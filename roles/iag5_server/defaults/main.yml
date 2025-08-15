@@ -1,0 +1,14 @@
+# Copyright (c) 2025, Itential, Inc
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+---
+iag5_server_user: itential
+iag5_server_group: itential
+
+iag5_server_cluster_id: cluster_1
+
+iag5_server_config_dir: /etc/gateway
+iag5_server_working_dir: /etc/gateway
+iag5_server_log_dir: /var/log/gateway
+
+iag5_server_listen_address: 0.0.0.0
+iag5_server_listen_port: 50051

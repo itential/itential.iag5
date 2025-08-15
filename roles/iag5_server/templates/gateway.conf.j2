@@ -1,0 +1,69 @@
+[application]
+ca_certificate_file = '/etc/gateway/certificates/ca.pem'
+cluster_id          = '{{ iag5_server_cluster_id }}'
+mode                = 'server'
+working_dir         = '{{ iag5_server_working_dir }}'
+
+[connect]
+certificate_file     = '/etc/gateway/certificates/gw-manager.pem'
+enabled              = false
+hosts                = ''
+private_key_file     = '/etc/gateway/certificates/gw-manager-key.pem'
+server_ha_enabled    = false
+server_ha_is_primary = false
+insecure_tls         = false
+
+[client]
+host             = "127.0.0.1"
+port             = 50051
+certificate_file = '/etc/gateway/certificates/client.pem'
+private_key_file = '/etc/gateway/certificates/client-key.pem'
+use_tls          = true
+
+[log]
+console_json       = false
+file_enabled       = true
+file_json          = false
+level              = 'INFO'
+server_dir         = '{{ iag5_server_log_dir }}'
+timestamp_timezone = 'utc'
+
+[python-script]
+requirements_file = requirements.txt
+
+[registry]
+default_overridable = true
+
+[secrets]
+encrypt_key_file = ''
+
+[runner]
+announcement_address = ''
+certificate_file     = ''
+listen_address       = 127.0.0.1
+port                 = 50051
+private_key_file     = ''
+use_tls              = true
+
+[server]
+api_key_expiration    = 1440
+certificate_file      = '/etc/gateway/certificates/server.pem'
+distributed_execution = false
+listen_address        = '{{ iag5_server_listen_address }}'
+port                  = {{ iag5_server_listen_port }}
+private_key_file      = '/etc/gateway/certificates/server-key.pem'
+use_tls               = true
+
+[store]
+backend                  = 'local'
+dynamodb_table_name      = 'itential.gateway5.store'
+etcd_ca_certificate_file = ''
+etcd_certificate_file    = ''
+etcd_client_cert_auth    = false
+etcd_hosts               = 'localhost:2379'
+etcd_private_key_file    = ''
+etcd_use_tls             = true
+
+[terminal]
+no_color           = false
+timestamp_timezone = 'utc'
