@@ -12,3 +12,12 @@ iag5_server_log_dir: /var/log/gateway
 
 iag5_server_listen_address: 0.0.0.0
 iag5_server_listen_port: 50051
+
+iag5_server_python_packages:
+  - python3.12
+  - python3.12-pip
+iag5_server_python_executable: /usr/bin/python3.12
+iag5_server_pip_executable: /usr/bin/pip3.12
+
+iag5_server_opentofu_packages:
+  - tofu

@@ -6,8 +6,8 @@ working_dir         = '{{ iag5_server_working_dir }}'
 
 [connect]
 certificate_file     = '/etc/gateway/certificates/gw-manager.pem'
-enabled              = false
-hosts                = ''
+enabled              = true
+hosts                = '{{ iag5_server_connect_host }}'
 private_key_file     = '/etc/gateway/certificates/gw-manager-key.pem'
 server_ha_enabled    = false
 server_ha_is_primary = false
