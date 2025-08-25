@@ -1,5 +1,11 @@
 # Copyright (c) 2025, Itential, Inc
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 ---
-- name: Install and configure Gateway5 servers and clients
-  import_playbook: itential.iag5.iag5
+- name: Install and configure Gateway5 servers
+  import_playbook: itential.iag5.servers
+
+# - name: Install and configure Gateway5 runners
+#   import_playbook: itential.iag5.runners
+
+- name: Install and configure Gateway5 clients
+  import_playbook: itential.iag5.clients

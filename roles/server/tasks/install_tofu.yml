@@ -11,5 +11,5 @@
 
 - name: Install OpenTofu packages
   ansible.builtin.dnf:
-    name: "{{ iag5_server_opentofu_packages }}"
+    name: "{{ server_opentofu_packages }}"
     state: present

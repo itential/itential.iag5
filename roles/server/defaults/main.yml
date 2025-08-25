@@ -1,0 +1,59 @@
+# Copyright (c) 2025, Itential, Inc
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+---
+# server user/group
+server_user: itential
+server_group: itential
+
+server_config_dir: /etc/gateway
+
+server_ssl_dir: /etc/gateway/certificates
+
+server_ssl_upload_certs: false
+server_ssl_selfsigned_certs: false
+# server_ssl_local_ca_certificate_path: ./itential_certs/server.csr
+# server_ssl_local_gw_manager_certificate_path: ./itential_certs/server.crt
+# server_ssl_local_gw_manager_private_key_path: ./itential_certs/server.key
+# server_ssl_local_certificate_path: ./itential_certs/server.key
+# server_ssl_local_gateway_private_key_path: ./itential_certs/server.key
+
+# application section
+server_application_cluster_id: cluster_1
+server_application_ca_certificate_file: "{{ server_ssl_dir }}/ca.pem"
+server_application_working_dir: /etc/gateway
+
+# connect section
+server_connect_enabled: true
+server_connect_certificate_file: "{{ server_ssl_dir }}/gw-manager.pem"
+server_connect_private_key_file: "{{ server_ssl_dir }}/gw-manager-key.pem"
+server_connect_insecure_tls: false
+server_connect_ha_enabled: false
+server_connect_ha_is_primary: false
+
+# log section
+server_log_console_json: false
+server_log_file_enabled: true
+server_log_file_json: false
+server_log_level: INFO
+server_log_dir: /var/log/gateway
+server_log_timestamp_timezone: utc
+
+# server section
+server_listen_address: 0.0.0.0
+server_listen_port: 50051
+server_distributed_execution: false
+server_api_key_expiration: 1440
+server_use_tls: true
+server_certificate_file: "{{ server_ssl_dir }}/server.pem"
+server_private_key_file: "{{ server_ssl_dir }}/server-key.pem"
+
+# python installation
+server_python_packages:
+  - python3.12
+  - python3.12-pip
+server_python_executable: /usr/bin/python3.12
+server_pip_executable: /usr/bin/pip3.12
+
+# opentofu installation
+server_opentofu_packages:
+  - tofu
