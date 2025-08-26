@@ -41,8 +41,20 @@
             file: upload_certs.yml
 
     - name: Configure Gateway
-      tags: configure
+      tags:
+        - configure
+        - configure_gateway
       block:
         - name: Configure Gateway
           ansible.builtin.include_tasks:
             file: configure_gateway.yml
+
+    - name: Configure Firewalld
+      tags:
+        - configure
+        - configure_firewalld
+      block:
+        - name: Configure Firewalld
+          ansible.builtin.include_tasks:
+            file: configure_firewalld.yml
+

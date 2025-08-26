@@ -1,6 +1,29 @@
 # Copyright (c) 2025, Itential, Inc
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 ---
-- name: REMOVEME
-  ansible.builtin.debug:
-    var: iag5_client_artifact
+- name: Install Gateway client
+  tags:
+    - install
+    - install_client
+    - install_gateway_client
+  block:
+    - name: Install Gateway client
+      ansible.builtin.include_tasks:
+        file: install_gateway_client.yml
+
+- name: Upload SSL certs and keys
+  tags: upload_certs
+  block:
+    - name: Upload SSL certs and keys
+      ansible.builtin.include_tasks:
+        file: upload_certs.yml
+
+- name: Configure Gateway client
+  tags:
+    - configure
+    - configure_client
+    - configure_gateway_client
+  block:
+    - name: Configure Gateway client
+      ansible.builtin.include_tasks:
+        file: configure_gateway_client.yml
