@@ -86,8 +86,8 @@
   loop: "{{ gateway_packages.files }}"
   when: gateway_packages | length > 0
 
-# - name: Remove the temporary download directory
-#   ansible.builtin.file:
-#     path: "{{ downloaddir.path }}"
-#     state: absent
-#   changed_when: false
+- name: Remove the temporary download directory
+  ansible.builtin.file:
+    path: "{{ downloaddir.path }}"
+    state: absent
+  changed_when: false

@@ -4,8 +4,5 @@
 - name: Install and configure Gateway5 servers
   import_playbook: itential.iag5.servers
 
-# - name: Install and configure Gateway5 runners
-#   import_playbook: itential.iag5.runners
-
 - name: Install and configure Gateway5 clients
   import_playbook: itential.iag5.clients
