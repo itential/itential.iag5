@@ -1,0 +1,83 @@
+# Copyright (c) 2025, Itential, Inc
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+---
+- name: Install and configure Gateway and dependencies
+  notify: Enable and start Gateway
+  block:
+    - name: Install Python
+      tags:
+        - install
+        - install_dependencies
+        - install_python
+      block:
+        - name: Install Python
+          ansible.builtin.include_tasks:
+            file: install_python.yml
+
+    - name: Install OpenTofu
+      tags:
+        - install
+        - install_dependencies
+        - install_opentofu
+      block:
+        - name: Install OpenTofu
+          ansible.builtin.include_tasks:
+            file: install_tofu.yml
+
+    - name: Install Gateway
+      tags:
+        - install
+        - install_gateway
+      block:
+        - name: Install Gateway
+          ansible.builtin.include_tasks:
+            file: install_gateway.yml
+
+    - name: Upload SSL certs and keys
+      tags: upload_certs
+      block:
+        - name: Upload SSL certs and keys
+          ansible.builtin.include_tasks:
+            file: upload_certs.yml
+
+    - name: Configure Gateway
+      tags:
+        - configure
+        - configure_gateway
+      block:
+        - name: Configure Gateway
+          ansible.builtin.include_tasks:
+            file: configure_gateway.yml
+
+    - name: Configure Firewalld
+      tags:
+        - configure
+        - configure_firewalld
+      block:
+        - name: Configure Firewalld
+          ansible.builtin.include_tasks:
+            file: configure_firewalld.yml
+
+- name: Flush all handlers
+  ansible.builtin.meta: flush_handlers
+
+- name: Ensure Gateway is running
+  tags: always
+  block:
+    - name: Start Gateway
+      ansible.builtin.service:
+        name: iagctl
+        state: started
+
+    - name: Assert that Gateway is running
+      block:
+        - name: Get Gateway service status
+          ansible.builtin.service:
+            name: iagctl
+          register: iagctl_status
+
+        - name: Assert that Gateway is running
+          ansible.builtin.assert:
+            that: iagctl_status.status.ActiveState == "active"
+            fail_msg: "Gateway service is not running (state: {{ iagctl_status.status.ActiveState }})"
+            success_msg: "Gateway service is running correctly"

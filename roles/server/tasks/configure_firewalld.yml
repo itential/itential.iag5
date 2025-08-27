@@ -1,0 +1,17 @@
+# Copyright (c) 2025, Itential, Inc
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+---
+- name: Gather service facts
+  ansible.builtin.service_facts:
+
+- name: Open Gateway Port on FirewallD Public Zone
+  ansible.posix.firewalld:
+    port: "{{ server_listen_port }}/tcp"
+    permanent: true
+    state: enabled
+    zone: public
+    immediate: true
+  when:
+    - ansible_facts.services["firewalld.service"] is defined
+    - ansible_facts.services["firewalld.service"].state == "running"
+    - ansible_facts.services["firewalld.service"].status == "enabled"

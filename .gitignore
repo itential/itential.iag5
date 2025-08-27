@@ -1,0 +1,11 @@
+.DS_Store
+**.DS_Store
+**/ansible.cfg
+**/*.bin
+**/*.whl
+**/*.tgz
+**/*.gz
+**/*.pem
+**/*.log
+**/*.keep
+inventories

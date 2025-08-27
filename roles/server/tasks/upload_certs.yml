@@ -1,0 +1,58 @@
+# Copyright (c) 2025, Itential, Inc
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+---
+- name: Upload SSL-related files
+  when: server_ssl_upload_certs | bool
+  block:
+    - name: Create the gateway certificates directory
+      ansible.builtin.file:
+        name: "{{ server_ssl_dir }}"
+        state: directory
+        owner: "{{ server_user }}"
+        group: "{{ server_group }}"
+        mode: "0755"
+
+    - name: Copy application CA certificate file
+      ansible.builtin.copy:
+        src: "{{ server_ssl_local_ca_certificate_path }}"
+        dest: "{{ server_application_ca_certificate_file }}"
+        owner: "{{ server_user }}"
+        group: "{{ server_group }}"
+        mode: '0644'
+      when: server_ssl_local_ca_certificate_path is defined
+
+    - name: Copy Gateway Manager certificate
+      ansible.builtin.copy:
+        src: "{{ server_ssl_local_gw_manager_certificate_path }}"
+        dest: "{{ server_connect_certificate_file }}"
+        owner: "{{ server_user }}"
+        group: "{{ server_group }}"
+        mode: '0644'
+      when: server_ssl_local_gw_manager_certificate_path is defined
+
+    - name: Copy Gateway Manager private key
+      ansible.builtin.copy:
+        src: "{{ server_ssl_local_gw_manager_private_key_path }}"
+        dest: "{{ server_connect_private_key_file }}"
+        owner: "{{ server_user }}"
+        group: "{{ server_group }}"
+        mode: '0600'
+      when: server_ssl_local_gw_manager_private_key_path is defined
+
+    - name: Copy Gateway certificate
+      ansible.builtin.copy:
+        src: "{{ server_ssl_local_gateway_certificate_path }}"
+        dest: "{{ server_certificate_file }}"
+        owner: "{{ server_user }}"
+        group: "{{ server_group }}"
+        mode: '0644'
+      when: server_ssl_local_gateway_certificate_path is defined
+
+    - name: Copy Gateway private key
+      ansible.builtin.copy:
+        src: "{{ server_ssl_local_gateway_private_key_path }}"
+        dest: "{{ server_private_key_file }}"
+        owner: "{{ server_user }}"
+        group: "{{ server_group }}"
+        mode: '0600'
+      when: server_ssl_local_gateway_private_key_path is defined
