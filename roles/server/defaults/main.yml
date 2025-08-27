@@ -7,10 +7,11 @@ server_group: itential
 
 server_config_dir: /etc/gateway
 
-server_ssl_dir: /etc/gateway/certificates
+server_ssl_dir: /etc/ssl/gateway
 
 server_ssl_upload_certs: false
 server_ssl_selfsigned_certs: false
+# TODO: Document these in the README
 # server_ssl_local_ca_certificate_path: ./itential_certs/server.csr
 # server_ssl_local_gw_manager_certificate_path: ./itential_certs/server.crt
 # server_ssl_local_gw_manager_private_key_path: ./itential_certs/server.key

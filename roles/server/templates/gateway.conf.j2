@@ -18,13 +18,6 @@ insecure_tls         = {{ server_connect_insecure_tls | to_json }}
 server_ha_enabled    = {{ server_connect_ha_enabled | to_json }}
 server_ha_is_primary = {{ server_connect_ha_is_primary | to_json }}
 
-[client]
-host             = "127.0.0.1"
-port             = 50051
-certificate_file = '/etc/gateway/certificates/client.pem'
-private_key_file = '/etc/gateway/certificates/client-key.pem'
-use_tls          = true
-
 [log]
 console_json       = {{ server_log_console_json | to_json }}
 file_enabled       = {{ server_log_file_enabled | to_json }}
@@ -41,14 +34,6 @@ default_overridable = true
 
 [secrets]
 encrypt_key_file = ''
-
-[runner]
-announcement_address = ''
-certificate_file     = ''
-listen_address       = 127.0.0.1
-port                 = 50051
-private_key_file     = ''
-use_tls              = true
 
 [server]
 listen_address        = '{{ server_listen_address }}'

@@ -3,14 +3,21 @@
 ---
 - name: Upload SSL-related files
   when: server_ssl_upload_certs | bool
-  tags: copy_certs
   block:
+    - name: Create the gateway certificates directory
+      ansible.builtin.file:
+        name: "{{ server_ssl_dir }}"
+        state: directory
+        owner: "{{ server_user }}"
+        group: "{{ server_group }}"
+        mode: "0755"
+
     - name: Copy application CA certificate file
       ansible.builtin.copy:
         src: "{{ server_ssl_local_ca_certificate_path }}"
         dest: "{{ server_application_ca_certificate_file }}"
-        owner: root
-        group: root
+        owner: "{{ server_user }}"
+        group: "{{ server_group }}"
         mode: '0644'
       when: server_ssl_local_ca_certificate_path is defined
 
@@ -18,8 +25,8 @@
       ansible.builtin.copy:
         src: "{{ server_ssl_local_gw_manager_certificate_path }}"
         dest: "{{ server_connect_certificate_file }}"
-        owner: root
-        group: root
+        owner: "{{ server_user }}"
+        group: "{{ server_group }}"
         mode: '0644'
       when: server_ssl_local_gw_manager_certificate_path is defined
 
@@ -27,17 +34,17 @@
       ansible.builtin.copy:
         src: "{{ server_ssl_local_gw_manager_private_key_path }}"
         dest: "{{ server_connect_private_key_file }}"
-        owner: root
-        group: root
-        mode: '0644'
+        owner: "{{ server_user }}"
+        group: "{{ server_group }}"
+        mode: '0600'
       when: server_ssl_local_gw_manager_private_key_path is defined
 
     - name: Copy Gateway certificate
       ansible.builtin.copy:
         src: "{{ server_ssl_local_gateway_certificate_path }}"
         dest: "{{ server_certificate_file }}"
-        owner: root
-        group: root
+        owner: "{{ server_user }}"
+        group: "{{ server_group }}"
         mode: '0644'
       when: server_ssl_local_gateway_certificate_path is defined
 
@@ -45,7 +52,7 @@
       ansible.builtin.copy:
         src: "{{ server_ssl_local_gateway_private_key_path }}"
         dest: "{{ server_private_key_file }}"
-        owner: root
-        group: root
-        mode: '0644'
+        owner: "{{ server_user }}"
+        group: "{{ server_group }}"
+        mode: '0600'
       when: server_ssl_local_gateway_private_key_path is defined

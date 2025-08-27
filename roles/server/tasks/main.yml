@@ -2,7 +2,7 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 ---
 - name: Install and configure Gateway and dependencies
-  notify: Enable and start gateway
+  notify: Enable and start Gateway
   block:
     - name: Install Python
       tags:
@@ -58,3 +58,26 @@
           ansible.builtin.include_tasks:
             file: configure_firewalld.yml
 
+- name: Flush all handlers
+  ansible.builtin.meta: flush_handlers
+
+- name: Ensure Gateway is running
+  tags: always
+  block:
+    - name: Start Gateway
+      ansible.builtin.service:
+        name: iagctl
+        state: started
+
+    - name: Assert that Gateway is running
+      block:
+        - name: Get Gateway service status
+          ansible.builtin.service:
+            name: iagctl
+          register: iagctl_status
+
+        - name: Assert that Gateway is running
+          ansible.builtin.assert:
+            that: iagctl_status.status.ActiveState == "active"
+            fail_msg: "Gateway service is not running (state: {{ iagctl_status.status.ActiveState }})"
+            success_msg: "Gateway service is running correctly"

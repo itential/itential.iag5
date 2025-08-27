@@ -77,7 +77,7 @@
   register: gateway_packages
   changed_when: false
 
-- name: Unarchive the gateway packages (local)
+- name: Unarchive the gateway packages
   ansible.builtin.unarchive:
     src: "{{ item.path }}"
     dest: "{{ client_application_install_dir }}/"
