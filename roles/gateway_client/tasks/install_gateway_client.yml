@@ -3,26 +3,26 @@
 ---
 - name: Create gateway group
   ansible.builtin.group:
-    name: "{{ client_group }}"
+    name: "{{ gateway_client_group }}"
     state: present
 
 - name: Create gateway user
   ansible.builtin.user:
-    name: "{{ client_user }}"
-    group: "{{ client_group }}"
+    name: "{{ gateway_client_user }}"
+    group: "{{ gateway_client_group }}"
     state: present
 
 - name: Create the gateway directories
   ansible.builtin.file:
     name: "{{ item }}"
     state: directory
-    owner: "{{ client_user }}"
-    group: "{{ client_group }}"
+    owner: "{{ gateway_client_user }}"
+    group: "{{ gateway_client_group }}"
     mode: "0775"
   with_items:
-    - "{{ client_application_install_dir }}"
-    - "{{ client_application_working_dir }}"
-    - "{{ client_application_certs_path }}"
+    - "{{ gateway_client_application_install_dir }}"
+    - "{{ gateway_client_application_working_dir }}"
+    - "{{ gateway_client_application_certs_path }}"
 
 - name: Create a temporary download directory
   ansible.builtin.tempfile:
@@ -53,7 +53,7 @@
     url_username: "{{ repository_username | default(omit) }}"
     url_password: "{{ repository_password | default(omit) }}"
     validate_certs: true
-  loop: "{{ client_packages }}"
+  loop: "{{ gateway_client_packages }}"
   when: "'http' in item"
   register: download_result
   changed_when: false
@@ -62,11 +62,11 @@
   ansible.builtin.copy:
     src: "{{ item }}"
     dest: "{{ downloaddir.path }}/"
-    owner: "{{ client_user }}"
-    group: "{{ client_group }}"
+    owner: "{{ gateway_client_user }}"
+    group: "{{ gateway_client_group }}"
     mode: "0775"
     force: false
-  loop: "{{ client_packages }}"
+  loop: "{{ gateway_client_packages }}"
   when: "'http' not in item"
   changed_when: false
 
@@ -80,7 +80,7 @@
 - name: Unarchive the gateway packages
   ansible.builtin.unarchive:
     src: "{{ item.path }}"
-    dest: "{{ client_application_install_dir }}/"
+    dest: "{{ gateway_client_application_install_dir }}/"
     remote_src: true
     # state: present
   loop: "{{ gateway_packages.files }}"

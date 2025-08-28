@@ -3,37 +3,37 @@
 ---
 - name: Install Python packages
   ansible.builtin.dnf:
-    name: "{{ server_python_packages }}"
+    name: "{{ gateway_python_packages }}"
     state: present
 
 - name: Create the local bin directory for the gateway user
   ansible.builtin.file:
-    name: "/home/{{ server_user }}/.local/bin"
+    name: "{{ gateway_local_bin_dir }}"
     state: directory
-    owner: "{{ server_user }}"
-    group: "{{ server_user }}"
+    owner: "{{ gateway_user }}"
+    group: "{{ gateway_user }}"
     mode: "0755"
 
 - name: Create local python symlink for gateway user
   ansible.builtin.file:
     state: link
-    src: "{{ server_python_executable }}"
-    path: "/home/{{ server_user }}/.local/bin/python"
+    src: "{{ gateway_python_executable }}"
+    path: "{{ gateway_local_bin_dir }}/python"
 
 - name: Create local python3 symlink for gateway user
   ansible.builtin.file:
     state: link
-    src: "{{ server_python_executable }}"
-    path: "/home/{{ server_user }}/.local/bin/python3"
+    src: "{{ gateway_python_executable }}"
+    path: "{{ gateway_local_bin_dir }}/python3"
 
 - name: Create local pip symlink for gateway user
   ansible.builtin.file:
     state: link
-    src: "{{ server_pip_executable }}"
-    path: "/home/{{ server_user }}/.local/bin/pip"
+    src: "{{ gateway_pip_executable }}"
+    path: "{{ gateway_local_bin_dir }}/pip"
 
 - name: Create local pip3 symlink for gateway user
   ansible.builtin.file:
     state: link
-    src: "{{ server_pip_executable }}"
-    path: "/home/{{ server_user }}/.local/bin/pip3"
+    src: "{{ gateway_pip_executable }}"
+    path: "{{ gateway_local_bin_dir }}/pip3"

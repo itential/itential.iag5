@@ -6,4 +6,6 @@
   become: true
   roles:
     # Perform a base installation of IAG5 client
-    - role: itential.iag5.client
+    - role: itential.iag5.gateway_client
+      vars:
+        gateway_application_mode: client

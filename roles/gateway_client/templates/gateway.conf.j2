@@ -1,0 +1,19 @@
+[application]
+mode                 = {{ gateway_application_mode }}
+working_dir          = {{ gateway_client_application_working_dir }}
+{% if ( (gateway_client_ssl_selfsigned_certs is defined) and
+        (gateway_client_ssl_selfsigned_certs is boolean) ) %}
+ca_certificate_file  = ''
+{% else %}
+ca_certificate_file  = {{ gateway_client_application_ca_certificate_file }}
+{% endif %}
+
+[client]
+host              = {{ gateway_client_host }}
+port              = {{ gateway_client_port }}
+certificate_file  = {{ gateway_client_certificate_file }}
+private_key_file  = {{ gateway_client_private_key_file }}
+use_tls           = {{ gateway_client_use_tls | to_json }}
+
+[log]
+level = {{ gateway_client_log_level }}

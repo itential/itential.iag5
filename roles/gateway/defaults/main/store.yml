@@ -1,0 +1,12 @@
+# Copyright (c) 2025, Itential, Inc
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+---
+# store variables
+gateway_store_backend: local
+gateway_store_etcd_ca_certificate_file:
+gateway_store_etcd_certificate_file:
+gateway_store_etcd_client_cert_auth: false
+gateway_store_etcd_hosts: localhost:2379
+gateway_store_etcd_private_key_file:
+gateway_store_etcd_use_tls: true
+gateway_store_dynamodb_table_name: itential.gateway5.store

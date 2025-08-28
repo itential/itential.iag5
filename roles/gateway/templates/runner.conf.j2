@@ -1,0 +1,61 @@
+[application]
+mode                = '{{ gateway_application_mode }}'
+cluster_id          = '{{ gateway_application_cluster_id }}'
+working_dir         = '{{ gateway_runner_runtime_data_dir }}'
+{% if ( (gateway_use_selfsigned_certs is defined) and
+        (gateway_use_selfsigned_certs is boolean) ) %}
+ca_certificate_file = ''
+{% else %}
+ca_certificate_file = '{{ gateway_application_ca_certificate_file }}'
+{% endif %}
+
+[log]
+console_json       = {{ gateway_log_console_json | to_json }}
+file_enabled       = {{ gateway_log_file_enabled | to_json }}
+file_json          = {{ gateway_log_file_json | to_json }}
+level              = '{{ gateway_log_level }}'
+server_dir         = '{{ gateway_log_server_dir }}'
+timestamp_timezone = '{{ gateway_log_timestamp_timezone }}'
+
+[python-script]
+requirements_file = requirements.txt
+
+[registry]
+default_overridable = {{ gateway_registry_default_overridable | to_json }}
+
+[secrets]
+encrypt_key_file = '{{ gateway_encryption_key_file }}'
+
+[runner]
+{% if gateway_runner_announcement_address %}
+announcement_address = '{{ gateway_runner_announcement_address }}'
+{% else %}
+announcement_address = ''
+{% endif %}
+{% if gateway_runner_certificate_file %}
+certificate_file     = '{{ gateway_runner_certificate_file }}'
+{% else %}
+certificate_file     = ''
+{% endif %}
+listen_address       = '{{ gateway_runner_listen_address }}
+port                 = {{ gateway_runner_port }}
+{% if gateway_runner_private_key_file %}
+private_key_file     = '{{ gateway_runner_private_key_file}}'
+{% else %}
+private_key_file     = ''
+{% endif %}
+use_tls              = {{ gateway_runner_use_tls | to_json }}
+
+[store]
+backend                  = '{{ gateway_store_backend }}'
+dynamodb_table_name      = '{{ gateway_store_dynamodb_table_name }}'
+etcd_ca_certificate_file = '{{ gateway_store_etcd_ca_certificate_file }}'
+etcd_certificate_file    = '{{ gateway_store_etcd_certificate_file }}'
+etcd_client_cert_auth    = {{ gateway_store_etcd_client_cert_auth | to_json }}
+etcd_hosts               = '{{ gateway_store_etcd_hosts }}'
+etcd_private_key_file    = '{{ gateway_store_etcd_private_key_file }}'
+etcd_use_tls             = {{ gateway_store_etcd_use_tls | to_json }}
+
+[terminal]
+no_color           = {{ gateway_terminal_no_color | to_json }}
+timestamp_timezone = '{{ gateway_terminal_timestamp_timezone }}'

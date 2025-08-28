@@ -4,9 +4,9 @@
 - name: Create the gateway configuration file
   ansible.builtin.template:
     src: "gateway.conf.j2"
-    dest: "{{ server_config_dir }}/gateway.conf"
+    dest: "{{ gateway_client_application_working_dir }}/gateway.conf"
     mode: "0600"
-    owner: "{{ server_user }}"
-    group: "{{ server_group }}"
+    owner: "{{ gateway_client_user }}"
+    group: "{{ gateway_client_group }}"
     lstrip_blocks: true
     backup: true

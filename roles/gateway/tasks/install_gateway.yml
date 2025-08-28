@@ -3,26 +3,49 @@
 ---
 - name: Create gateway group
   ansible.builtin.group:
-    name: "{{ server_group }}"
+    name: "{{ gateway_group }}"
     state: present
 
 - name: Create gateway user
   ansible.builtin.user:
-    name: "{{ server_user }}"
-    group: "{{ server_group }}"
+    name: "{{ gateway_user }}"
+    group: "{{ gateway_group }}"
     state: present
 
 - name: Create the gateway directories
   ansible.builtin.file:
     name: "{{ item }}"
     state: directory
-    owner: "{{ server_user }}"
-    group: "{{ server_group }}"
+    owner: "{{ gateway_user }}"
+    group: "{{ gateway_group }}"
     mode: "0775"
   with_items:
-    - "{{ server_config_dir }}"
-    - "{{ server_application_working_dir }}"
-    - "{{ server_log_dir }}"
+    - "{{ gateway_config_dir }}"
+    # - "{{ gateway_application_working_dir }}"
+    - "{{ gateway_log_server_dir }}"
+    - "{{ gateway_encryption_key_dir }}"
+
+- name: Create the gateway server directories
+  ansible.builtin.file:
+    name: "{{ item }}"
+    state: directory
+    owner: "{{ gateway_user }}"
+    group: "{{ gateway_group }}"
+    mode: "0775"
+  with_items:
+    - "{{ gateway_server_runtime_data_dir }}"
+  when: gateway_application_mode == "server"
+
+- name: Create the gateway runner directories
+  ansible.builtin.file:
+    name: "{{ item }}"
+    state: directory
+    owner: "{{ gateway_user }}"
+    group: "{{ gateway_group }}"
+    mode: "0775"
+  with_items:
+    - "{{ gateway_runner_runtime_data_dir }}"
+  when: gateway_application_mode == "runner"
 
 - name: Create a temporary download directory
   ansible.builtin.tempfile:
@@ -53,7 +76,7 @@
     url_username: "{{ repository_username | default(omit) }}"
     url_password: "{{ repository_password | default(omit) }}"
     validate_certs: true
-  loop: "{{ server_packages }}"
+  loop: "{{ gateway_packages }}"
   when:
     - "'http' in item"
     - item.endswith('.rpm')
@@ -64,11 +87,11 @@
   ansible.builtin.copy:
     src: "{{ item }}"
     dest: "{{ downloaddir.path }}/{{ item }}"
-    owner: "{{ server_user }}"
-    group: "{{ server_group }}"
+    owner: "{{ gateway_user }}"
+    group: "{{ gateway_group }}"
     mode: "0775"
     force: false
-  loop: "{{ server_packages }}"
+  loop: "{{ gateway_packages }}"
   when:
     - "'http' not in item"
     - item.endswith('.rpm')
