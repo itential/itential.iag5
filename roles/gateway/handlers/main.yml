@@ -11,3 +11,8 @@
   retries: 3
   delay: 15
   failed_when: iagctl_service_result.status.ActiveState != "active"
+
+- name: Reload daemon
+  ansible.builtin.systemd:
+    name: iagctl
+    daemon_reload: true

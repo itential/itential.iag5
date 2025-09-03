@@ -1,0 +1,12 @@
+[Unit]
+Description=IAG Gateway Server Service
+After=network.target
+
+[Service]
+User={{ gateway_user }}
+Group={{ gateway_group }}
+ExecStart=/opt/gateway/iagctl server --config {{ gateway_config_dir }}/gateway.conf
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

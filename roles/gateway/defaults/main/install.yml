@@ -8,9 +8,6 @@ gateway_group: itential
 gateway_config_dir: /etc/gateway
 gateway_cert_dir: /etc/ssl/gateway
 
-gateway_encryption_key_dir: "{{ gateway_application_working_dir }}/keys"
-gateway_encryption_key_file: "{{ gateway_encryption_key_dir }}/encryption-key.txt"
-
 gateway_upload_certs: false
 gateway_use_selfsigned_certs: false
 # TODO: Document these in the README

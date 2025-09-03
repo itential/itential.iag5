@@ -10,3 +10,7 @@ gateway_store_etcd_hosts: localhost:2379
 gateway_store_etcd_private_key_file:
 gateway_store_etcd_use_tls: true
 gateway_store_dynamodb_table_name: itential.gateway5.store
+gateway_store_dynamodb_aws_access_key_id:
+gateway_store_dynamodb_aws_secret_access_key:
+gateway_store_dynamodb_aws_session_token:
+gateway_store_dynamodb_aws_region:

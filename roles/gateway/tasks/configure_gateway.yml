@@ -1,24 +1,46 @@
 # Copyright (c) 2025, Itential, Inc
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 ---
-- name: Create the gateway server configuration file
-  ansible.builtin.template:
-    src: "server.conf.j2"
-    dest: "{{ gateway_config_dir }}/gateway.conf"
-    mode: "0600"
-    owner: "{{ gateway_user }}"
-    group: "{{ gateway_group }}"
-    lstrip_blocks: true
-    backup: true
+- name: Configure Gateway server
   when: gateway_application_mode == 'server'
+  block:
+    - name: Create the gateway server configuration file
+      ansible.builtin.template:
+        src: "server.conf.j2"
+        dest: "{{ gateway_config_dir }}/gateway.conf"
+        mode: "0600"
+        owner: "{{ gateway_user }}"
+        group: "{{ gateway_group }}"
+        lstrip_blocks: true
+        backup: true
 
-- name: Create the gateway runner configuration file
-  ansible.builtin.template:
-    src: "runner.conf.j2"
-    dest: "{{ gateway_config_dir }}/gateway.conf"
-    mode: "0600"
-    owner: "{{ gateway_user }}"
-    group: "{{ gateway_group }}"
-    lstrip_blocks: true
-    backup: true
+    - name: Create the gateway server systemd file
+      ansible.builtin.template:
+        src: server.service.j2
+        dest: /usr/lib/systemd/system/iagctl.service
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Daemon reload
+
+- name: Configure Gateway runner
   when: gateway_application_mode == 'runner'
+  block:
+    - name: Create the gateway runner configuration file
+      ansible.builtin.template:
+        src: "runner.conf.j2"
+        dest: "{{ gateway_config_dir }}/gateway.conf"
+        mode: "0600"
+        owner: "{{ gateway_user }}"
+        group: "{{ gateway_group }}"
+        lstrip_blocks: true
+        backup: true
+
+    - name: Create the gateway runner systemd file
+      ansible.builtin.template:
+        src: runner.service.j2
+        dest: /usr/lib/systemd/system/iagctl.service
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Daemon reload
