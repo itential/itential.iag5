@@ -2,17 +2,4 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 ---
 - name: Enable and start Gateway
-  ansible.builtin.service:
-    name: iagctl
-    enabled: true
-    state: restarted
-  register: iagctl_service_result
-  until: iagctl_service_result.status.ActiveState == "active"
-  retries: 3
-  delay: 15
-  failed_when: iagctl_service_result.status.ActiveState != "active"
-
-- name: Reload daemon
-  ansible.builtin.systemd:
-    name: iagctl
-    daemon_reload: true
+  ansible.builtin.include_tasks: start_gateway.yml

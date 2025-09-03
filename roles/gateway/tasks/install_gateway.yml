@@ -24,7 +24,6 @@
     # - "{{ gateway_application_working_dir }}"
     - "{{ gateway_log_server_dir }}"
 
-
 - name: Create the gateway server directories
   ansible.builtin.file:
     name: "{{ item }}"

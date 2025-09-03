@@ -21,7 +21,14 @@
         owner: root
         group: root
         mode: "0644"
-      notify: Daemon reload
+
+    - name: Create the gateway server encryption key file
+      ansible.builtin.copy:
+        content: "{{ gateway_encryption_key }}"
+        dest: "{{ gateway_server_encryption_key_file }}"
+        mode: "0600"
+        owner: "{{ gateway_user }}"
+        group: "{{ gateway_group }}"
 
 - name: Configure Gateway runner
   when: gateway_application_mode == 'runner'
@@ -43,4 +50,11 @@
         owner: root
         group: root
         mode: "0644"
-      notify: Daemon reload
+
+    - name: Create the gateway runner encryption key file
+      ansible.builtin.copy:
+        content: "{{ gateway_encryption_key }}"
+        dest: "{{ gateway_runner_encryption_key_file }}"
+        mode: "0600"
+        owner: "{{ gateway_user }}"
+        group: "{{ gateway_group }}"

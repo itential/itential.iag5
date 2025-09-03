@@ -7,12 +7,12 @@
   block:
     - name: Copy application CA certificate file
       ansible.builtin.copy:
-        src: "{{ client_ssl_local_ca_certificate_path }}"
+        src: "{{ gateway_client_ssl_local_ca_certificate_file }}"
         dest: "{{ gateway_client_application_ca_certificate_file }}"
         owner: root
         group: root
         mode: '0644'
-      when: client_ssl_local_ca_certificate_path is defined
+      when: gateway_client_ssl_local_ca_certificate_file is defined
 
     - name: Copy client certificate
       ansible.builtin.copy:
