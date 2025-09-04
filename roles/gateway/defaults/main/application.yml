@@ -4,7 +4,4 @@
 # application variables
 gateway_application_cluster_id: cluster_1
 gateway_application_ca_certificate_file: "{{ gateway_cert_dir }}/ca.pem"
-# TODO: Discuss this variable with the gateway team
-#       What is the difference between the gateway_application_working_dir and
-#       gateway_server_runtime_data_dir?
-gateway_application_working_dir:
+gateway_application_working_dir: "{{ gateway_data_dir }}"

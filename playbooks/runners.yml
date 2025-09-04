@@ -2,10 +2,10 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 ---
 - name: Install and configure IAG5 runners
-  hosts: iag5_runner
+  hosts: iag5_runners
   become: true
   roles:
-    # Perform a base installation of IAG5 server
+    # Perform a base installation of IAG5 runner
     - role: itential.iag5.gateway
       vars:
         gateway_application_mode: runner

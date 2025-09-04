@@ -24,7 +24,7 @@ requirements_file = requirements.txt
 default_overridable = {{ gateway_registry_default_overridable | to_json }}
 
 [secrets]
-encrypt_key_file = '{{ gateway_runner_encryption_key_file }}'
+encrypt_key_file = '{{ gateway_secrets_encrypt_key_file }}'
 
 [runner]
 listen_address       = '{{ gateway_runner_listen_address }}'

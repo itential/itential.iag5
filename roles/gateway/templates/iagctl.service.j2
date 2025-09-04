@@ -5,7 +5,7 @@ After=network.target
 [Service]
 User={{ gateway_user }}
 Group={{ gateway_group }}
-ExecStart=/opt/gateway/iagctl server --config {{ gateway_config_dir }}/gateway.conf
+ExecStart=/opt/gateway/iagctl {{ gateway_application_mode }} --config {{ gateway_config_dir }}/gateway.conf
 Restart=on-failure
 {% if gateway_store_backend == 'dynamodb' %}
 Environment=AWS_ACCESS_KEY_ID={{ gateway_store_dynamodb_aws_access_key_id }}

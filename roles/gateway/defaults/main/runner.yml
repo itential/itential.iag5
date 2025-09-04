@@ -2,12 +2,10 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 ---
 # runner variables
-gateway_runner_listen_address: 0.0.0.0
-gateway_runner_port: 50051
+gateway_runner_listen_address: "{{ gateway_listen_address }}"
+gateway_runner_port: "{{ gateway_port }}"
 gateway_runner_announcement_address:
-gateway_runner_runtime_data_dir: /var/lib/gateway
-gateway_runner_encryption_key_dir: "{{ gateway_runner_runtime_data_dir }}/keys"
-gateway_runner_encryption_key_file: "{{ gateway_runner_encryption_key_dir }}/encryption-key.txt"
-gateway_runner_use_tls: true
+gateway_runner_runtime_data_dir: "{{ gateway_data_dir }}"
+gateway_runner_use_tls: "{{ gateway_use_tls }}"
 gateway_runner_certificate_file: "{{ gateway_cert_dir }}/server.pem"
 gateway_runner_private_key_file: "{{ gateway_cert_dir }}/server-key.pem"

@@ -21,7 +21,8 @@
     mode: "0775"
   with_items:
     - "{{ gateway_config_dir }}"
-    # - "{{ gateway_application_working_dir }}"
+    - "{{ gateway_application_working_dir }}"
+    - "{{ gateway_secrets_encrypt_key_dir }}"
     - "{{ gateway_log_server_dir }}"
 
 - name: Create the gateway server directories
@@ -33,7 +34,6 @@
     mode: "0775"
   with_items:
     - "{{ gateway_server_runtime_data_dir }}"
-    - "{{ gateway_server_encryption_key_dir }}"
   when: gateway_application_mode == "server"
 
 - name: Create the gateway runner directories
@@ -45,7 +45,6 @@
     mode: "0775"
   with_items:
     - "{{ gateway_runner_runtime_data_dir }}"
-    - "{{ gateway_runner_encryption_key_dir }}"
   when: gateway_application_mode == "runner"
 
 - name: Create a temporary download directory

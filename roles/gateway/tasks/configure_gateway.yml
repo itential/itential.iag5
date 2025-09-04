@@ -1,60 +1,40 @@
 # Copyright (c) 2025, Itential, Inc
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 ---
-- name: Configure Gateway server
+- name: Create the gateway server configuration file
+  ansible.builtin.template:
+    src: "server.conf.j2"
+    dest: "{{ gateway_config_dir }}/gateway.conf"
+    mode: "0600"
+    owner: "{{ gateway_user }}"
+    group: "{{ gateway_group }}"
+    lstrip_blocks: true
+    backup: true
   when: gateway_application_mode == 'server'
-  block:
-    - name: Create the gateway server configuration file
-      ansible.builtin.template:
-        src: "server.conf.j2"
-        dest: "{{ gateway_config_dir }}/gateway.conf"
-        mode: "0600"
-        owner: "{{ gateway_user }}"
-        group: "{{ gateway_group }}"
-        lstrip_blocks: true
-        backup: true
 
-    - name: Create the gateway server systemd file
-      ansible.builtin.template:
-        src: server.service.j2
-        dest: /usr/lib/systemd/system/iagctl.service
-        owner: root
-        group: root
-        mode: "0644"
-
-    - name: Create the gateway server encryption key file
-      ansible.builtin.copy:
-        content: "{{ gateway_encryption_key }}"
-        dest: "{{ gateway_server_encryption_key_file }}"
-        mode: "0600"
-        owner: "{{ gateway_user }}"
-        group: "{{ gateway_group }}"
-
-- name: Configure Gateway runner
+- name: Create the gateway runner configuration file
+  ansible.builtin.template:
+    src: "runner.conf.j2"
+    dest: "{{ gateway_config_dir }}/gateway.conf"
+    mode: "0600"
+    owner: "{{ gateway_user }}"
+    group: "{{ gateway_group }}"
+    lstrip_blocks: true
+    backup: true
   when: gateway_application_mode == 'runner'
-  block:
-    - name: Create the gateway runner configuration file
-      ansible.builtin.template:
-        src: "runner.conf.j2"
-        dest: "{{ gateway_config_dir }}/gateway.conf"
-        mode: "0600"
-        owner: "{{ gateway_user }}"
-        group: "{{ gateway_group }}"
-        lstrip_blocks: true
-        backup: true
 
-    - name: Create the gateway runner systemd file
-      ansible.builtin.template:
-        src: runner.service.j2
-        dest: /usr/lib/systemd/system/iagctl.service
-        owner: root
-        group: root
-        mode: "0644"
+- name: Create the gateway systemd file
+  ansible.builtin.template:
+    src: iagctl.service.j2
+    dest: /usr/lib/systemd/system/iagctl.service
+    owner: root
+    group: root
+    mode: "0644"
 
-    - name: Create the gateway runner encryption key file
-      ansible.builtin.copy:
-        content: "{{ gateway_encryption_key }}"
-        dest: "{{ gateway_runner_encryption_key_file }}"
-        mode: "0600"
-        owner: "{{ gateway_user }}"
-        group: "{{ gateway_group }}"
+- name: Create the gateway runner encryption key file
+  ansible.builtin.copy:
+    content: "{{ gateway_secrets_encrypt_key }}"
+    dest: "{{ gateway_secrets_encrypt_key_file }}"
+    mode: "0600"
+    owner: "{{ gateway_user }}"
+    group: "{{ gateway_group }}"

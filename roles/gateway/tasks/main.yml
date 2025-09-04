@@ -71,6 +71,10 @@
         name: iagctl
         state: started
         daemon_reload: true
+
+    - name: Get status of Gateway service
+      ansible.builtin.service:
+        name: iagctl
       register: iagctl_status
 
     - name: Assert that Gateway is running
