@@ -67,20 +67,14 @@
       ansible.builtin.meta: flush_handlers
 
     - name: Start Gateway
-      ansible.builtin.systemd:
+      ansible.builtin.service:
         name: iagctl
         state: started
         daemon_reload: true
+      register: iagctl_status
 
     - name: Assert that Gateway is running
-      block:
-        - name: Get Gateway service status
-          ansible.builtin.service:
-            name: iagctl
-          register: iagctl_status
-
-        - name: Assert that Gateway is running
-          ansible.builtin.assert:
-            that: iagctl_status.status.ActiveState == "active"
-            fail_msg: "Gateway service is not running (state: {{ iagctl_status.status.ActiveState }})"
-            success_msg: "Gateway service is running correctly"
+      ansible.builtin.assert:
+        that: iagctl_status.status.ActiveState == "active"
+        fail_msg: "Gateway service is not running (state: {{ iagctl_status.status.ActiveState }})"
+        success_msg: "Gateway service is running correctly"
