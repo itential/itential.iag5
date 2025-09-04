@@ -7,14 +7,13 @@ gateway_client_group: itential
 
 gateway_client_application_install_dir: /home/itential/.local/bin
 gateway_client_application_working_dir: "/home/itential/.gateway.d"
-gateway_client_application_certs_path: "{{ gateway_client_application_working_dir }}/certificates"
+gateway_client_application_certs_dir: "{{ gateway_client_application_working_dir }}/certificates"
 
-gateway_client_application_ca_certificate_file: "{{ gateway_client_application_certs_path }}/ca.pem"
-
-# gateway_client_host: "{{ inventory_hostname }}"
+gateway_client_host:
 gateway_client_port: 50051
 gateway_client_use_tls: true
-gateway_client_certificate_file: "{{ gateway_client_application_certs_path }}/client.pem"
-gateway_client_private_key_file: "{{ gateway_client_application_certs_path }}/client-key.pem"
+gateway_client_application_ca_certificate_file: "{{ gateway_client_application_certs_dir }}/ca.pem"
+gateway_client_certificate_file: "{{ gateway_client_application_certs_dir }}/client.pem"
+gateway_client_private_key_file: "{{ gateway_client_application_certs_dir }}/client-key.pem"
 
 gateway_client_log_level: INFO

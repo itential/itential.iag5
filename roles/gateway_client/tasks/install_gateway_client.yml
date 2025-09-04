@@ -22,7 +22,7 @@
   with_items:
     - "{{ gateway_client_application_install_dir }}"
     - "{{ gateway_client_application_working_dir }}"
-    - "{{ gateway_client_application_certs_path }}"
+    - "{{ gateway_client_application_certs_dir }}"
 
 - name: Create a temporary download directory
   ansible.builtin.tempfile:

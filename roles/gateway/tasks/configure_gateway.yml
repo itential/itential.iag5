@@ -31,7 +31,7 @@
     group: root
     mode: "0644"
 
-- name: Create the gateway runner encryption key file
+- name: Create the gateway encryption key file
   ansible.builtin.copy:
     content: "{{ gateway_secrets_encrypt_key }}"
     dest: "{{ gateway_secrets_encrypt_key_file }}"
