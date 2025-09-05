@@ -1,12 +1,7 @@
 [application]
 mode                 = {{ gateway_application_mode }}
 working_dir          = {{ gateway_client_application_working_dir }}
-{% if ( (gateway_client_ssl_selfsigned_certs is defined) and
-        (gateway_client_ssl_selfsigned_certs is boolean) ) %}
-ca_certificate_file  = ''
-{% else %}
 ca_certificate_file  = {{ gateway_client_application_ca_certificate_file }}
-{% endif %}
 
 [client]
 host              = {{ gateway_client_host }}

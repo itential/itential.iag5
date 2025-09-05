@@ -2,7 +2,7 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 ---
 - name: Enable and start Gateway
-  ansible.builtin.service:
+  ansible.builtin.systemd:
     name: iagctl
     enabled: true
     state: restarted

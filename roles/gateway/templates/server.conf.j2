@@ -2,12 +2,7 @@
 mode                = '{{ gateway_application_mode }}'
 cluster_id          = '{{ gateway_application_cluster_id }}'
 working_dir         = '{{ gateway_server_runtime_data_dir }}'
-{% if ( (gateway_use_selfsigned_certs is defined) and
-        (gateway_use_selfsigned_certs is boolean) ) %}
-ca_certificate_file = ''
-{% else %}
 ca_certificate_file = '{{ gateway_application_ca_certificate_file }}'
-{% endif %}
 
 [connect]
 enabled              = {{ gateway_connect_enabled | to_json }}
@@ -29,7 +24,7 @@ server_dir         = '{{ gateway_log_server_dir }}'
 timestamp_timezone = '{{ gateway_log_timestamp_timezone }}'
 
 [python-script]
-requirements_file = requirements.txt
+requirements_file = {{ gateway_requirements_file }}
 
 [registry]
 default_overridable = true

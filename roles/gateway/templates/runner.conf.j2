@@ -2,12 +2,7 @@
 mode                = '{{ gateway_application_mode }}'
 cluster_id          = '{{ gateway_application_cluster_id }}'
 working_dir         = '{{ gateway_runner_runtime_data_dir }}'
-{% if ( (gateway_use_selfsigned_certs is defined) and
-        (gateway_use_selfsigned_certs is boolean) ) %}
-ca_certificate_file = ''
-{% else %}
 ca_certificate_file = '{{ gateway_application_ca_certificate_file }}'
-{% endif %}
 
 [log]
 console_json       = {{ gateway_log_console_json | to_json }}
@@ -18,7 +13,7 @@ server_dir         = '{{ gateway_log_server_dir }}'
 timestamp_timezone = '{{ gateway_log_timestamp_timezone }}'
 
 [python-script]
-requirements_file = requirements.txt
+requirements_file = {{ gateway_requirements_file }}
 
 [registry]
 default_overridable = {{ gateway_registry_default_overridable | to_json }}
@@ -29,11 +24,7 @@ encrypt_key_file = '{{ gateway_secrets_encrypt_key_file }}'
 [runner]
 listen_address       = '{{ gateway_runner_listen_address }}'
 port                 = {{ gateway_runner_port }}
-{% if gateway_runner_announcement_address %}
 announcement_address = '{{ gateway_runner_announcement_address }}'
-{% else %}
-announcement_address = ''
-{% endif %}
 use_tls              = {{ gateway_runner_use_tls | to_json }}
 {% if gateway_runner_use_tls %}
 {% if gateway_runner_certificate_file %}
