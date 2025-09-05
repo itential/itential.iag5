@@ -1,0 +1,15 @@
+# Copyright (c) 2025, Itential, Inc
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+---
+- name: Install OpenTofu repository
+  ansible.builtin.copy:
+    src: opentofu.repo
+    dest: /etc/yum.repos.d/
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Install OpenTofu packages
+  ansible.builtin.dnf:
+    name: "{{ gateway_opentofu_packages }}"
+    state: present

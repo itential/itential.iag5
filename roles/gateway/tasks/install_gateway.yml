@@ -1,0 +1,118 @@
+# Copyright (c) 2025, Itential, Inc
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+---
+- name: Create gateway group
+  ansible.builtin.group:
+    name: "{{ gateway_group }}"
+    state: present
+
+- name: Create gateway user
+  ansible.builtin.user:
+    name: "{{ gateway_user }}"
+    group: "{{ gateway_group }}"
+    state: present
+
+- name: Create the gateway directories
+  ansible.builtin.file:
+    name: "{{ item }}"
+    state: directory
+    owner: "{{ gateway_user }}"
+    group: "{{ gateway_group }}"
+    mode: "0775"
+  with_items:
+    - "{{ gateway_config_dir }}"
+    - "{{ gateway_application_working_dir }}"
+    - "{{ gateway_secrets_encrypt_key_dir }}"
+    - "{{ gateway_log_server_dir }}"
+
+- name: Create the gateway server directories
+  ansible.builtin.file:
+    name: "{{ item }}"
+    state: directory
+    owner: "{{ gateway_user }}"
+    group: "{{ gateway_group }}"
+    mode: "0775"
+  with_items:
+    - "{{ gateway_server_runtime_data_dir }}"
+  when: gateway_application_mode == "server"
+
+- name: Create the gateway runner directories
+  ansible.builtin.file:
+    name: "{{ item }}"
+    state: directory
+    owner: "{{ gateway_user }}"
+    group: "{{ gateway_group }}"
+    mode: "0775"
+  with_items:
+    - "{{ gateway_runner_runtime_data_dir }}"
+  when: gateway_application_mode == "runner"
+
+- name: Create a temporary download directory
+  ansible.builtin.tempfile:
+    state: directory
+  register: downloaddir
+  changed_when: false
+
+- name: Download the gateway packages from repository
+  ansible.builtin.get_url:
+    url: "{{ item }}"
+    dest: "{{ downloaddir.path }}/"
+    mode: '0755'
+    # Sets the appropriate header based on the repository type:
+    # - For JFrog: Uses the "X-JFrog-Art-Api" header with the API key if "repository_api_key"
+    #   is defined and "jfrog" is part of the download URL.
+    # - For Gitlab: Uses the "PRIVATE-TOKEN" header with the API key if "repository_api_key"
+    #   is defined and "gitlab" is part of the download URL.
+    # - For Nexus: Uses a default header ("Accept: application/octet-stream") since Nexus doesn't
+    #   support API key authentication.
+    headers: >-
+      {%- if repository_api_key is defined and item is search("jfrog") -%}
+        {"X-JFrog-Art-Api": "{{ repository_api_key }}", "Accept": "application/octet-stream"}
+      {%- elif repository_api_key is defined and item is search("gitlab") -%}
+        {"PRIVATE-TOKEN": "{{ repository_api_key }}", "Accept": "application/octet-stream"}
+      {%- else -%}
+        {"Accept": "application/octet-stream"}
+      {%- endif -%}
+    url_username: "{{ repository_username | default(omit) }}"
+    url_password: "{{ repository_password | default(omit) }}"
+    validate_certs: true
+  loop: "{{ gateway_packages }}"
+  when:
+    - "'http' in item"
+    - item.endswith('.rpm')
+  register: download_result
+  changed_when: false
+
+- name: Propagate the gateway packages from the control node
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "{{ downloaddir.path }}/{{ item }}"
+    owner: "{{ gateway_user }}"
+    group: "{{ gateway_group }}"
+    mode: "0775"
+    force: false
+  loop: "{{ gateway_packages }}"
+  when:
+    - "'http' not in item"
+    - item.endswith('.rpm')
+  changed_when: false
+
+- name: Find the gateway packages
+  ansible.builtin.find:
+    paths: "{{ downloaddir.path }}"
+    patterns: "*.rpm"
+  register: gateway_packages
+  changed_when: false
+
+- name: Install the gateway packages (local)
+  ansible.builtin.dnf:
+    name: "{{ gateway_packages.files | map(attribute='path') | join(',') }}"
+    disable_gpg_check: true
+    state: present
+  when: gateway_packages | length > 0
+
+- name: Remove the temporary download directory
+  ansible.builtin.file:
+    path: "{{ downloaddir.path }}"
+    state: absent
+  changed_when: false

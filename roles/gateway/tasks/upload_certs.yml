@@ -1,0 +1,82 @@
+# Copyright (c) 2025, Itential, Inc
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+---
+- name: Upload SSL-related files
+  when: gateway_upload_certs | bool
+  block:
+    - name: Create the gateway certificates directory
+      ansible.builtin.file:
+        name: "{{ gateway_cert_dir }}"
+        state: directory
+        owner: "{{ gateway_user }}"
+        group: "{{ gateway_group }}"
+        mode: "0755"
+
+    - name: Upload certs to servers
+      when: gateway_application_mode == 'server'
+      block:
+        - name: Copy application CA certificate file
+          ansible.builtin.copy:
+            src: "{{ gateway_application_local_ca_certificate_file }}"
+            dest: "{{ gateway_application_ca_certificate_file }}"
+            owner: "{{ gateway_user }}"
+            group: "{{ gateway_group }}"
+            mode: '0644'
+          when: gateway_application_local_ca_certificate_file is defined
+
+        - name: Copy Gateway Manager certificate
+          ansible.builtin.copy:
+            src: "{{ gateway_connect_local_certificate_file }}"
+            dest: "{{ gateway_connect_certificate_file }}"
+            owner: "{{ gateway_user }}"
+            group: "{{ gateway_group }}"
+            mode: '0644'
+          when: gateway_connect_local_certificate_file is defined
+
+        - name: Copy Gateway Manager private key
+          ansible.builtin.copy:
+            src: "{{ gateway_connect_local_private_key_file }}"
+            dest: "{{ gateway_connect_private_key_file }}"
+            owner: "{{ gateway_user }}"
+            group: "{{ gateway_group }}"
+            mode: '0600'
+          when: gateway_connect_local_private_key_file is defined
+
+        - name: Copy Gateway certificate
+          ansible.builtin.copy:
+            src: "{{ gateway_server_local_certificate_file }}"
+            dest: "{{ gateway_server_certificate_file }}"
+            owner: "{{ gateway_user }}"
+            group: "{{ gateway_group }}"
+            mode: '0644'
+          when: gateway_server_local_certificate_file is defined
+
+        - name: Copy Gateway private key
+          ansible.builtin.copy:
+            src: "{{ gateway_server_local_private_key_file }}"
+            dest: "{{ gateway_server_private_key_file }}"
+            owner: "{{ gateway_user }}"
+            group: "{{ gateway_group }}"
+            mode: '0600'
+          when: gateway_server_local_private_key_file is defined
+
+    - name: Upload certs to runners
+      when: gateway_application_mode == 'runner'
+      block:
+        - name: Copy Gateway certificate
+          ansible.builtin.copy:
+            src: "{{ gateway_runner_local_certificate_file }}"
+            dest: "{{ gateway_runner_certificate_file }}"
+            owner: "{{ gateway_user }}"
+            group: "{{ gateway_group }}"
+            mode: '0644'
+          when: gateway_runner_local_certificate_file is defined
+
+        - name: Copy Gateway private key
+          ansible.builtin.copy:
+            src: "{{ gateway_runner_local_private_key_file }}"
+            dest: "{{ gateway_runner_private_key_file }}"
+            owner: "{{ gateway_user }}"
+            group: "{{ gateway_group }}"
+            mode: '0600'
+          when: gateway_runner_local_private_key_file is defined

@@ -1,0 +1,33 @@
+# Copyright (c) 2025, Itential, Inc
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+---
+- name: Upload SSL-related files
+  when: gateway_client_upload_certs | bool
+  tags: upload_certs
+  block:
+    - name: Copy application CA certificate file
+      ansible.builtin.copy:
+        src: "{{ gateway_local_application_ca_certificate_file }}"
+        dest: "{{ gateway_application_ca_certificate_file }}"
+        owner: root
+        group: root
+        mode: '0644'
+      when: gateway_local_application_ca_certificate_file is defined
+
+    - name: Copy client certificate
+      ansible.builtin.copy:
+        src: "{{ gateway_client_local_certificate_file }}"
+        dest: "{{ gateway_client_certificate_file }}"
+        owner: root
+        group: root
+        mode: '0644'
+      when: gateway_client_local_certificate_file is defined
+
+    - name: Copy client private key
+      ansible.builtin.copy:
+        src: "{{ gateway_client_local_private_key_file }}"
+        dest: "{{ gateway_client_private_key_file }}"
+        owner: root
+        group: root
+        mode: '0644'
+      when: gateway_client_local_private_key_file is defined

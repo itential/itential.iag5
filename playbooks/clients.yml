@@ -1,0 +1,11 @@
+# Copyright (c) 2025, Itential, Inc
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+---
+- name: Install and configure IAG5 clients
+  hosts: iag5_clients
+  become: true
+  roles:
+    # Perform a base installation of IAG5 client
+    - role: itential.iag5.gateway_client
+      vars:
+        gateway_application_mode: client

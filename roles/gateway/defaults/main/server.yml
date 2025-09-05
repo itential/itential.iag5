@@ -1,0 +1,14 @@
+# Copyright (c) 2025, Itential, Inc
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+---
+# server variables
+# TODO: Discuss with gateway team. The docs specify 127.0.0.1. But the client cannot connect
+#       unless server is listening on all interfaces, not just localhost.
+gateway_server_listen_address: "{{ gateway_listen_address }}"
+gateway_server_port: "{{ gateway_port }}"
+gateway_server_runtime_data_dir: "{{ gateway_data_dir }}"
+gateway_server_distributed_execution: false
+gateway_server_api_key_expiration: 1440
+gateway_server_use_tls: "{{ gateway_use_tls }}"
+gateway_server_certificate_file: "{{ gateway_cert_dir }}/server.pem"
+gateway_server_private_key_file: "{{ gateway_cert_dir }}/server-key.pem"

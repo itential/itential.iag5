@@ -1,0 +1,30 @@
+# Copyright (c) 2025, Itential, Inc
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+---
+# server user/group
+gateway_user: itential
+gateway_group: itential
+
+gateway_config_dir: /etc/gateway
+gateway_cert_dir: /etc/ssl/gateway
+
+gateway_upload_certs: false
+gateway_use_selfsigned_certs: false
+# TODO: Document these in the README
+# gateway_application_local_ca_certificate_file: ./itential_certs/server.csr
+# gateway_connect_local_certificate_file: ./itential_certs/server.crt
+# gateway_connect_local_private_key_file: ./itential_certs/server.key
+# gateway_server_certificate_file: ./itential_certs/server.crt
+# gateway_server_local_private_key_file: ./itential_certs/server.key
+
+# python installation
+gateway_python_packages:
+  - python3.12
+  - python3.12-pip
+gateway_python_executable: /usr/bin/python3.12
+gateway_pip_executable: /usr/bin/pip3.12
+gateway_local_bin_dir: "/home/{{ gateway_user }}/.local/bin"
+
+# opentofu installation
+gateway_opentofu_packages:
+  - tofu
