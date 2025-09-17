@@ -1,8 +1,19 @@
 # Copyright (c) 2025, Itential, Inc
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 ---
+############################################
+# Gateway common server and runner variables
+############################################
+
+# Gateway data directory
 gateway_data_dir: /var/lib/gateway
+
+# Gateway listen address and port
 gateway_listen_address: 0.0.0.0
 gateway_port: 50051
+
+# Gateway TLS
 gateway_use_tls: true
+
+# Gateway requirements file
 gateway_requirements_file: requirements.txt

@@ -20,9 +20,9 @@
     group: "{{ gateway_client_group }}"
     mode: "0775"
   with_items:
-    - "{{ gateway_client_application_install_dir }}"
-    - "{{ gateway_client_application_working_dir }}"
-    - "{{ gateway_client_application_certs_dir }}"
+    - "{{ gateway_client_install_dir }}"
+    - "{{ gateway_client_working_dir }}"
+    - "{{ gateway_certs_dir }}"
 
 - name: Create a temporary download directory
   ansible.builtin.tempfile:
@@ -80,7 +80,7 @@
 - name: Unarchive the gateway packages
   ansible.builtin.unarchive:
     src: "{{ item.path }}"
-    dest: "{{ gateway_client_application_install_dir }}/"
+    dest: "{{ gateway_client_install_dir }}/"
     remote_src: true
     # state: present
   loop: "{{ gateway_packages.files }}"
