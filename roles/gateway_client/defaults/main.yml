@@ -1,19 +1,41 @@
 # Copyright (c) 2025, Itential, Inc
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 ---
-# client user/group
+##########################
+# Gateway client variables
+##########################
+
+# Gateway client user/group
 gateway_client_user: itential
 gateway_client_group: itential
 
-gateway_client_application_install_dir: /home/itential/.local/bin
-gateway_client_application_working_dir: "/home/itential/.gateway.d"
-gateway_client_application_certs_dir: "{{ gateway_client_application_working_dir }}/certificates"
+# Gateway client install and working and directories
+gateway_client_install_dir: "/home/{{ gateway_client_user }}/.local/bin"
+gateway_client_working_dir: "/home/{{ gateway_client_user }}/.gateway.d"
 
+# Gateway client connection variables (which server to connect to)
 gateway_client_host:
 gateway_client_port: 50051
-gateway_client_use_tls: true
-gateway_client_application_ca_certificate_file: "{{ gateway_client_application_certs_dir }}/ca.pem"
-gateway_client_certificate_file: "{{ gateway_client_application_certs_dir }}/client.pem"
-gateway_client_private_key_file: "{{ gateway_client_application_certs_dir }}/client-key.pem"
 
+# Gateway client logging variables
 gateway_client_log_level: INFO
+
+##############################
+# Gateway client TLS variables
+##############################
+
+gateway_client_use_tls: true
+
+gateway_client_pki_dir: "{{ gateway_client_working_dir }}/ssl"
+
+gateway_client_pki_key_file: '{{ inventory_hostname }}{{ gateway_pki_key_suffix }}'
+gateway_client_pki_key_src: '{{ gateway_pki_src_dir }}/{{ gateway_client_pki_key_file }}'
+gateway_client_pki_key_dest: '{{ gateway_client_pki_dir }}/{{ gateway_client_pki_key_file }}'
+
+gateway_client_pki_cert_file: '{{ inventory_hostname }}{{ gateway_pki_cert_suffix }}'
+gateway_client_pki_cert_src: '{{ gateway_pki_src_dir }}/{{ gateway_client_pki_cert_file }}'
+gateway_client_pki_cert_dest: '{{ gateway_client_pki_dir }}/{{ gateway_client_pki_cert_file }}'
+
+gateway_client_pki_ca_file: 'ca{{ gateway_pki_cert_suffix }}'
+gateway_client_pki_ca_cert_src: '{{ gateway_pki_src_dir }}/{{ gateway_client_pki_ca_file }}'
+gateway_client_pki_ca_cert_dest: '{{ gateway_client_pki_dir }}/{{ gateway_client_pki_ca_file }}'

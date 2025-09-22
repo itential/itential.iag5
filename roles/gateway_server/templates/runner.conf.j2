@@ -1,0 +1,53 @@
+[application]
+mode                = '{{ gateway_application_mode }}'
+cluster_id          = '{{ gateway_server_cluster_id }}'
+working_dir         = '{{ gateway_server_data_dir }}'
+ca_certificate_file = '{{ gateway_server_pki_ca_cert_dest }}'
+
+[log]
+console_json       = {{ gateway_server_log_console_json | to_json }}
+file_enabled       = {{ gateway_server_log_file_enabled | to_json }}
+file_json          = {{ gateway_server_log_file_json | to_json }}
+level              = '{{ gateway_server_log_level }}'
+server_dir         = '{{ gateway_server_log_server_dir }}'
+timestamp_timezone = '{{ gateway_server_log_timestamp_timezone }}'
+
+[python-script]
+requirements_file = {{ gateway_server_requirements_file }}
+
+[registry]
+default_overridable = {{ gateway_server_registry_default_overridable | to_json }}
+
+[secrets]
+encrypt_key_file = '{{ gateway_server_secrets_encrypt_key_file }}'
+
+[runner]
+listen_address       = '{{ gateway_server_listen_address }}'
+port                 = {{ gateway_server_port }}
+announcement_address = '{{ gateway_server_runner_announcement_address }}'
+use_tls              = {{ gateway_server_use_tls | to_json }}
+{% if gateway_server_use_tls %}
+certificate_file      = '{{ gateway_server_pki_cert_dest }}'
+private_key_file      = '{{ gateway_server_pki_key_dest }}'
+{% endif %}
+
+[store]
+backend                  = '{{ gateway_server_store_backend }}'
+{% if gateway_server_store_backend == 'dynamodb' %}
+dynamodb_table_name      = '{{ gateway_server_store_dynamodb_table_name }}'
+{% elif gateway_server_store_backend == 'etcd' %}
+etcd_hosts               = '{{ gateway_server_store_etcd_hosts }}'
+etcd_use_tls             = {{ gateway_server_store_etcd_use_tls | to_json }}
+etcd_client_cert_auth    = {{ gateway_server_store_etcd_client_cert_auth | to_json }}
+{% if gateway_server_store_etcd_use_tls | bool %}
+etcd_ca_certificate_file = '{{ gateway_server_pki_ca_cert_dest }}'
+{% endif %}
+{% if gateway_server_store_etcd_client_cert_auth | bool %}
+etcd_certificate_file    = '{{ gateway_server_pki_cert_dest }}'
+etcd_private_key_file    = '{{ gateway_server_pki_key_dest }}'
+{% endif %}
+{% endif %}
+
+[terminal]
+no_color           = {{ gateway_server_terminal_no_color | to_json }}
+timestamp_timezone = '{{ gateway_server_terminal_timestamp_timezone }}'

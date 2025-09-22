@@ -1,14 +1,14 @@
 [application]
 mode                 = {{ gateway_application_mode }}
-working_dir          = {{ gateway_client_application_working_dir }}
-ca_certificate_file  = {{ gateway_client_application_ca_certificate_file }}
+working_dir          = {{ gateway_client_working_dir }}
+ca_certificate_file  = {{ gateway_client_pki_ca_cert_dest }}
 
 [client]
 host              = {{ gateway_client_host }}
 port              = {{ gateway_client_port }}
-certificate_file  = {{ gateway_client_certificate_file }}
-private_key_file  = {{ gateway_client_private_key_file }}
 use_tls           = {{ gateway_client_use_tls | to_json }}
+private_key_file  = {{ gateway_client_pki_key_dest }}
+certificate_file  = {{ gateway_client_pki_cert_dest }}
 
 [log]
 level = {{ gateway_client_log_level }}

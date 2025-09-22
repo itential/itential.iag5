@@ -1,0 +1,26 @@
+# Copyright (c) 2025, Itential, Inc
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+---
+############################
+# Gateway install variables
+############################
+
+# Gateway user/group
+gateway_server_user: itential
+gateway_server_group: itential
+
+# Gateway configuration and data directories
+gateway_server_config_dir: /etc/gateway
+gateway_server_data_dir: /var/lib/gateway
+
+# Gateway python installation
+gateway_server_python_packages:
+  - python3.12
+  - python3.12-pip
+gateway_server_python_executable: /usr/bin/python3.12
+gateway_server_pip_executable: /usr/bin/pip3.12
+gateway_server_local_bin_dir: "/home/{{ gateway_server_user }}/.local/bin"
+
+# Gateway OpenTofu installation
+gateway_server_opentofu_packages:
+  - tofu

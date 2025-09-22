@@ -12,20 +12,6 @@
     zone: public
     immediate: true
   when:
-    - gateway_application_mode == 'server'
-    - ansible_facts.services["firewalld.service"] is defined
-    - ansible_facts.services["firewalld.service"].state == "running"
-    - ansible_facts.services["firewalld.service"].status == "enabled"
-
-- name: Open Gateway runner port on FirewallD Public Zone
-  ansible.posix.firewalld:
-    port: "{{ gateway_runner_port }}/tcp"
-    permanent: true
-    state: enabled
-    zone: public
-    immediate: true
-  when:
-    - gateway_application_mode == 'runner'
     - ansible_facts.services["firewalld.service"] is defined
     - ansible_facts.services["firewalld.service"].state == "running"
     - ansible_facts.services["firewalld.service"].status == "enabled"

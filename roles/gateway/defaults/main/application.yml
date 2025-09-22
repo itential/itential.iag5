@@ -1,7 +1,0 @@
-# Copyright (c) 2025, Itential, Inc
-# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
----
-# application variables
-gateway_application_cluster_id: cluster_1
-gateway_application_ca_certificate_file: "{{ gateway_cert_dir }}/ca.pem"
-gateway_application_working_dir: "{{ gateway_data_dir }}"
