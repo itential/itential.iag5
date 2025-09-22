@@ -14,6 +14,10 @@ gateway_port: 50051
 
 # Gateway TLS
 gateway_use_tls: true
+gateway_certificate_filename: "server{{ gateway_application_cert_suffix }}"
+gateway_private_key_filename: "server{{ gateway_application_key_suffix }}"
+gateway_local_certificate_filename:
+gateway_local_private_key_filename:
 
 # Gateway requirements file
 gateway_requirements_file: requirements.txt

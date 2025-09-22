@@ -8,14 +8,13 @@
 # Gateway cluster ID
 gateway_application_cluster_id: cluster_1
 
-# Gateway working directory
-gateway_application_working_dir: "{{ gateway_data_dir }}"
-
-# Gateway TLS variables
+# Gateway TLS
 gateway_application_upload_certs: true
 gateway_application_key_suffix: .key
 gateway_application_cert_suffix: .crt
-gateway_application_ca_certificate_filename: ca{{ gateway_application_cert_suffix }}
-gateway_application_ca_certificate_file: "{{ gateway_certs_dir }}/{{ gateway_application_ca_cert_filename }}"
-gateway_application_local_certs_dir: ./certs
-gateway_application_local_ca_certificate_file: "{{ gateway_application_local_certs_dir }}/{{ gateway_application_ca_certificate_filename }}"
+gateway_application_local_certs_dir:  # The local certificates directory must be defined in the inventory
+gateway_application_local_ca_certificate_filename: "itentialCA{{ gateway_application_cert_suffix }}"
+gateway_application_ca_certs_dir: /etc/pki/ca-trust/source/anchors
+gateway_application_ca_certificate_owner: root
+gateway_application_ca_certificate_group: root
+gateway_application_ca_certificate_filename: "{{ gateway_application_local_ca_certificate_filename }}"

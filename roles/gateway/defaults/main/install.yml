@@ -11,7 +11,7 @@ gateway_group: itential
 
 # Gateway configuration and certificates directories
 gateway_config_dir: /etc/gateway
-gateway_certs_dir: /etc/gateway/certificates
+gateway_certs_dir: /etc/gateway/ssl
 
 # Gateway python installation
 gateway_python_packages:

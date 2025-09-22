@@ -1,20 +1,20 @@
 # Copyright (c) 2025, Itential, Inc
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 ---
-##########################
-# Gateway server variables
-##########################
+#########################
+# Gateway store variables
+#########################
 
 # Gateway store backend (local, dynamodb, etcd)
 gateway_store_backend: local
 
 # Gateway Etcd variables
-gateway_store_etcd_ca_certificate_file:
-gateway_store_etcd_certificate_file:
-gateway_store_etcd_client_cert_auth: false
 gateway_store_etcd_hosts: localhost:2379
-gateway_store_etcd_private_key_file:
 gateway_store_etcd_use_tls: true
+gateway_store_etcd_client_cert_auth: true
+gateway_store_etcd_ca_certificate_filename: "{{ gateway_application_ca_certificate_filename }}"
+gateway_store_etcd_certificate_filename: "{{ gateway_certificate_filename }}"
+gateway_store_etcd_private_key_filename: "{{ gateway_private_key_filename }}"
 
 # Gateway DynamoDB variables
 gateway_store_dynamodb_table_name: itential.gateway5.store

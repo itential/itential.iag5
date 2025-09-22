@@ -5,21 +5,5 @@
 # Gateway server variables
 ##########################
 
-# Gateway server data directory
-gateway_server_runtime_data_dir: "{{ gateway_data_dir }}"
-
-# Gateway server listen address and port
-gateway_server_listen_address: "{{ gateway_listen_address }}"
-gateway_server_port: "{{ gateway_port }}"
-
 gateway_server_distributed_execution: false
 gateway_server_api_key_expiration: 1440
-
-# Gateway server TLS variables
-gateway_server_use_tls: "{{ gateway_use_tls }}"
-gateway_server_certificate_filename: server{{ gateway_application_cert_suffix }}
-gateway_server_certificate_file: "{{ gateway_certs_dir }}/{{ gateway_server_certificate_filename }}"
-gateway_server_private_key_filename: server{{ gateway_application_key_suffix }}
-gateway_server_private_key_file: "{{ gateway_certs_dir }}/{{ gateway_server_private_key_filename }}"
-gateway_server_local_certificate_file:
-gateway_server_local_private_key_file:

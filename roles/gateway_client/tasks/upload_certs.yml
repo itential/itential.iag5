@@ -4,35 +4,43 @@
 - name: Upload SSL-related files
   when: gateway_application_upload_certs | bool
   block:
+    - name: Create the gateway client certificates directory
+      ansible.builtin.file:
+        name: "{{ gateway_client_certs_dir }}"
+        state: directory
+        owner: "{{ gateway_client_user }}"
+        group: "{{ gateway_client_group }}"
+        mode: "0755"
+
     - name: Copy application CA certificate
       ansible.builtin.copy:
-        src: "{{ gateway_local_application_ca_certificate_file }}"
-        dest: "{{ gateway_application_ca_certificate_file }}"
-        owner: root
-        group: "{{ gateway_user }}"
-        mode: '0644'
+        src: "{{ gateway_application_local_certs_dir }}/{{ gateway_application_local_ca_certificate_filename }}"
+        dest: "{{ gateway_application_ca_certs_dir }}/{{ gateway_application_ca_certificate_filename }}"
+        owner: "{{ gateway_application_ca_certificate_owner }}"
+        group: "{{ gateway_application_ca_certificate_group }}"
+        mode: '0444'
       when:
-        - gateway_local_application_ca_certificate_file is defined
-        - gateway_local_application_ca_certificate_file is not none
+        - gateway_application_local_ca_certificate_filename is defined
+        - gateway_application_local_ca_certificate_filename is not none
 
     - name: Copy client certificate
       ansible.builtin.copy:
-        src: "{{ gateway_client_local_certificate_file }}"
-        dest: "{{ gateway_client_certificate_file }}"
-        owner: root
-        group: "{{ gateway_user }}"
-        mode: '0644'
+        src: "{{ gateway_application_local_certs_dir }}/{{ gateway_client_local_certificate_filename }}"
+        dest: "{{ gateway_client_certs_dir }}/{{ gateway_client_certificate_filename }}"
+        owner: "{{ gateway_client_user }}"
+        group: "{{ gateway_client_user }}"
+        mode: '0440'
       when:
-        - gateway_client_local_certificate_file is defined
-        - gateway_client_local_certificate_file is not none
+        - gateway_client_local_certificate_filename is defined
+        - gateway_client_local_certificate_filename is not none
 
     - name: Copy client private key
       ansible.builtin.copy:
-        src: "{{ gateway_client_local_private_key_file }}"
-        dest: "{{ gateway_client_private_key_file }}"
-        owner: root
-        group: "{{ gateway_user }}"
-        mode: '0640'
+        src: "{{ gateway_application_local_certs_dir }}/{{ gateway_client_local_private_key_filename }}"
+        dest: "{{ gateway_client_certs_dir }}/{{ gateway_client_private_key_filename }}"
+        owner: "{{ gateway_client_user }}"
+        group: "{{ gateway_client_group }}"
+        mode: '0400'
       when:
-        - gateway_client_local_private_key_file is defined
-        - gateway_client_local_private_key_file is not none
+        - gateway_client_local_private_key_filename is defined
+        - gateway_client_local_private_key_filename is not none

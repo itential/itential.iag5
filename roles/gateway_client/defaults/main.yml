@@ -12,7 +12,7 @@ gateway_client_group: itential
 # Gateway client install, working and certificates directories
 gateway_client_install_dir: "/home/{{ gateway_client_user }}/.local/bin"
 gateway_client_working_dir: "/home/{{ gateway_client_user }}/.gateway.d"
-gateway_certs_dir: "{{ gateway_client_working_dir }}/certificates"  # noqa var-naming[no-role-prefix]
+gateway_client_certs_dir: "{{ gateway_client_working_dir }}/ssl"
 
 # Gateway client connection variables (which server to connect to)
 gateway_client_host:
@@ -20,10 +20,8 @@ gateway_client_port: 50051
 
 # Gateway client TLS variables
 gateway_client_use_tls: true
-gateway_client_certificate_filename: client{{ gateway_application_cert_suffix }}
-gateway_client_certificate_file: "{{ gateway_certs_dir }}/{{ gateway_client_certificate_filename }}"
-gateway_client_private_key_filename: client{{ gateway_application_key_suffix }}
-gateway_client_private_key_file: "{{ gateway_certs_dir }}/{{ gateway_client_private_key_filename }}"
+gateway_client_certificate_filename: "client{{ gateway_application_cert_suffix }}"
+gateway_client_private_key_filename: "client{{ gateway_application_key_suffix }}"
 
 # Gateway client logging variables
 gateway_client_log_level: INFO

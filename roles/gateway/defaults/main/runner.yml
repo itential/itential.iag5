@@ -5,22 +5,6 @@
 # Gateway runner variables
 ##########################
 
-# Gateway runner data directory
-gateway_runner_runtime_data_dir: "{{ gateway_data_dir }}"
-
-# Gateway runner listen address and port
-gateway_runner_listen_address: "{{ gateway_listen_address }}"
-gateway_runner_port: "{{ gateway_port }}"
-
 # Gateway runner announcement address
 # By default this is set to empty and will be automatically determined by the Gateway application.
 gateway_runner_announcement_address:
-
-# Gateway TLS variables
-gateway_runner_use_tls: "{{ gateway_use_tls }}"
-gateway_runner_certificate_filename: server{{ gateway_application_cert_suffix }}
-gateway_runner_certificate_file: "{{ gateway_certs_dir }}/{{ gateway_runner_certificate_filename }}"
-gateway_runner_private_key_filename: server{{ gateway_application_key_suffix }}
-gateway_runner_private_key_file: "{{ gateway_certs_dir }}/{{ gateway_runner_private_key_filename }}"
-gateway_runner_local_certificate_file:
-gateway_runner_local_private_key_file:
