@@ -5,11 +5,11 @@
   hosts: iag5_runners
   become: true
   roles:
-    # Pull in the gateway application vars
-    - role: itential.iag5.gateway_application
+    # Pull in the gateway vars
+    - role: itential.iag5.gateway
       tags: always
 
     # Perform a base installation of IAG5 runner
-    - role: itential.iag5.gateway
+    - role: itential.iag5.gateway_server
       vars:
         gateway_application_mode: runner

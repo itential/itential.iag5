@@ -3,27 +3,27 @@
 ---
 - name: Create gateway group
   ansible.builtin.group:
-    name: "{{ gateway_group }}"
+    name: "{{ gateway_server_group }}"
     state: present
 
 - name: Create gateway user
   ansible.builtin.user:
-    name: "{{ gateway_user }}"
-    group: "{{ gateway_group }}"
+    name: "{{ gateway_server_user }}"
+    group: "{{ gateway_server_group }}"
     state: present
 
 - name: Create the gateway directories
   ansible.builtin.file:
     name: "{{ item }}"
     state: directory
-    owner: "{{ gateway_user }}"
-    group: "{{ gateway_group }}"
+    owner: "{{ gateway_server_user }}"
+    group: "{{ gateway_server_group }}"
     mode: "0775"
   with_items:
-    - "{{ gateway_config_dir }}"
-    - "{{ gateway_data_dir }}"
-    - "{{ gateway_secrets_encrypt_key_dir }}"
-    - "{{ gateway_log_server_dir }}"
+    - "{{ gateway_server_config_dir }}"
+    - "{{ gateway_server_data_dir }}"
+    - "{{ gateway_server_secrets_encrypt_key_dir }}"
+    - "{{ gateway_server_log_server_dir }}"
 
 - name: Create a temporary download directory
   ansible.builtin.tempfile:
@@ -54,7 +54,7 @@
     url_username: "{{ repository_username | default(omit) }}"
     url_password: "{{ repository_password | default(omit) }}"
     validate_certs: true
-  loop: "{{ gateway_packages }}"
+  loop: "{{ gateway_server_packages }}"
   when:
     - "'http' in item"
     - item.endswith('.rpm')
@@ -65,11 +65,11 @@
   ansible.builtin.copy:
     src: "{{ item }}"
     dest: "{{ downloaddir.path }}/{{ item }}"
-    owner: "{{ gateway_user }}"
-    group: "{{ gateway_group }}"
+    owner: "{{ gateway_server_user }}"
+    group: "{{ gateway_server_group }}"
     mode: "0775"
     force: false
-  loop: "{{ gateway_packages }}"
+  loop: "{{ gateway_server_packages }}"
   when:
     - "'http' not in item"
     - item.endswith('.rpm')
@@ -79,15 +79,15 @@
   ansible.builtin.find:
     paths: "{{ downloaddir.path }}"
     patterns: "*.rpm"
-  register: gateway_packages
+  register: gateway_server_packages
   changed_when: false
 
 - name: Install the gateway packages (local)
   ansible.builtin.dnf:
-    name: "{{ gateway_packages.files | map(attribute='path') | join(',') }}"
+    name: "{{ gateway_server_packages.files | map(attribute='path') | join(',') }}"
     disable_gpg_check: true
     state: present
-  when: gateway_packages | length > 0
+  when: gateway_server_packages | length > 0
 
 - name: Remove the temporary download directory
   ansible.builtin.file:

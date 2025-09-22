@@ -1,0 +1,74 @@
+# Copyright (c) 2025, Itential, Inc
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+---
+- name: Upload SSL-related files
+  when: gateway_pki_upload | bool
+  block:
+    - name: Create the gateway server pki directory
+      ansible.builtin.file:
+        name: "{{ gateway_server_pki_dir }}"
+        state: directory
+        owner: "{{ gateway_server_user }}"
+        group: "{{ gateway_server_group }}"
+        mode: "0755"
+
+    - name: Copy application CA certificate
+      ansible.builtin.copy:
+        src: "{{ gateway_server_pki_ca_cert_src }}"
+        dest: "{{ gateway_server_pki_ca_cert_dest }}"
+        owner: "{{ gateway_server_user }}"
+        group: "{{ gateway_server_group }}"
+        mode: '0444'
+      when:
+        - gateway_server_pki_cert_src is defined
+        - gateway_server_pki_cert_src is not none
+
+    - name: Copy Gateway server certificate
+      ansible.builtin.copy:
+        src: "{{ gateway_server_pki_cert_src }}"
+        dest: "{{ gateway_server_pki_cert_dest }}"
+        owner: "{{ gateway_server_user }}"
+        group: "{{ gateway_server_group }}"
+        mode: '0644'
+      when:
+        - gateway_server_pki_cert_src is defined
+        - gateway_server_pki_cert_src is not none
+
+    - name: Copy Gateway server private key
+      ansible.builtin.copy:
+        src: "{{ gateway_server_pki_key_src }}"
+        dest: "{{ gateway_server_pki_key_dest }}"
+        owner: "{{ gateway_server_user }}"
+        group: "{{ gateway_server_group }}"
+        mode: '0400'
+      when:
+        - gateway_server_pki_key_src is defined
+        - gateway_server_pki_key_src is not none
+
+    - name: Upload Gateway Manager certificate and key
+      when: gateway_application_mode == 'server'
+      block:
+        - name: Copy Gateway Manager certificate and key
+          when: gateway_server_connect_enabled | bool
+          block:
+            - name: Copy Gateway manager certificate
+              ansible.builtin.copy:
+                src: "{{ gateway_server_application_local_certs_dir }}/{{ gateway_server_connect_local_certificate_filename }}"
+                dest: "{{ gateway_server_pki_dir }}/{{ gateway_server_connect_certificate_filename }}"
+                owner: "{{ gateway_server_user }}"
+                group: "{{ gateway_server_group }}"
+                mode: '0644'
+              when:
+                - gateway_server_connect_local_certificate_filename is defined
+                - gateway_server_connect_local_certificate_filename is not none
+
+            - name: Copy Gateway manager private key
+              ansible.builtin.copy:
+                src: "{{ gateway_server_application_local_certs_dir }}/{{ gateway_server_connect_local_private_key_filename }}"
+                dest: "{{ gateway_server_pki_dir }}/{{ gateway_server_connect_private_key_filename }}"
+                owner: "{{ gateway_server_user }}"
+                group: "{{ gateway_server_group }}"
+                mode: '0400'
+              when:
+                - gateway_server_connect_local_private_key_filename is defined
+                - gateway_server_connect_local_private_key_filename is not none

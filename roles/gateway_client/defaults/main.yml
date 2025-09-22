@@ -9,19 +9,33 @@
 gateway_client_user: itential
 gateway_client_group: itential
 
-# Gateway client install, working and certificates directories
+# Gateway client install and working and directories
 gateway_client_install_dir: "/home/{{ gateway_client_user }}/.local/bin"
 gateway_client_working_dir: "/home/{{ gateway_client_user }}/.gateway.d"
-gateway_client_certs_dir: "{{ gateway_client_working_dir }}/ssl"
 
 # Gateway client connection variables (which server to connect to)
 gateway_client_host:
 gateway_client_port: 50051
 
-# Gateway client TLS variables
-gateway_client_use_tls: true
-gateway_client_certificate_filename: "client{{ gateway_application_cert_suffix }}"
-gateway_client_private_key_filename: "client{{ gateway_application_key_suffix }}"
-
 # Gateway client logging variables
 gateway_client_log_level: INFO
+
+##############################
+# Gateway client TLS variables
+##############################
+
+gateway_client_use_tls: true
+
+gateway_client_pki_dir: "{{ gateway_client_working_dir }}/ssl"
+
+gateway_client_pki_key_file: '{{ inventory_hostname }}{{ gateway_pki_key_suffix }}'
+gateway_client_pki_key_src: '{{ gateway_pki_src_dir }}/{{ gateway_client_pki_key_file }}'
+gateway_client_pki_key_dest: '{{ gateway_client_pki_dir }}/{{ gateway_client_pki_key_file }}'
+
+gateway_client_pki_cert_file: '{{ inventory_hostname }}{{ gateway_pki_cert_suffix }}'
+gateway_client_pki_cert_src: '{{ gateway_pki_src_dir }}/{{ gateway_client_pki_cert_file }}'
+gateway_client_pki_cert_dest: '{{ gateway_client_pki_dir }}/{{ gateway_client_pki_cert_file }}'
+
+gateway_client_pki_ca_file: 'ca{{ gateway_pki_cert_suffix }}'
+gateway_client_pki_ca_cert_src: '{{ gateway_pki_src_dir }}/{{ gateway_client_pki_ca_file }}'
+gateway_client_pki_ca_cert_dest: '{{ gateway_client_pki_dir }}/{{ gateway_client_pki_ca_file }}'

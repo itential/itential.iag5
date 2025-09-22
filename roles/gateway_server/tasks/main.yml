@@ -19,7 +19,7 @@
             file: install_gateway.yml
 
     - name: Install Python
-      when: gateway_features_python_enabled | bool
+      when: gateway_server_features_python_enabled | bool
       tags:
         - install
         - install_dependencies
@@ -30,7 +30,7 @@
             file: install_python.yml
 
     - name: Install OpenTofu
-      when: gateway_features_opentofu_enabled | bool
+      when: gateway_server_features_opentofu_enabled | bool
       tags:
         - install
         - install_dependencies

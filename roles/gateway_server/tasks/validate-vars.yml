@@ -1,0 +1,28 @@
+# Copyright (c) 2025, Itential, Inc
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+---
+- name: Validate Gateway variables
+  tags: always
+  block:
+    - name: Validate variables when uploading is configured on
+      when: gateway_upload_certs | bool
+      block:
+        - name: Validate gateway_pki_src_dir variable is set
+          ansible.builtin.assert:
+            that:
+              - gateway_pki_src_dir is defined
+              - gateway_pki_src_dir is not none
+            fail_msg: gateway_pki_src_dir must be defined when
+                      gateway_upload_certs is set to 'true'
+
+        - name: Stat the local pki directory
+          ansible.builtin.stat:
+            path: "{{ gateway_pki_src_dir }}"
+          register: stat_result
+          delegate_to: localhost
+          become: false
+
+        - name: Validate local pki directory exists
+          ansible.builtin.assert:
+            that: stat_result.stat.exists
+            fail_msg: Local pki directory does not exist

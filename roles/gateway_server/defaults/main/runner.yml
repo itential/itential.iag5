@@ -7,4 +7,4 @@
 
 # Gateway runner announcement address
 # By default this is set to empty and will be automatically determined by the Gateway application.
-gateway_runner_announcement_address:
+gateway_server_runner_announcement_address:

@@ -6,7 +6,7 @@
 
 - name: Open Gateway server port on FirewallD Public Zone
   ansible.posix.firewalld:
-    port: "{{ gateway_port }}/tcp"
+    port: "{{ gateway_server_port }}/tcp"
     permanent: true
     state: enabled
     zone: public

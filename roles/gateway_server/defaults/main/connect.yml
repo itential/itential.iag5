@@ -1,0 +1,20 @@
+# Copyright (c) 2025, Itential, Inc
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+---
+###########################
+# Gateway connect variables
+###########################
+
+gateway_server_connect_enabled: true
+
+gateway_server_connect_server_ha_enabled: false
+gateway_server_connect_server_ha_is_primary: false
+
+gateway_server_connect_insecure_tls: false
+gateway_server_connect_certificate_filename: gw-manager-key.pem
+gateway_server_connect_certificate_file: "{{ gateway_server_pki_dir }}/{{ gateway_server_connect_certificate_filename }}"
+gateway_server_connect_private_key_filename: gw-manager-key.pem
+gateway_server_connect_private_key_file: "{{ gateway_server_pki_dir }}/{{ gateway_server_connect_private_key_filename }}"
+
+gateway_server_connect_local_certificate_file:
+gateway_server_connect_local_private_key_file:

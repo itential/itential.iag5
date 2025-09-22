@@ -5,4 +5,4 @@
 # Gateway registry variables
 ############################
 
-gateway_registry_default_overridable: true
+gateway_server_registry_default_overridable: true

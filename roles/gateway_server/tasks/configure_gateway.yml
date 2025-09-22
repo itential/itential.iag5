@@ -4,10 +4,10 @@
 - name: Create the gateway server configuration file
   ansible.builtin.template:
     src: "server.conf.j2"
-    dest: "{{ gateway_config_dir }}/gateway.conf"
+    dest: "{{ gateway_server_config_dir }}/gateway.conf"
     mode: "0600"
-    owner: "{{ gateway_user }}"
-    group: "{{ gateway_group }}"
+    owner: "{{ gateway_server_user }}"
+    group: "{{ gateway_server_group }}"
     lstrip_blocks: true
     backup: true
   when: gateway_application_mode == 'server'
@@ -15,10 +15,10 @@
 - name: Create the gateway runner configuration file
   ansible.builtin.template:
     src: "runner.conf.j2"
-    dest: "{{ gateway_config_dir }}/gateway.conf"
+    dest: "{{ gateway_server_config_dir }}/gateway.conf"
     mode: "0600"
-    owner: "{{ gateway_user }}"
-    group: "{{ gateway_group }}"
+    owner: "{{ gateway_server_user }}"
+    group: "{{ gateway_server_group }}"
     lstrip_blocks: true
     backup: true
   when: gateway_application_mode == 'runner'
@@ -33,8 +33,8 @@
 
 - name: Create the gateway encryption key file
   ansible.builtin.copy:
-    content: "{{ gateway_secrets_encrypt_key }}"
-    dest: "{{ gateway_secrets_encrypt_key_file }}"
+    content: "{{ gateway_server_secrets_encrypt_key }}"
+    dest: "{{ gateway_server_secrets_encrypt_key_file }}"
     mode: "0600"
-    owner: "{{ gateway_user }}"
-    group: "{{ gateway_group }}"
+    owner: "{{ gateway_server_user }}"
+    group: "{{ gateway_server_group }}"

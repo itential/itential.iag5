@@ -5,7 +5,7 @@
 # Gateway features variables
 ############################
 
-gateway_features_ansible_enabled: true
-gateway_features_hostkeys_enabled: true
-gateway_features_opentofu_enabled: true
-gateway_features_python_enabled: true
+gateway_server_features_ansible_enabled: true
+gateway_server_features_hostkeys_enabled: true
+gateway_server_features_opentofu_enabled: true
+gateway_server_features_python_enabled: true
