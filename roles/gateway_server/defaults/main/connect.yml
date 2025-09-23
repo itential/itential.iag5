@@ -11,10 +11,5 @@ gateway_server_connect_server_ha_enabled: false
 gateway_server_connect_server_ha_is_primary: false
 
 gateway_server_connect_insecure_tls: false
-gateway_server_connect_certificate_filename: gw-manager-key.pem
-gateway_server_connect_certificate_file: "{{ gateway_server_pki_dir }}/{{ gateway_server_connect_certificate_filename }}"
-gateway_server_connect_private_key_filename: gw-manager-key.pem
-gateway_server_connect_private_key_file: "{{ gateway_server_pki_dir }}/{{ gateway_server_connect_private_key_filename }}"
-
-gateway_server_connect_local_certificate_file:
-gateway_server_connect_local_private_key_file:
+gateway_server_connect_certificate_file: "{{ gateway_server_pki_cert_dest }}"
+gateway_server_connect_private_key_file: "{{ gateway_server_pki_key_dest }}"
