@@ -5,15 +5,14 @@
   tags: always
   block:
     - name: Validate variables when uploading is configured on
-      when: gateway_upload_certs | bool
+      when: gateway_pki_upload | bool
       block:
         - name: Validate gateway_pki_src_dir variable is set
           ansible.builtin.assert:
             that:
               - gateway_pki_src_dir is defined
               - gateway_pki_src_dir is not none
-            fail_msg: gateway_pki_src_dir must be defined when
-                      gateway_upload_certs is set to 'true'
+            fail_msg: gateway_pki_src_dir must be defined when gateway_pki_upload is set to 'true'
 
         - name: Stat the local pki directory
           ansible.builtin.stat:
