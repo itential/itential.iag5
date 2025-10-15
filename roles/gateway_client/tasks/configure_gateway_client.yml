@@ -10,3 +10,11 @@
     group: "{{ gateway_client_group }}"
     lstrip_blocks: true
     backup: true
+
+- name: Create the gateway encryption key file
+  ansible.builtin.copy:
+    content: "{{ gateway_secrets_encrypt_key }}"
+    dest: "{{ gateway_secrets_encrypt_key_file }}"
+    mode: "0600"
+    owner: "{{ gateway_client_user }}"
+    group: "{{ gateway_client_group }}"

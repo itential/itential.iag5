@@ -10,5 +10,11 @@ use_tls           = {{ gateway_client_use_tls | to_json }}
 private_key_file  = {{ gateway_client_pki_key_dest }}
 certificate_file  = {{ gateway_client_pki_cert_dest }}
 
+[secrets]
+encrypt_key_file = '{{ gateway_secrets_encrypt_key_file }}'
+
 [log]
 level = {{ gateway_client_log_level }}
+
+[terminal]
+timestamp_timezone = '{{ gateway_client_terminal_timestamp_timezone }}'

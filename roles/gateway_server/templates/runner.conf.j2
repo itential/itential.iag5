@@ -19,7 +19,7 @@ requirements_file = {{ gateway_server_requirements_file }}
 default_overridable = {{ gateway_server_registry_default_overridable | to_json }}
 
 [secrets]
-encrypt_key_file = '{{ gateway_server_secrets_encrypt_key_file }}'
+encrypt_key_file = '{{ gateway_secrets_encrypt_key_file }}'
 
 [runner]
 listen_address       = '{{ gateway_server_listen_address }}'
@@ -30,6 +30,7 @@ use_tls              = {{ gateway_server_use_tls | to_json }}
 certificate_file      = '{{ gateway_server_pki_cert_dest }}'
 private_key_file      = '{{ gateway_server_pki_key_dest }}'
 {% endif %}
+runtime_data_dir      = '{{ gateway_server_data_dir }}'
 
 [store]
 backend                  = '{{ gateway_server_store_backend }}'
@@ -49,5 +50,4 @@ etcd_private_key_file    = '{{ gateway_server_pki_key_dest }}'
 {% endif %}
 
 [terminal]
-no_color           = {{ gateway_server_terminal_no_color | to_json }}
-timestamp_timezone = '{{ gateway_server_terminal_timestamp_timezone }}'
+no_color = {{ gateway_server_terminal_no_color | to_json }}

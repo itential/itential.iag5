@@ -5,6 +5,10 @@
 # Gateway install variables
 ############################
 
+# The list of gateway server packages to install.
+# Must be defined in the inventory.
+gateway_server_packages:
+
 # Gateway user/group
 gateway_server_user: itential
 gateway_server_group: itential

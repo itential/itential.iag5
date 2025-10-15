@@ -22,17 +22,18 @@
   with_items:
     - "{{ gateway_client_install_dir }}"
     - "{{ gateway_client_working_dir }}"
+    - "{{ gateway_secrets_encrypt_key_dir }}"
 
 - name: Create a temporary download directory
   ansible.builtin.tempfile:
     state: directory
-  register: downloaddir
+  register: gateway_client_download_dir
   changed_when: false
 
 - name: Download the gateway packages from repository
   ansible.builtin.get_url:
     url: "{{ item }}"
-    dest: "{{ downloaddir.path }}/"
+    dest: "{{ gateway_client_download_dir.path }}/"
     mode: '0755'
     # Sets the appropriate header based on the repository type:
     # - For JFrog: Uses the "X-JFrog-Art-Api" header with the API key if "repository_api_key"
@@ -54,13 +55,13 @@
     validate_certs: true
   loop: "{{ gateway_client_packages }}"
   when: "'http' in item"
-  register: download_result
+  register: gateway_client_download_result
   changed_when: false
 
 - name: Propagate the gateway packages from the control node
   ansible.builtin.copy:
     src: "{{ item }}"
-    dest: "{{ downloaddir.path }}/"
+    dest: "{{ gateway_client_download_dir.path }}/"
     owner: "{{ gateway_client_user }}"
     group: "{{ gateway_client_group }}"
     mode: "0775"
@@ -71,9 +72,9 @@
 
 - name: Find the gateway packages
   ansible.builtin.find:
-    paths: "{{ downloaddir.path }}"
+    paths: "{{ gateway_client_download_dir.path }}"
     patterns: "*.tar.gz"
-  register: gateway_packages
+  register: gateway_client_packages
   changed_when: false
 
 - name: Unarchive the gateway packages
@@ -82,11 +83,11 @@
     dest: "{{ gateway_client_install_dir }}/"
     remote_src: true
     # state: present
-  loop: "{{ gateway_packages.files }}"
-  when: gateway_packages | length > 0
+  loop: "{{ gateway_client_packages.files }}"
+  when: gateway_client_packages | length > 0
 
 - name: Remove the temporary download directory
   ansible.builtin.file:
-    path: "{{ downloaddir.path }}"
+    path: "{{ gateway_client_download_dir.path }}"
     state: absent
   changed_when: false
