@@ -1,12 +1,22 @@
 # Copyright (c) 2025, Itential, Inc
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 ---
-###############################
-# Gateway application variables
-###############################
+##########################
+# Gateway common variables
+##########################
+
+# Artifact repository credentials
+# Must be defined in the inventory when downloading Gateway artifacts from the Itential
+# Nexus repository.
+repository_username:  # noqa var-naming[no-role-prefix]
+repository_password:  # noqa var-naming[no-role-prefix]
 
 # Gateway TLS
 gateway_pki_upload: true
 gateway_pki_key_suffix: .key
 gateway_pki_cert_suffix: .crt
 gateway_pki_src_dir:  # The local pki directory must be defined in the inventory
+
+# Secrets encrypt key
+gateway_secrets_encrypt_key:
+gateway_secrets_encrypt_key_file: "{{ gateway_secrets_encrypt_key_dir }}/encryption-key"

@@ -5,6 +5,10 @@
 # Gateway client variables
 ##########################
 
+# The list of gateway client packages to install. Currently this is a single tarball.
+# Must be defined in the inventory.
+gateway_client_packages:
+
 # Gateway client user/group
 gateway_client_user: itential
 gateway_client_group: itential
@@ -20,6 +24,11 @@ gateway_client_port: 50051
 # Gateway client logging variables
 gateway_client_log_level: INFO
 
+gateway_client_terminal_timestamp_timezone: utc
+
+# Gateway clients secrets encrypt key directory
+gateway_secrets_encrypt_key_dir: "{{ gateway_client_working_dir }}/keys"  # noqa var-naming[no-role-prefix]
+
 ##############################
 # Gateway client TLS variables
 ##############################
@@ -28,14 +37,14 @@ gateway_client_use_tls: true
 
 gateway_client_pki_dir: "{{ gateway_client_working_dir }}/ssl"
 
-gateway_client_pki_key_file: '{{ inventory_hostname }}{{ gateway_pki_key_suffix }}'
-gateway_client_pki_key_src: '{{ gateway_pki_src_dir }}/{{ gateway_client_pki_key_file }}'
-gateway_client_pki_key_dest: '{{ gateway_client_pki_dir }}/{{ gateway_client_pki_key_file }}'
+gateway_client_pki_key_file: "{{ inventory_hostname }}{{ gateway_pki_key_suffix }}"
+gateway_client_pki_key_src: "{{ gateway_pki_src_dir }}/{{ gateway_client_pki_key_file }}"
+gateway_client_pki_key_dest: "{{ gateway_client_pki_dir }}/{{ gateway_client_pki_key_file }}"
 
-gateway_client_pki_cert_file: '{{ inventory_hostname }}{{ gateway_pki_cert_suffix }}'
-gateway_client_pki_cert_src: '{{ gateway_pki_src_dir }}/{{ gateway_client_pki_cert_file }}'
-gateway_client_pki_cert_dest: '{{ gateway_client_pki_dir }}/{{ gateway_client_pki_cert_file }}'
+gateway_client_pki_cert_file: "{{ inventory_hostname }}{{ gateway_pki_cert_suffix }}"
+gateway_client_pki_cert_src: "{{ gateway_pki_src_dir }}/{{ gateway_client_pki_cert_file }}"
+gateway_client_pki_cert_dest: "{{ gateway_client_pki_dir }}/{{ gateway_client_pki_cert_file }}"
 
-gateway_client_pki_ca_file: 'ca{{ gateway_pki_cert_suffix }}'
-gateway_client_pki_ca_cert_src: '{{ gateway_pki_src_dir }}/{{ gateway_client_pki_ca_file }}'
-gateway_client_pki_ca_cert_dest: '{{ gateway_client_pki_dir }}/{{ gateway_client_pki_ca_file }}'
+gateway_client_pki_ca_file: "ca{{ gateway_pki_cert_suffix }}"
+gateway_client_pki_ca_cert_src: "{{ gateway_pki_src_dir }}/{{ gateway_client_pki_ca_file }}"
+gateway_client_pki_ca_cert_dest: "{{ gateway_client_pki_dir }}/{{ gateway_client_pki_ca_file }}"

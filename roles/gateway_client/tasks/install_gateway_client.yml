@@ -22,6 +22,7 @@
   with_items:
     - "{{ gateway_client_install_dir }}"
     - "{{ gateway_client_working_dir }}"
+    - "{{ gateway_secrets_encrypt_key_dir }}"
 
 - name: Create a temporary download directory
   ansible.builtin.tempfile:

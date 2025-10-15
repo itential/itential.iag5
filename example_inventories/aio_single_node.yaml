@@ -1,0 +1,34 @@
+all:
+  vars:
+    ansible_user: rocky
+
+    # Uncomment and configure the following two variables if you want the playbook to download the 
+    # iactl artifacts from the Itential repository (Nexus).
+    # Otherwise, the iactl artifacts will need to be downloaded from the Itential repository
+    # manually and placed in the playbooks/files directory.
+    # repository_username: <NEXUS-USER>
+    # repository_password: <NEXUS-PASSWORD>
+
+    # The encrpyt key can be generated using the command:
+    #  'openssl rand -hex 32'
+    gateway_secrets_encrypt_key: <ENCRYPT-KEY>
+    tls_pki_local_dir: <LOCAL-PKI-DIR>
+    gateway_pki_src_dir: "{{ tls_pki_local_dir }}"
+
+  children:
+    iag5_servers:
+      hosts:
+        <IAG5-SERVER-HOSTNAME>:
+          ansible_host: <IAG5-SERVER-IP>
+      vars:
+        gateway_server_packages:
+          - <IAGCTL-RPM>
+
+    iag5_clients:
+      hosts:
+        <IAG5-CLIENT-HOSTNAME>:
+          ansible_host: <IAG5-CLIENT-IP>
+      vars:
+        gateway_client_packages:
+          - <IAGCTL-TARBALL>
+        gateway_client_host: <IAG5-SERVER-IP>

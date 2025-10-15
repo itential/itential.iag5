@@ -22,7 +22,7 @@
   with_items:
     - "{{ gateway_server_config_dir }}"
     - "{{ gateway_server_data_dir }}"
-    - "{{ gateway_server_secrets_encrypt_key_dir }}"
+    - "{{ gateway_secrets_encrypt_key_dir }}"
     - "{{ gateway_server_log_server_dir }}"
 
 - name: Create a temporary download directory
