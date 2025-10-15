@@ -2,7 +2,7 @@ all:
   vars:
     ansible_user: rocky
 
-    # Uncomment and configure the following two variables if you want the playbook to download the 
+    # Uncomment and configure the following two variables if you want the playbook to download the
     # iactl artifacts from the Itential repository (Nexus).
     # Otherwise, the iactl artifacts will need to be downloaded from the Itential repository
     # manually and placed in the playbooks/files directory.
