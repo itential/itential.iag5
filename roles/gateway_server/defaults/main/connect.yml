@@ -7,6 +7,10 @@
 
 gateway_server_connect_enabled: true
 
+# The gateway_server_connect_hosts must be set in the inventory if gateway_server_connect_enabled
+# is set to 'true'.
+gateway_server_connect_hosts:
+
 gateway_server_connect_server_ha_enabled: false
 gateway_server_connect_server_ha_is_primary: false
 

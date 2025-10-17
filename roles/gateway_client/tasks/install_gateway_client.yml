@@ -34,7 +34,7 @@
   ansible.builtin.get_url:
     url: "{{ item }}"
     dest: "{{ gateway_client_download_dir.path }}/"
-    mode: '0755'
+    mode: "0755"
     # Sets the appropriate header based on the repository type:
     # - For JFrog: Uses the "X-JFrog-Art-Api" header with the API key if "repository_api_key"
     #   is defined and "jfrog" is part of the download URL.

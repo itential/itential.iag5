@@ -2,7 +2,8 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 ---
 ##############################
-# Gateway client TLS variables
+# Gateway client log variables
 ##############################
 
-# TODO - Remove?
+# Gateway client logging variables
+gateway_client_log_level: INFO

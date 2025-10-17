@@ -476,31 +476,21 @@ all:
   vars:
     ansible_user: <ANSIBLE-USER>
 
-    # Nexus
+    # Itential Nexus repository
     repository_username: <NEXUS-USERNAME>
     repository_password: <NEXUS-PASSWORD>
 
+    gateway_secrets_encrypt_key: <ENCRYPT-KEY>
+    gateway_pki_src_dir: <PKI-DIR>
+
   children:
-    gateway_all:
-      children:
-        iag5_servers:
-        iag5_clients:
-      vars:
-        gateway_pki_src_dir: <PKI-DIR>
-
-    gateway_servers:
-      children:
-        iag5_servers:
-      vars:
-        gateway_server_packages:
-          - <IAGCTL-RPM>
-        gateway_server_secrets_encrypt_key: <ENCRYPT-KEY>
-
     iag5_servers:
       hosts:
         <IAG5-SERVER-HOSTNAME>:
           ansible_host: <IAG5-SERVER-IP>
       vars:
+        gateway_server_packages:
+          - <IAGCTL-RPM>
         gateway_server_connect_hosts: <GATEWAY-MANAGER-IP>:8080
 
     iag5_clients:
@@ -508,9 +498,9 @@ all:
         <IAG5-CLIENT-HOSTNAME>:
           ansible_host: <IAG5-CLIENT-IP>
       vars:
-        gateway_client_host: <IAG-SERVER-IP>
         gateway_client_packages:
           - <IAGCTL-TARBALL>
+        gateway_client_host: <IAG-SERVER-IP>
 ```
 
 ### All-in-one Active/Standby High Availability Inventory
@@ -524,42 +514,33 @@ all:
     repository_username: <NEXUS-USERNAME>
     repository_password: <NEXUS-PASSWORD>
 
+    gateway_secrets_encrypt_key: <ENCRYPT-KEY>
+    gateway_pki_src_dir: <PKI-DIR>
+
   children:
-    gateway_all:
-      children:
-        iag5_servers:
-        iag5_clients:
-      vars:
-        gateway_pki_src_dir: <PKI-DIR>
-
-    gateway_servers:
-      children:
-        iag5_servers:
-      vars:
-        gateway_server_packages:
-          - <IAGCTL-RPM>
-        gateway_server_secrets_encrypt_key: <ENCRYPT-KEY>
-
-        # Etcd
-        gateway_server_store_backend: etcd
-        gateway_server_store_etcd_hosts: <ETCD-SERVER1-IP>:2379 <ETCD-SERVER2-IP>:2379 <ETCD-SERVER2-IP>:2379
-        gateway_server_connect_hosts: <GATEWAY-MANAGER-IP>:8080
-
     iag5_servers:
       hosts:
         <ACTIVE-IAG5-SERVER-HOSTNAME>:
           ansible_host: <ACTIVE-IAG5-SERVER-IP>
         <STANDBY-IAG5-SERVER-HOSTNAME>:
           ansible_host: <STANDBY-IAG5-SERVER-IP>
+      vars:
+        gateway_server_packages:
+          - <IAGCTL-RPM>
+
+        # Etcd
+        gateway_server_store_backend: etcd
+        gateway_server_store_etcd_hosts: <ETCD-SERVER1-IP>:2379 <ETCD-SERVER2-IP>:2379 <ETCD-SERVER2-IP>:2379
+        gateway_server_connect_hosts: <GATEWAY-MANAGER-IP>:8080
 
     iag5_clients:
       hosts:
         <IAG5-CLIENT-HOSTNAME>:
           ansible_host: <IAG5-CLIENT-IP>
       vars:
-        gateway_client_host: <IAG-SERVER-IP>
         gateway_client_packages:
           - <IAGCTL-TARBALL>
+        gateway_client_host: <IAG-SERVER-IP>
 ```
 
 ### Distributed Service Execution with Single Cluster Inventory
@@ -573,13 +554,10 @@ all:
     repository_username: <NEXUS-USERNAME>
     repository_password: <NEXUS-PASSWORD>
 
-  children:
-    gateway_all:
-      children:
-        iag5_servers:
-        iag5_runners:
-        iag5_clients:
+    gateway_secrets_encrypt_key: <ENCRYPT-KEY>
+    gateway_pki_src_dir: <PKI-DIR>
 
+  children:
     gateway_servers:
       children:
         iag5_servers:
@@ -587,7 +565,6 @@ all:
       vars:
         gateway_packages:
           - <IAGCTL-RPM>
-        gateway_secrets_encrypt_key: <ENCRYPT-KEY>
 
         # DynamoDB
         gateway_store_backend: dynamodb
@@ -618,9 +595,9 @@ all:
         <IAG5-CLIENT-HOSTNAME>:
           ansible_host: <IAG5-CLIENT-IP>
       vars:
-        gateway_client_host: <IAG-SERVER-IP>
         gateway_client_packages:
           - <IAGCTL-TARBALL>
+        gateway_client_host: <IAG-SERVER-IP>
 ```
 
 ### High Availability with Distributed Execution Inventory
@@ -634,21 +611,19 @@ all:
     repository_username: <NEXUS-USERNAME>
     repository_password: <NEXUS-PASSWORD>
 
-  children:
-    gateway_all:
-      children:
-        iag5_servers:
-        iag5_clients:
-      vars:
-        gateway_pki_src_dir: <PKI-DIR>
+    gateway_secrets_encrypt_key: <ENCRYPT-KEY>
+    gateway_pki_src_dir: <PKI-DIR>
 
+  children:
     gateway_servers:
       children:
         iag5_servers:
+        iag5_runners:
       vars:
         gateway_server_packages:
           - <IAGCTL-RPM>
-        gateway_server_secrets_encrypt_key: <ENCRYPT-KEY>
+
+        # Etcd
         gateway_server_store_backend: etcd
         gateway_server_store_etcd_hosts: <ETCD-SERVER1-IP>:2379 <ETCD-SERVER2-IP>:2379 <ETCD-SERVER2-IP>:2379
         gateway_server_connect_hosts: <GATEWAY-MANAGER-IP>:8080
@@ -662,7 +637,7 @@ all:
       vars:
         gateway_server_distributed_execution: true
 
-iag5_runners:
+    iag5_runners:
       hosts:
         <IAG5-RUNNER1-HOSTNAME>:
           ansible_host: <IAG5-RUNNER1-IP>
@@ -676,14 +651,15 @@ iag5_runners:
         <IAG5-CLIENT-HOSTNAME>:
           ansible_host: <IAG5-CLIENT-IP>
       vars:
-        gateway_client_host: <IAG-SERVER-IP>
         gateway_client_packages:
           - <IAGCTL-TARBALL>
+        gateway_client_host: <IAG-SERVER-IP>
 ```
 
 ### Multiple Cluster Architecture Inventories
 
 Cluster 1:
+Note - `gateway_server_cluster_id` is set to `cluster_1` in the `iag5_servers` vars section.
 
 ```yaml
 all:
@@ -694,13 +670,10 @@ all:
     repository_username: <NEXUS-USERNAME>
     repository_password: <NEXUS-PASSWORD>
 
-  children:
-    gateway_all:
-      children:
-        iag5_servers:
-        iag5_runners:
-        iag5_clients:
+    gateway_secrets_encrypt_key: <ENCRYPT-KEY>
+    gateway_pki_src_dir: <PKI-DIR>
 
+  children:
     gateway_servers:
       children:
         iag5_servers:
@@ -738,12 +711,13 @@ all:
         <IAG5-CLIENT-HOSTNAME>:
           ansible_host: <IAG5-CLIENT-IP>
       vars:
-        gateway_client_host: <IAG-SERVER-IP>
         gateway_client_packages:
           - <IAGCTL-TARBALL>
+        gateway_client_host: <IAG-SERVER-IP>
 ```
 
 Cluster 2:
+Note - `gateway_server_cluster_id` is set to `cluster_2` in the `iag5_servers` vars section.
 
 ```yaml
 all:
@@ -754,13 +728,10 @@ all:
     repository_username: <NEXUS-USERNAME>
     repository_password: <NEXUS-PASSWORD>
 
-  children:
-    gateway_all:
-      children:
-        iag5_servers:
-        iag5_runners:
-        iag5_clients:
+    gateway_secrets_encrypt_key: <ENCRYPT-KEY>
+    gateway_pki_src_dir: <PKI-DIR>
 
+  children:
     gateway_servers:
       children:
         iag5_servers:

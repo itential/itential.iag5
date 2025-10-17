@@ -18,7 +18,7 @@
         dest: "{{ gateway_server_pki_ca_cert_dest }}"
         owner: "{{ gateway_server_user }}"
         group: "{{ gateway_server_group }}"
-        mode: '0444'
+        mode: "0444"
       when:
         - gateway_server_pki_cert_src is defined
         - gateway_server_pki_cert_src is not none
@@ -29,7 +29,7 @@
         dest: "{{ gateway_server_pki_cert_dest }}"
         owner: "{{ gateway_server_user }}"
         group: "{{ gateway_server_group }}"
-        mode: '0644'
+        mode: "0644"
       when:
         - gateway_server_pki_cert_src is defined
         - gateway_server_pki_cert_src is not none
@@ -40,7 +40,7 @@
         dest: "{{ gateway_server_pki_key_dest }}"
         owner: "{{ gateway_server_user }}"
         group: "{{ gateway_server_group }}"
-        mode: '0400'
+        mode: "0400"
       when:
         - gateway_server_pki_key_src is defined
         - gateway_server_pki_key_src is not none
@@ -57,7 +57,7 @@
                 dest: "{{ gateway_server_pki_dir }}/{{ gateway_server_connect_certificate_filename }}"
                 owner: "{{ gateway_server_user }}"
                 group: "{{ gateway_server_group }}"
-                mode: '0644'
+                mode: "0644"
               when:
                 - gateway_server_connect_local_certificate_filename is defined
                 - gateway_server_connect_local_certificate_filename is not none
@@ -68,7 +68,7 @@
                 dest: "{{ gateway_server_pki_dir }}/{{ gateway_server_connect_private_key_filename }}"
                 owner: "{{ gateway_server_user }}"
                 group: "{{ gateway_server_group }}"
-                mode: '0400'
+                mode: "0400"
               when:
                 - gateway_server_connect_local_private_key_filename is defined
                 - gateway_server_connect_local_private_key_filename is not none
