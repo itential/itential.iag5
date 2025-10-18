@@ -486,21 +486,21 @@ all:
   children:
     iag5_servers:
       hosts:
-        <IAG5-SERVER-HOSTNAME>:
-          ansible_host: <IAG5-SERVER-IP>
+        server:
+          ansible_host: <SERVER-IP>
       vars:
+        gateway_server_connect_hosts: <GATEWAY-MANAGER-IP>:8080
         gateway_server_packages:
           - <IAGCTL-RPM>
-        gateway_server_connect_hosts: <GATEWAY-MANAGER-IP>:8080
 
     iag5_clients:
       hosts:
-        <IAG5-CLIENT-HOSTNAME>:
-          ansible_host: <IAG5-CLIENT-IP>
+        client:
+          ansible_host: <CLIENT-IP>
+          gateway_client_host: <SERVER-IP>
       vars:
         gateway_client_packages:
           - <IAGCTL-TARBALL>
-        gateway_client_host: <IAG-SERVER-IP>
 ```
 
 ### All-in-one Active/Standby High Availability Inventory
@@ -510,7 +510,7 @@ all:
   vars:
     ansible_user: <ANSIBLE-USER>
 
-    # Nexus
+    # Itential Nexus repository
     repository_username: <NEXUS-USERNAME>
     repository_password: <NEXUS-PASSWORD>
 
@@ -520,27 +520,24 @@ all:
   children:
     iag5_servers:
       hosts:
-        <ACTIVE-IAG5-SERVER-HOSTNAME>:
-          ansible_host: <ACTIVE-IAG5-SERVER-IP>
-        <STANDBY-IAG5-SERVER-HOSTNAME>:
-          ansible_host: <STANDBY-IAG5-SERVER-IP>
+        active-server:
+          ansible_host: <ACTIVE-SERVER-IP>
+        standby-server:
+          ansible_host: <STANDBY-SERVER-IP>
       vars:
         gateway_server_packages:
           - <IAGCTL-RPM>
-
-        # Etcd
         gateway_server_store_backend: etcd
-        gateway_server_store_etcd_hosts: <ETCD-SERVER1-IP>:2379 <ETCD-SERVER2-IP>:2379 <ETCD-SERVER2-IP>:2379
-        gateway_server_connect_hosts: <GATEWAY-MANAGER-IP>:8080
+        gateway_server_store_etcd_hosts: <ETCD-SERVER1-IP>:2379 <ETCD-SERVER2-IP>:2379 <ETCD-SERVER3-IP>:2379
 
     iag5_clients:
       hosts:
-        <IAG5-CLIENT-HOSTNAME>:
-          ansible_host: <IAG5-CLIENT-IP>
+        client:
+          ansible_host: <CLIENT-IP>
+          gateway_client_host: <ACTIVE-SERVER-IP>
       vars:
         gateway_client_packages:
           - <IAGCTL-TARBALL>
-        gateway_client_host: <IAG-SERVER-IP>
 ```
 
 ### Distributed Service Execution with Single Cluster Inventory
@@ -550,7 +547,7 @@ all:
   vars:
     ansible_user: rocky
 
-    # Nexus
+    # Itential Nexus repository
     repository_username: <NEXUS-USERNAME>
     repository_password: <NEXUS-PASSWORD>
 
@@ -558,46 +555,43 @@ all:
     gateway_pki_src_dir: <PKI-DIR>
 
   children:
-    gateway_servers:
-      children:
-        iag5_servers:
-        iag5_runners:
-      vars:
-        gateway_packages:
-          - <IAGCTL-RPM>
-
-        # DynamoDB
-        gateway_store_backend: dynamodb
-        gateway_store_dynamodb_table_name: <DYNAMODB-TABLE-NAME>
-        gateway_store_dynamodb_aws_access_key_id: <DYNAMODB-AWS-ACCESS-KEY-ID>
-        gateway_store_dynamodb_aws_secret_access_key: <DYNAMODB-AWS-SECRET-ACCESS-KEY>
-        gateway_store_dynamodb_aws_session_token: <DYNAMODB-AWS-SESSION-TOKEN>
-
     iag5_servers:
       hosts:
-        <IAG5-SERVER-HOSTNAME>:
-          ansible_host: <IAG5-SERVER-IP>
+        server:
+          ansible_host: <SERVER-IP>
+
+    iag5_runners:
+      hosts:
+        runner1:
+          ansible_host: <RUNNER1-IP>
+        runner2:
+          ansible_host: <RUNNER2-IP>
+        runner3:
+          ansible_host: <RUNNER3-IP>
       vars:
         gateway_server_connect_hosts: <GATEWAY-MANAGER-IP>:8080
         gateway_server_distributed_execution: true
 
-    iag5_runners:
+    servers_runners:
       hosts:
-        <IAG5-RUNNER1-HOSTNAME>:
-          ansible_host: <IAG5-RUNNER1-IP>
-        <IAG5-RUNNER2-HOSTNAME>:
-          ansible_host: <IAG5-RUNNER2-IP>
-        <IAG5-RUNNER3-HOSTNAME>:
-          ansible_host: <IAG5-RUNNER3-IP>
+        server:
+        runner1:
+        runner2:
+        runner3:
+      vars:
+        gateway_server_packages:
+          - <IAGCTL-RPM>
+        gateway_server_store_backend: etcd
+        gateway_server_store_etcd_hosts: <ETCD-SERVER1-IP>:2379 <ETCD-SERVER2-IP>:2379 <ETCD-SERVER3-IP>:2379
 
     iag5_clients:
       hosts:
-        <IAG5-CLIENT-HOSTNAME>:
-          ansible_host: <IAG5-CLIENT-IP>
+        client:
+          ansible_host: <CLIENT-IP>
+          gateway_client_host: <SERVER-IP>
       vars:
         gateway_client_packages:
           - <IAGCTL-TARBALL>
-        gateway_client_host: <IAG-SERVER-IP>
 ```
 
 ### High Availability with Distributed Execution Inventory
@@ -605,9 +599,9 @@ all:
 ```yaml
 all:
   vars:
-    ansible_user: <ANSIBLE-USER>
+    ansible_user: rocky
 
-    # Nexus
+    # Itential Nexus repository
     repository_username: <NEXUS-USERNAME>
     repository_password: <NEXUS-PASSWORD>
 
@@ -615,58 +609,59 @@ all:
     gateway_pki_src_dir: <PKI-DIR>
 
   children:
-    gateway_servers:
-      children:
-        iag5_servers:
-        iag5_runners:
-      vars:
-        gateway_server_packages:
-          - <IAGCTL-RPM>
-
-        # Etcd
-        gateway_server_store_backend: etcd
-        gateway_server_store_etcd_hosts: <ETCD-SERVER1-IP>:2379 <ETCD-SERVER2-IP>:2379 <ETCD-SERVER2-IP>:2379
-        gateway_server_connect_hosts: <GATEWAY-MANAGER-IP>:8080
-
     iag5_servers:
       hosts:
-        <ACTIVE-IAG5-SERVER-HOSTNAME>:
-          ansible_host: <ACTIVE-IAG5-SERVER-IP>
-        <STANDBY-IAG5-SERVER-HOSTNAME>:
-          ansible_host: <STANDBY-IAG5-SERVER-IP>
-      vars:
-        gateway_server_distributed_execution: true
+        active-server:
+          ansible_host: <ACTIVE-SERVER-IP>
+        standby-server:
+          ansible_host: <STANDBY-SERVER-IP>
 
     iag5_runners:
       hosts:
-        <IAG5-RUNNER1-HOSTNAME>:
-          ansible_host: <IAG5-RUNNER1-IP>
-        <IAG5-RUNNER2-HOSTNAME>:
-          ansible_host: <IAG5-RUNNER2-IP>
-        <IAG5-RUNNER3-HOSTNAME>:
-          ansible_host: <IAG5-RUNNER3-IP>
+        runner1:
+          ansible_host: <RUNNER1-IP>
+        runner2:
+          ansible_host: <RUNNER2-IP>
+        runner3:
+          ansible_host: <RUNNER3-IP>
+      vars:
+        gateway_server_connect_hosts: <GATEWAY-MANAGER-IP>:8080
+        gateway_server_distributed_execution: true
+
+    servers_runners:
+      hosts:
+        active-server:
+        standby-server:
+        runner1:
+        runner2:
+        runner3:
+      vars:
+        gateway_server_packages:
+          - <IAGCTL-RPM>
+        gateway_server_store_backend: etcd
+        gateway_server_store_etcd_hosts: <ETCD-SERVER1-IP>:2379 <ETCD-SERVER2-IP>:2379 <ETCD-SERVER3-IP>:2379
 
     iag5_clients:
       hosts:
-        <IAG5-CLIENT-HOSTNAME>:
-          ansible_host: <IAG5-CLIENT-IP>
+        client:
+          ansible_host: <CLIENT-IP>
+          gateway_client_host: <ACTIVE-SERVER-IP>
       vars:
         gateway_client_packages:
           - <IAGCTL-TARBALL>
-        gateway_client_host: <IAG-SERVER-IP>
 ```
 
 ### Multiple Cluster Architecture Inventories
 
 Cluster 1:
-Note - `gateway_server_cluster_id` is set to `cluster_1` in the `iag5_servers` vars section.
+Note - `gateway_cluster_id` is set to `cluster_1` in the `iag5_servers` vars section.
 
 ```yaml
 all:
   vars:
     ansible_user: rocky
 
-    # Nexus
+    # Itential Nexus repository
     repository_username: <NEXUS-USERNAME>
     repository_password: <NEXUS-PASSWORD>
 
@@ -674,104 +669,93 @@ all:
     gateway_pki_src_dir: <PKI-DIR>
 
   children:
-    gateway_servers:
-      children:
-        iag5_servers:
-        iag5_runners:
+    iag5_servers:
+      hosts:
+        cluster1_server:
+          ansible_host: <CLUSTER1-SERVER-IP>
+        cluster2_server:
+          ansible_host: <CLUSTER2-SERVER-IP>
       vars:
-        gateway_packages:
-          - <IAGCTL-RPM>
-        gateway_secrets_encrypt_key: <ENCRYPT-KEY>
+        gateway_server_connect_hosts: <GATEWAY-MANAGER-IP>:8080
+        gateway_server_distributed_execution: true
 
-        # Etcd
+    iag5_runners:
+      hosts:
+        cluster1_runner1:
+          ansible_host: <CLUSTER1-RUNNER1-IP>
+        cluster1_runner2:
+          ansible_host: <CLUSTER1-RUNNER2-IP>
+        cluster1_runner3:
+          ansible_host: <CLUSTER1-RUNNER3-IP>
+        cluster2_runner1:
+          ansible_host: <CLUSTER2-RUNNER1-IP>
+        cluster2_runner2:
+          ansible_host: <CLUSTER2-RUNNER2-IP>
+        cluster2_runner3:
+          ansible_host: <CLUSTER2-RUNNER3-IP>
+
+    iag5_servers_runners:
+      hosts:
+        cluster1_server:
+        cluster1_runner1:
+        cluster1_runner2:
+        cluster1_runner3:
+        cluster2_server:
+        cluster2_runner1:
+        cluster2_runner2:
+        cluster2_runner3:
+      vars:
+        gateway_server_packages:
+          - <IAGCTL-RPM>
         gateway_server_store_backend: etcd
-        gateway_server_store_etcd_hosts: <ETCD-SERVER1-IP>:2379 <ETCD-SERVER2-IP>:2379 <ETCD-SERVER2-IP>:2379
-        gateway_server_connect_hosts: <GATEWAY-MANAGER-IP>:8080
 
-    iag5_servers:
+    cluster1_iag5_all:
       hosts:
-        <IAG5-SERVER-HOSTNAME>:
-          ansible_host: <IAG5-SERVER-IP>
+        cluster1_client:
+        cluster1_server:
+        cluster1_runner1:
+        cluster1_runner2:
+        cluster1_runner3:
       vars:
-        gateway_server_cluster_id: cluster_1
-        gateway_server_connect_hosts: <GATEWAY-MANAGER-IP>:8080
-        gateway_server_distributed_execution: true
+        gateway_cluster_id: cluster_1
 
-    iag5_runners:
+    cluster1_iag5_servers_runners:
       hosts:
-        <IAG5-RUNNER1-HOSTNAME>:
-          ansible_host: <IAG5-RUNNER1-IP>
-        <IAG5-RUNNER2-HOSTNAME>:
-          ansible_host: <IAG5-RUNNER2-IP>
-        <IAG5-RUNNER3-HOSTNAME>:
-          ansible_host: <IAG5-RUNNER3-IP>
+        cluster1_server:
+        cluster1_runner1:
+        cluster1_runner2:
+        cluster1_runner3:
+      vars:
+        gateway_server_store_etcd_hosts: <CLUSTER1-ETCD-SERVER1-IP>:2379 <CLUSTER1-ETCD-SERVER2-IP>:2379 <CLUSTER1-ETCD-SERVER3-IP>:2379
+
+    cluster2_iag5_all:
+      hosts:
+        cluster2_client:
+        cluster2_server:
+        cluster2_runner1:
+        cluster2_runner2:
+        cluster2_runner3:
+      vars:
+        gateway_cluster_id: cluster_2
+
+    cluster2_iag5_servers_runners:
+      hosts:
+        cluster2_server:
+        cluster2_runner1:
+        cluster2_runner2:
+        cluster2_runner3:
+      vars:
+        gateway_server_store_etcd_hosts: <CLUSTER2-ETCD-SERVER1-IP>:2379 <CLUSTER2-ETCD-SERVER2-IP>:2379 <CLUSTER2-TCD-SERVER3-IP>:2379
 
     iag5_clients:
       hosts:
-        <IAG5-CLIENT-HOSTNAME>:
-          ansible_host: <IAG5-CLIENT-IP>
+        cluster1_client:
+          ansible_host: <CLUSTER1-CLIENT-IP>
+          gateway_client_host: <CLUSTER1-SERVER-IP>
+        cluster2_client:
+          ansible_host: <CLUSTER2-CLIENT-IP>
+          gateway_client_host: <CLUSTER2-SERVER-IP>
       vars:
-        gateway_client_packages:
-          - <IAGCTL-TARBALL>
-        gateway_client_host: <IAG-SERVER-IP>
-```
-
-Cluster 2:
-Note - `gateway_server_cluster_id` is set to `cluster_2` in the `iag5_servers` vars section.
-
-```yaml
-all:
-  vars:
-    ansible_user: rocky
-
-    # Nexus
-    repository_username: <NEXUS-USERNAME>
-    repository_password: <NEXUS-PASSWORD>
-
-    gateway_secrets_encrypt_key: <ENCRYPT-KEY>
-    gateway_pki_src_dir: <PKI-DIR>
-
-  children:
-    gateway_servers:
-      children:
-        iag5_servers:
-        iag5_runners:
-      vars:
-        gateway_packages:
-          - <IAGCTL-RPM>
-        gateway_secrets_encrypt_key: <ENCRYPT-KEY>
-
-        # DynamoDB
-        gateway_store_backend: dynamodb
-        gateway_store_dynamodb_table_name: <DYNAMODB-TABLE-NAME>
-        gateway_store_dynamodb_aws_access_key_id: <DYNAMODB-AWS-ACCESS-KEY-ID>
-        gateway_store_dynamodb_aws_secret_access_key: <DYNAMODB-AWS-SECRET-ACCESS-KEY>
-        gateway_store_dynamodb_aws_session_token: <DYNAMODB-AWS-SESSION-TOKEN>
-
-    iag5_servers:
-      hosts:
-        <IAG5-SERVER-HOSTNAME>:
-          ansible_host: <IAG5-SERVER-IP>
-      vars:
-        gateway_server_cluster_id: cluster_2
-        gateway_server_connect_hosts: <GATEWAY-MANAGER-IP>:8080
-        gateway_server_distributed_execution: true
-
-    iag5_runners:
-      hosts:
-        <IAG5-RUNNER1-HOSTNAME>:
-          ansible_host: <IAG5-RUNNER1-IP>
-        <IAG5-RUNNER2-HOSTNAME>:
-          ansible_host: <IAG5-RUNNER2-IP>
-        <IAG5-RUNNER3-HOSTNAME>:
-          ansible_host: <IAG5-RUNNER3-IP>
-
-    iag5_clients:
-      hosts:
-        <IAG5-CLIENT-HOSTNAME>:
-          ansible_host: <IAG5-CLIENT-IP>
-      vars:
-        gateway_client_host: <IAG-SERVER-IP>
         gateway_client_packages:
           - <IAGCTL-TARBALL>
 ```

@@ -16,7 +16,7 @@ all:
           ansible_host: <SERVER-IP>
       vars:
         gateway_server_connect_hosts: <GATEWAY-MANAGER-IP>:8080
-        gateway_packages:
+        gateway_server_packages:
           - <IAGCTL-RPM>
 
     iag5_clients:

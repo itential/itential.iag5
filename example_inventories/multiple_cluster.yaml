@@ -16,6 +16,9 @@ all:
           ansible_host: <CLUSTER1-SERVER-IP>
         cluster2_server:
           ansible_host: <CLUSTER2-SERVER-IP>
+      vars:
+        gateway_server_connect_hosts: <GATEWAY-MANAGER-IP>:8080
+        gateway_server_distributed_execution: true
 
     iag5_runners:
       hosts:
@@ -31,11 +34,8 @@ all:
           ansible_host: <CLUSTER2-RUNNER2-IP>
         cluster2_runner3:
           ansible_host: <CLUSTER2-RUNNER3-IP>
-      vars:
-        gateway_server_connect_hosts: <GATEWAY-MANAGER-IP>:8080
-        gateway_server_distributed_execution: true
 
-    servers_runners:
+    iag5_servers_runners:
       hosts:
         cluster1_server:
         cluster1_runner1:
@@ -46,28 +46,46 @@ all:
         cluster2_runner2:
         cluster2_runner3:
       vars:
-        gateway_packages:
+        gateway_server_packages:
           - <IAGCTL-RPM>
         gateway_server_store_backend: etcd
 
-    cluster1:
+    cluster1_iag5_all:
+      hosts:
+        cluster1_client:
+        cluster1_server:
+        cluster1_runner1:
+        cluster1_runner2:
+        cluster1_runner3:
+      vars:
+        gateway_cluster_id: cluster_1
+
+    cluster1_iag5_servers_runners:
       hosts:
         cluster1_server:
         cluster1_runner1:
         cluster1_runner2:
         cluster1_runner3:
       vars:
-        cluster_id: cluster_1
         gateway_server_store_etcd_hosts: <CLUSTER1-ETCD-SERVER1-IP>:2379 <CLUSTER1-ETCD-SERVER2-IP>:2379 <CLUSTER1-ETCD-SERVER3-IP>:2379
 
-    cluster2:
+    cluster2_iag5_all:
+      hosts:
+        cluster2_client:
+        cluster2_server:
+        cluster2_runner1:
+        cluster2_runner2:
+        cluster2_runner3:
+      vars:
+        gateway_cluster_id: cluster_2
+
+    cluster2_iag5_servers_runners:
       hosts:
         cluster2_server:
         cluster2_runner1:
         cluster2_runner2:
         cluster2_runner3:
       vars:
-        cluster_id: cluster_2
         gateway_server_store_etcd_hosts: <CLUSTER2-ETCD-SERVER1-IP>:2379 <CLUSTER2-ETCD-SERVER2-IP>:2379 <CLUSTER2-TCD-SERVER3-IP>:2379
 
     iag5_clients:

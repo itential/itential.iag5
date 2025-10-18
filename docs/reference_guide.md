@@ -7,8 +7,7 @@ overridden in the `iag5_clients`, `iag5_servers` or `iag_runners` group vars.
 
 | Variable | Type | Description | Default Value |
 | :------- | :--- | :---------- | :------------ |
-| `repository_username` | String | The username for authenticating to the Itential Nexus repository. | N/A |
-| `repository_password` | String | The password for authenticating to the Itential Nexus repository. | N/A |
+| `gateway_cluster_id` | String | The IAG5 cluster ID. | cluster_1 |
 | `gateway_pki_upload` | Boolean | Flag for enabling/disabling upload of PKI certificates and keys. | true |
 | `gateway_pki_key_suffix` | String | The default PKI key suffix. | .key |
 | `gateway_pki_cert_suffix` | String | The default PKI certificate suffix. | .crt |
@@ -16,6 +15,8 @@ overridden in the `iag5_clients`, `iag5_servers` or `iag_runners` group vars.
 | `gateway_secrets_encrypt_key` | String | The secrets encrypt key. | N/A (must be defined in inventory) |
 | `gateway_secrets_encrypt_key_dir` | String | The directory where the secrets encrypt key is stored. | "{{ gateway_client_working_dir }}/keys" (clients)<br>"{{ gateway_server_config_dir }}/keys" (servers/runners) |
 | `gateway_secrets_encrypt_key_file` | String | The path to the secrets encrypt key. | "{{ gateway_secrets_encrypt_key_dir }}/encryption-key" |
+| `repository_username` | String | The username for authenticating to the Itential Nexus repository. | N/A |
+| `repository_password` | String | The password for authenticating to the Itential Nexus repository. | N/A |
 
 ## Client Variables
 
@@ -55,7 +56,6 @@ the `iag5_servers` or `iag_runners` group vars.
 | Variable | Type | Description | Default Value |
 | :------- | :--- | :---------- | :------------ |
 | `gateway_server_packages` | List of Strings | The gateway server packages to install | N/A (must be defined in inventory) |
-| `gateway_server_cluster_id` | String | The IAG5 cluster ID. | cluster_1 |
 | `gateway_server_listen_address` | String | The server listen address. | 0.0.0.0 |
 | `gateway_server_port` | Integer | The server listen port. | 50051 |
 | `gateway_server_requirements_file` | String |  | requirements.txt |

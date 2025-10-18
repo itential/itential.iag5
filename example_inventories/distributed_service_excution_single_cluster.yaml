@@ -34,7 +34,7 @@ all:
         runner2:
         runner3:
       vars:
-        gateway_packages:
+        gateway_server_packages:
           - <IAGCTL-RPM>
         gateway_server_store_backend: etcd
         gateway_server_store_etcd_hosts: <ETCD-SERVER1-IP>:2379 <ETCD-SERVER2-IP>:2379 <ETCD-SERVER3-IP>:2379

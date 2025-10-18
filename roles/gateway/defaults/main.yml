@@ -5,11 +5,8 @@
 # Gateway common variables
 ##########################
 
-# Artifact repository credentials
-# Must be defined in the inventory when downloading Gateway artifacts from the Itential
-# Nexus repository.
-repository_username:  # noqa var-naming[no-role-prefix]
-repository_password:  # noqa var-naming[no-role-prefix]
+# Gateway cluster ID
+gateway_cluster_id: cluster_1
 
 # Gateway TLS
 gateway_pki_upload: true
@@ -22,3 +19,9 @@ gateway_pki_src_dir:
 # The gateway_secrets_encrypt_key must be defined in the inventory.
 gateway_secrets_encrypt_key:
 gateway_secrets_encrypt_key_file: "{{ gateway_secrets_encrypt_key_dir }}/encryption-key"
+
+# Artifact repository credentials
+# Must be defined in the inventory when downloading Gateway artifacts from the Itential
+# Nexus repository.
+repository_username:  # noqa var-naming[no-role-prefix]
+repository_password:  # noqa var-naming[no-role-prefix]
