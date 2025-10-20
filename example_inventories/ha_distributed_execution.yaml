@@ -1,0 +1,52 @@
+all:
+  vars:
+    ansible_user: rocky
+
+    # Nexus
+    repository_username: <NEXUS-USERNAME>
+    repository_password: <NEXUS-PASSWORD>
+
+    gateway_secrets_encrypt_key: <ENCRYPT-KEY>
+    gateway_pki_src_dir: <PKI-DIR>
+
+  children:
+    iag5_servers:
+      hosts:
+        active-server:
+          ansible_host: <ACTIVE-SERVER-IP>
+        standby-server:
+          ansible_host: <STANDBY-SERVER-IP>
+
+    iag5_runners:
+      hosts:
+        runner1:
+          ansible_host: <RUNNER1-IP>
+        runner2:
+          ansible_host: <RUNNER2-IP>
+        runner3:
+          ansible_host: <RUNNER3-IP>
+      vars:
+        gateway_server_connect_hosts: <GATEWAY-MANAGER-IP>:8080
+        gateway_server_distributed_execution: true
+
+    servers_runners:
+      hosts:
+        active-server:
+        standby-server:
+        runner1:
+        runner2:
+        runner3:
+      vars:
+        gateway_server_packages:
+          - <IAGCTL-RPM>
+        gateway_server_store_backend: etcd
+        gateway_server_store_etcd_hosts: <ETCD-SERVER1-IP>:2379 <ETCD-SERVER2-IP>:2379 <ETCD-SERVER3-IP>:2379
+
+    iag5_clients:
+      hosts:
+        client:
+          ansible_host: <CLIENT-IP>
+          gateway_client_host: <ACTIVE-SERVER-IP>
+      vars:
+        gateway_client_packages:
+          - <IAGCTL-TARBALL>

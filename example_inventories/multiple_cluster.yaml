@@ -1,0 +1,101 @@
+all:
+  vars:
+    ansible_user: rocky
+
+    # Nexus
+    repository_username: <NEXUS-USERNAME>
+    repository_password: <NEXUS-PASSWORD>
+
+    gateway_secrets_encrypt_key: <ENCRYPT-KEY>
+    gateway_pki_src_dir: <PKI-DIR>
+
+  children:
+    iag5_servers:
+      hosts:
+        cluster1_server:
+          ansible_host: <CLUSTER1-SERVER-IP>
+        cluster2_server:
+          ansible_host: <CLUSTER2-SERVER-IP>
+      vars:
+        gateway_server_connect_hosts: <GATEWAY-MANAGER-IP>:8080
+        gateway_server_distributed_execution: true
+
+    iag5_runners:
+      hosts:
+        cluster1_runner1:
+          ansible_host: <CLUSTER1-RUNNER1-IP>
+        cluster1_runner2:
+          ansible_host: <CLUSTER1-RUNNER2-IP>
+        cluster1_runner3:
+          ansible_host: <CLUSTER1-RUNNER3-IP>
+        cluster2_runner1:
+          ansible_host: <CLUSTER2-RUNNER1-IP>
+        cluster2_runner2:
+          ansible_host: <CLUSTER2-RUNNER2-IP>
+        cluster2_runner3:
+          ansible_host: <CLUSTER2-RUNNER3-IP>
+
+    iag5_servers_runners:
+      hosts:
+        cluster1_server:
+        cluster1_runner1:
+        cluster1_runner2:
+        cluster1_runner3:
+        cluster2_server:
+        cluster2_runner1:
+        cluster2_runner2:
+        cluster2_runner3:
+      vars:
+        gateway_server_packages:
+          - <IAGCTL-RPM>
+        gateway_server_store_backend: etcd
+
+    cluster1_iag5_all:
+      hosts:
+        cluster1_client:
+        cluster1_server:
+        cluster1_runner1:
+        cluster1_runner2:
+        cluster1_runner3:
+      vars:
+        gateway_cluster_id: cluster_1
+
+    cluster1_iag5_servers_runners:
+      hosts:
+        cluster1_server:
+        cluster1_runner1:
+        cluster1_runner2:
+        cluster1_runner3:
+      vars:
+        gateway_server_store_etcd_hosts: <CLUSTER1-ETCD-SERVER1-IP>:2379 <CLUSTER1-ETCD-SERVER2-IP>:2379 <CLUSTER1-ETCD-SERVER3-IP>:2379
+
+    cluster2_iag5_all:
+      hosts:
+        cluster2_client:
+        cluster2_server:
+        cluster2_runner1:
+        cluster2_runner2:
+        cluster2_runner3:
+      vars:
+        gateway_cluster_id: cluster_2
+
+    cluster2_iag5_servers_runners:
+      hosts:
+        cluster2_server:
+        cluster2_runner1:
+        cluster2_runner2:
+        cluster2_runner3:
+      vars:
+        gateway_server_store_etcd_hosts: <CLUSTER2-ETCD-SERVER1-IP>:2379 <CLUSTER2-ETCD-SERVER2-IP>:2379 <CLUSTER2-TCD-SERVER3-IP>:2379
+
+    iag5_clients:
+      hosts:
+        cluster1_client:
+          ansible_host: <CLUSTER1-CLIENT-IP>
+          gateway_client_host: <CLUSTER1-SERVER-IP>
+        cluster2_client:
+          ansible_host: <CLUSTER2-CLIENT-IP>
+          gateway_client_host: <CLUSTER2-SERVER-IP>
+      vars:
+        gateway_client_packages:
+          - <IAGCTL-TARBALL>

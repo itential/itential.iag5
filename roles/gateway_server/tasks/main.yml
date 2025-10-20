@@ -80,5 +80,5 @@
     - name: Validate Gateway is running
       ansible.builtin.systemd:
         name: iagctl
-      register: iagctl_status
-      failed_when: iagctl_status.status.ActiveState != 'active'
+      register: gateway_server_iagctl_status
+      failed_when: gateway_server_iagctl_status.status.ActiveState != 'active'

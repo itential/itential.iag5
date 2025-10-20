@@ -8,7 +8,7 @@ namespace: itential
 name: iag5
 
 # The version of the collection. Must be compatible with semantic versioning
-version: 0.0.1
+version: 1.0.0
 
 # The path to the Markdown (.md) readme file. This path is relative to the root of the collection
 readme: README.md
@@ -42,7 +42,8 @@ tags:
 # collection label 'namespace.name'. The value is a version range
 # L(specifiers,https://python-semanticversion.readthedocs.io/en/latest/#requirement-specification). Multiple version
 # range specifiers can be set and are separated by ','
-# dependencies:
+dependencies:
+  'ansible.posix': '>=0.0.1'
 
 # The URL of the originating SCM repository
 repository: https://github.com/itential/itential.iag5
@@ -61,17 +62,23 @@ issues: https://github.com/itential/itential.iag5/issues
 # uses 'fnmatch' to match the files or directories. Some directories and files like 'galaxy.yml', '*.pyc', '*.retry',
 # and '.git' are always filtered. Mutually exclusive with 'manifest'
 build_ignore:
+  - .ansible
+  - .ansible-lint
+  - .github
   - .gitignore
-  - .gitlab-ci.yml
   - ansible.cfg
-  - '*.log'
   - '*.bin'
-  - '*.whl'
-  - '*.tgz'
-  - '*.gz'
-  - '*.pem'
   - '*.cert'
+  - '*.gz'
+  - '*.keep'
+  - '*.log'
+  - '*.pem'
+  - '*.tgz'
+  - '*.whl'
+  - inventories
+  - inventory
   - scripts
+  - test
 
 # A dict controlling use of manifest directives used in building the collection artifact. The key 'directives' is a
 # list of MANIFEST.in style

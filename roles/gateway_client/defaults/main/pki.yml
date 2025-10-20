@@ -1,34 +1,6 @@
 # Copyright (c) 2025, Itential, Inc
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 ---
-##########################
-# Gateway client variables
-##########################
-
-# The list of gateway client packages to install. Currently this is a single tarball.
-# Must be defined in the inventory.
-gateway_client_packages:
-
-# Gateway client user/group
-gateway_client_user: itential
-gateway_client_group: itential
-
-# Gateway client install and working and directories
-gateway_client_install_dir: "/home/{{ gateway_client_user }}/.local/bin"
-gateway_client_working_dir: "/home/{{ gateway_client_user }}/.gateway.d"
-
-# Gateway client connection variables (which server to connect to)
-gateway_client_host:
-gateway_client_port: 50051
-
-# Gateway client logging variables
-gateway_client_log_level: INFO
-
-gateway_client_terminal_timestamp_timezone: utc
-
-# Gateway clients secrets encrypt key directory
-gateway_secrets_encrypt_key_dir: "{{ gateway_client_working_dir }}/keys"  # noqa var-naming[no-role-prefix]
-
 ##############################
 # Gateway client TLS variables
 ##############################

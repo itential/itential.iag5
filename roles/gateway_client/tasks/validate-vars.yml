@@ -4,13 +4,13 @@
 - name: Validate Gateway variables
   tags: always
   block:
-    - name: Validate gateway_server_packages is set
+    - name: Validate gateway_client_packages is set
       ansible.builtin.assert:
         that:
-          - gateway_server_packages is defined
-          - gateway_server_packages is iterable
-          - gateway_server_packages | length > 0
-        fail_msg: gateway_server_packages must be defined
+          - gateway_client_packages is defined
+          - gateway_client_packages is iterable
+          - gateway_client_packages | length > 0
+        fail_msg: gateway_client_packages must be defined
 
     - name: Validate gateway_secrets_encrypt_key is correctly formatted
       ansible.builtin.assert:
@@ -32,13 +32,13 @@
         - name: Stat gateway_pki_src_dir directory
           ansible.builtin.stat:
             path: "{{ gateway_pki_src_dir }}"
-          register: gateway_server_pki_dir_stat_result
+          register: gateway_client_pki_dir_stat_result
           delegate_to: localhost
           become: false
 
         - name: Validate gateway_pki_src_dir exists
           ansible.builtin.assert:
-            that: gateway_server_pki_dir_stat_result.stat.exists
+            that: gateway_client_pki_dir_stat_result.stat.exists
             fail_msg:
               - "Local pki directory {{ gateway_pki_src_dir }} does not exist"
               - "Set gateway_pki_src_dir to a valid directory"

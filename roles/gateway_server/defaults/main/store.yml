@@ -12,10 +12,9 @@ gateway_server_store_backend: local
 gateway_server_store_etcd_hosts: localhost:2379
 gateway_server_store_etcd_use_tls: true
 gateway_server_store_etcd_client_cert_auth: true
-# TODO - Remove?
-# gateway_server_store_etcd_ca_certificate_filename: "{{ gateway_server_pki_ca_cert_dest }}"
-# gateway_server_store_etcd_certificate_filename: "{{ gateway_server_pki_cert_dest }}"
-# gateway_server_store_etcd_private_key_filename: "{{ gateway_server_pki_key_dest }}"
+gateway_server_store_etcd_ca_certificate_filename: "{{ gateway_server_pki_ca_cert_dest }}"
+gateway_server_store_etcd_certificate_filename: "{{ gateway_server_pki_cert_dest }}"
+gateway_server_store_etcd_private_key_filename: "{{ gateway_server_pki_key_dest }}"
 
 # Gateway DynamoDB variables
 gateway_server_store_dynamodb_table_name: itential.gateway5.store
