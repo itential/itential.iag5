@@ -472,11 +472,14 @@ supported architectures. These are intended to be starting points only.
 ### All-in-one Single Node Inventory
 
 ```yaml
+# Note:
+#  - All example inventory_hostname entries must be replaced with the actual server hostnames.
+#  - All hostnames must be resolvable.
 all:
   vars:
     ansible_user: <ANSIBLE-USER>
 
-    # Itential Nexus repository
+    # Itential Nexus repository credentials
     repository_username: <NEXUS-USERNAME>
     repository_password: <NEXUS-PASSWORD>
 
@@ -486,7 +489,7 @@ all:
   children:
     iag5_servers:
       hosts:
-        server:
+        example-server:
           ansible_host: <SERVER-IP>
       vars:
         gateway_server_connect_hosts: <GATEWAY-MANAGER-IP>:8080
@@ -495,7 +498,7 @@ all:
 
     iag5_clients:
       hosts:
-        client:
+        example-client:
           ansible_host: <CLIENT-IP>
           gateway_client_host: <SERVER-IP>
       vars:
@@ -506,11 +509,15 @@ all:
 ### All-in-one Active/Standby High Availability Inventory
 
 ```yaml
+# Notes:
+#  - All example inventory_hostname entries must be replaced with the actual server hostnames.
+#  - All hostnames must be resolvable.
+#  - Backend 'dynamodb' is also supported; see Reference Guide for details.
 all:
   vars:
     ansible_user: <ANSIBLE-USER>
 
-    # Itential Nexus repository
+    # Itential Nexus repository credentials
     repository_username: <NEXUS-USERNAME>
     repository_password: <NEXUS-PASSWORD>
 
@@ -520,9 +527,9 @@ all:
   children:
     iag5_servers:
       hosts:
-        active-server:
+        example-active-server:
           ansible_host: <ACTIVE-SERVER-IP>
-        standby-server:
+        example-standby-server:
           ansible_host: <STANDBY-SERVER-IP>
       vars:
         gateway_server_packages:
@@ -532,22 +539,27 @@ all:
 
     iag5_clients:
       hosts:
-        client:
+        example-client:
           ansible_host: <CLIENT-IP>
           gateway_client_host: <ACTIVE-SERVER-IP>
       vars:
         gateway_client_packages:
           - <IAGCTL-TARBALL>
+
 ```
 
 ### Distributed Service Execution with Single Cluster Inventory
 
 ```yaml
+# Note:
+#  - All example inventory_hostname entries must be replaced with the actual server hostnames.
+#  - All hostnames must be resolvable.
+#  - Backend 'dynamodb' is also supported; see Reference Guide for details.
 all:
   vars:
-    ansible_user: rocky
+    ansible_user: <ANSIBLE-USER>
 
-    # Itential Nexus repository
+    # Itential Nexus repository credentials
     repository_username: <NEXUS-USERNAME>
     repository_password: <NEXUS-PASSWORD>
 
@@ -557,16 +569,16 @@ all:
   children:
     iag5_servers:
       hosts:
-        server:
+        example-server:
           ansible_host: <SERVER-IP>
 
     iag5_runners:
       hosts:
-        runner1:
+        example-runner1:
           ansible_host: <RUNNER1-IP>
-        runner2:
+        example-runner2:
           ansible_host: <RUNNER2-IP>
-        runner3:
+        example-runner3:
           ansible_host: <RUNNER3-IP>
       vars:
         gateway_server_connect_hosts: <GATEWAY-MANAGER-IP>:8080
@@ -574,10 +586,10 @@ all:
 
     servers_runners:
       hosts:
-        server:
-        runner1:
-        runner2:
-        runner3:
+        example-server:
+        example-runner1:
+        example-runner2:
+        example-runner3:
       vars:
         gateway_server_packages:
           - <IAGCTL-RPM>
@@ -586,7 +598,7 @@ all:
 
     iag5_clients:
       hosts:
-        client:
+        example-client:
           ansible_host: <CLIENT-IP>
           gateway_client_host: <SERVER-IP>
       vars:
@@ -597,11 +609,15 @@ all:
 ### High Availability with Distributed Execution Inventory
 
 ```yaml
+# Note:
+#  - All example inventory_hostname entries must be replaced with the actual server hostnames.
+#  - All hostnames must be resolvable.
+#  - Backend 'dynamodb' is also supported; see Reference Guide for details.
 all:
   vars:
-    ansible_user: rocky
+    ansible_user: <ANSIBLE-USER>
 
-    # Itential Nexus repository
+    # Itential Nexus repository credentials
     repository_username: <NEXUS-USERNAME>
     repository_password: <NEXUS-PASSWORD>
 
@@ -611,18 +627,18 @@ all:
   children:
     iag5_servers:
       hosts:
-        active-server:
+        example-active-server:
           ansible_host: <ACTIVE-SERVER-IP>
-        standby-server:
+        example-standby-server:
           ansible_host: <STANDBY-SERVER-IP>
 
     iag5_runners:
       hosts:
-        runner1:
+        example-runner1:
           ansible_host: <RUNNER1-IP>
-        runner2:
+        rexample-unner2:
           ansible_host: <RUNNER2-IP>
-        runner3:
+        example-runner3:
           ansible_host: <RUNNER3-IP>
       vars:
         gateway_server_connect_hosts: <GATEWAY-MANAGER-IP>:8080
@@ -630,11 +646,11 @@ all:
 
     servers_runners:
       hosts:
-        active-server:
-        standby-server:
-        runner1:
-        runner2:
-        runner3:
+        example-active-server:
+        example-standby-server:
+        example-runner1:
+        example-runner2:
+        example-runner3:
       vars:
         gateway_server_packages:
           - <IAGCTL-RPM>
@@ -643,7 +659,7 @@ all:
 
     iag5_clients:
       hosts:
-        client:
+        example-client:
           ansible_host: <CLIENT-IP>
           gateway_client_host: <ACTIVE-SERVER-IP>
       vars:
@@ -653,15 +669,16 @@ all:
 
 ### Multiple Cluster Architecture Inventories
 
-Cluster 1:
-Note - `gateway_cluster_id` is set to `cluster_1` in the `iag5_servers` vars section.
-
 ```yaml
+# Note:
+#  - All example inventory_hostname entries must be replaced with the actual server hostnames.
+#  - All hostnames must be resolvable.
+#  - Backend 'dynamodb' is also supported; see Reference Guide for details.
 all:
   vars:
-    ansible_user: rocky
+    ansible_user: <ANSIBLE-USER>
 
-    # Itential Nexus repository
+    # Itential Nexus repository credentials
     repository_username: <NEXUS-USERNAME>
     repository_password: <NEXUS-PASSWORD>
 
@@ -671,9 +688,9 @@ all:
   children:
     iag5_servers:
       hosts:
-        cluster1_server:
+        example-cluster1_server:
           ansible_host: <CLUSTER1-SERVER-IP>
-        cluster2_server:
+        example-cluster2_server:
           ansible_host: <CLUSTER2-SERVER-IP>
       vars:
         gateway_server_connect_hosts: <GATEWAY-MANAGER-IP>:8080
@@ -681,29 +698,29 @@ all:
 
     iag5_runners:
       hosts:
-        cluster1_runner1:
+        example-cluster1_runner1:
           ansible_host: <CLUSTER1-RUNNER1-IP>
-        cluster1_runner2:
+        example-cluster1_runner2:
           ansible_host: <CLUSTER1-RUNNER2-IP>
-        cluster1_runner3:
+        example-cluster1_runner3:
           ansible_host: <CLUSTER1-RUNNER3-IP>
-        cluster2_runner1:
+        example-cluster2_runner1:
           ansible_host: <CLUSTER2-RUNNER1-IP>
-        cluster2_runner2:
+        example-cluster2_runner2:
           ansible_host: <CLUSTER2-RUNNER2-IP>
-        cluster2_runner3:
+        example-cluster2_runner3:
           ansible_host: <CLUSTER2-RUNNER3-IP>
 
     iag5_servers_runners:
       hosts:
-        cluster1_server:
-        cluster1_runner1:
-        cluster1_runner2:
-        cluster1_runner3:
-        cluster2_server:
-        cluster2_runner1:
-        cluster2_runner2:
-        cluster2_runner3:
+        example-cluster1_server:
+        example-cluster1_runner1:
+        example-cluster1_runner2:
+        example-cluster1_runner3:
+        example-cluster2_server:
+        example-cluster2_runner1:
+        example-cluster2_runner2:
+        example-cluster2_runner3:
       vars:
         gateway_server_packages:
           - <IAGCTL-RPM>
@@ -711,48 +728,48 @@ all:
 
     cluster1_iag5_all:
       hosts:
-        cluster1_client:
-        cluster1_server:
-        cluster1_runner1:
-        cluster1_runner2:
-        cluster1_runner3:
+        example-cluster1_client:
+        example-cluster1_server:
+        example-cluster1_runner1:
+        example-cluster1_runner2:
+        example-cluster1_runner3:
       vars:
         gateway_cluster_id: cluster_1
 
     cluster1_iag5_servers_runners:
       hosts:
-        cluster1_server:
-        cluster1_runner1:
-        cluster1_runner2:
-        cluster1_runner3:
+        example-cluster1_server:
+        example-cluster1_runner1:
+        example-cluster1_runner2:
+        example-cluster1_runner3:
       vars:
         gateway_server_store_etcd_hosts: <CLUSTER1-ETCD-SERVER1-IP>:2379 <CLUSTER1-ETCD-SERVER2-IP>:2379 <CLUSTER1-ETCD-SERVER3-IP>:2379
 
     cluster2_iag5_all:
       hosts:
-        cluster2_client:
-        cluster2_server:
-        cluster2_runner1:
-        cluster2_runner2:
-        cluster2_runner3:
+        example-cluster2_client:
+        example-cluster2_server:
+        example-cluster2_runner1:
+        example-cluster2_runner2:
+        example-cluster2_runner3:
       vars:
         gateway_cluster_id: cluster_2
 
     cluster2_iag5_servers_runners:
       hosts:
-        cluster2_server:
-        cluster2_runner1:
-        cluster2_runner2:
-        cluster2_runner3:
+        example-cluster2_server:
+        example-cluster2_runner1:
+        example-cluster2_runner2:
+        example-cluster2_runner3:
       vars:
         gateway_server_store_etcd_hosts: <CLUSTER2-ETCD-SERVER1-IP>:2379 <CLUSTER2-ETCD-SERVER2-IP>:2379 <CLUSTER2-TCD-SERVER3-IP>:2379
 
     iag5_clients:
       hosts:
-        cluster1_client:
+        example-cluster1_client:
           ansible_host: <CLUSTER1-CLIENT-IP>
           gateway_client_host: <CLUSTER1-SERVER-IP>
-        cluster2_client:
+        example-cluster2_client:
           ansible_host: <CLUSTER2-CLIENT-IP>
           gateway_client_host: <CLUSTER2-SERVER-IP>
       vars:
