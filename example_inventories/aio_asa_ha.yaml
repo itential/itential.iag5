@@ -1,8 +1,12 @@
+# Notes:
+#  - All example inventory_hostname entries must be replaced with the actual server hostnames.
+#  - All hostnames must be resolvable.
+#  - Backend 'dynamodb' is also supported; see Reference Guide for details.
 all:
   vars:
-    ansible_user: rocky
+    ansible_user: <ANSIBLE-USER>
 
-    # Nexus
+    # Itential Nexus repository credentials
     repository_username: <NEXUS-USERNAME>
     repository_password: <NEXUS-PASSWORD>
 
@@ -12,9 +16,9 @@ all:
   children:
     iag5_servers:
       hosts:
-        active-server:
+        example-active-server:
           ansible_host: <ACTIVE-SERVER-IP>
-        standby-server:
+        example-standby-server:
           ansible_host: <STANDBY-SERVER-IP>
       vars:
         gateway_server_packages:
@@ -24,7 +28,7 @@ all:
 
     iag5_clients:
       hosts:
-        client:
+        example-client:
           ansible_host: <CLIENT-IP>
           gateway_client_host: <ACTIVE-SERVER-IP>
       vars:
