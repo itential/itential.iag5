@@ -1,4 +1,4 @@
-# Note:
+# Notes:
 #  - All example inventory_hostname entries must be replaced with the actual server hostnames.
 #  - All hostnames must be resolvable.
 all:
@@ -15,8 +15,8 @@ all:
   children:
     iag5_servers:
       hosts:
-        example-server:
-          ansible_host: <SERVER-IP>
+        gateway-server01.example.com:
+          ansible_host: <GATEWAY-SERVER01-IP>
       vars:
         gateway_server_connect_hosts: <GATEWAY-MANAGER-IP>:8080
         gateway_server_packages:
@@ -24,9 +24,9 @@ all:
 
     iag5_clients:
       hosts:
-        example-client:
-          ansible_host: <CLIENT-IP>
-          gateway_client_host: <SERVER-IP>
+        gateway-client01.example.com:
+          ansible_host: <GATEWAY-CLIENT01-IP>
+          gateway_client_host: <GATEWAY-SERVER01-IP>
       vars:
         gateway_client_packages:
           - <IAGCTL-TARBALL>
