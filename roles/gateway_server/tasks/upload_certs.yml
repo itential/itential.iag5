@@ -20,8 +20,8 @@
         group: "{{ gateway_server_group }}"
         mode: "0444"
       when:
-        - gateway_server_pki_cert_src is defined
-        - gateway_server_pki_cert_src is not none
+        - gateway_server_pki_ca_cert_src is defined
+        - gateway_server_pki_ca_cert_src is not none
 
     - name: Copy Gateway server certificate
       ansible.builtin.copy:
