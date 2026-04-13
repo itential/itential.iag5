@@ -1,0 +1,34 @@
+---
+# Shared summary task — include this at the end of every role
+# Include with:
+#   - name: "Print summary"
+#     ansible.builtin.include_tasks: ../../common/tasks/summary.yml
+#     vars:
+#       role_title: "CLUSTER TLS — SERVER ↔ RUNNER (gRPC mTLS)"
+
+- name: "SUMMARY | Print header"
+  ansible.builtin.debug:
+    msg: "============================================================"
+
+- name: "SUMMARY | Print title"
+  ansible.builtin.debug:
+    msg: "{{ role_title }} — {{ inventory_hostname }}"
+
+- name: "SUMMARY | Print separator"
+  ansible.builtin.debug:
+    msg: "============================================================"
+
+- name: "SUMMARY | Print each check result"
+  ansible.builtin.debug:
+    msg:
+      - "{{ item.status }} | {{ item.check }}"
+      - "         Expected : {{ item.expected }}"
+      - "         Actual   : {{ item.actual }}"
+      - "------------------------------------------------------------"
+  loop: "{{ check_results }}"
+  loop_control:
+    label: "{{ item.check }}"
+
+- name: "SUMMARY | Print footer"
+  ansible.builtin.debug:
+    msg: "============================================================"
