@@ -1,0 +1,506 @@
+---
+# ROLE: connect_server_to_gwm
+# TLS Type: One-way TLS (NOT mTLS) — WebSocket (wss://)
+# node_section = 'connect' — reads from [connect] section of gateway.conf
+# gateway_conf = /etc/gateway/gateway.conf (server node)
+
+- name: "INIT | Set node section and gateway conf"
+  ansible.builtin.set_fact:
+    node_section: "connect"
+    gateway_conf: "{{ server_gateway_conf }}"
+
+- name: "INIT | Init results tracker"
+  ansible.builtin.set_fact:
+    check_results: []
+
+# -----------------------------------------------------------------------
+# [connect] section — read enabled first, gate all checks on it
+# -----------------------------------------------------------------------
+
+- name: "CHECK 1 | Read enabled — node section {{ node_section }}"
+  ansible.builtin.shell:
+    cmd: >
+      awk '/^\[{{ node_section }}\]/{f=1} f && /^\[/{if(!/^\[{{ node_section }}\]/) f=0} f && /^\s*enabled/' {{ gateway_conf }}
+  register: connect_enabled
+  changed_when: false
+  ignore_errors: true
+
+- name: "CHECK 1 | Set connect_is_enabled fact"
+  ansible.builtin.set_fact:
+    connect_is_enabled: "{{ 'true' in (connect_enabled.stdout | default('')) }}"
+
+- name: "CHECK 1 | Record result — enabled — node section {{ node_section }}"
+  ansible.builtin.set_fact:
+    check_results: "{{ check_results + [
+      {
+        'check': 'CHECK 1 — [' + node_section + '] enabled',
+        'expected': 'enabled = true',
+        'actual': connect_enabled.stdout | default('NOT FOUND'),
+        'status': '✅ PASS' if connect_is_enabled else '❌ FAIL — Connect disabled, skipping all connect cert checks'
+      }
+    ] }}"
+
+# -----------------------------------------------------------------------
+# [application] section — cluster_id
+# -----------------------------------------------------------------------
+
+- name: "CHECK 2 | Read cluster_id from [application] section"
+  ansible.builtin.shell:
+    cmd: >
+      awk '/^\[application\]/{f=1} f && /^\[/{if(!/^\[application\]/) f=0} f && /cluster_id/' {{ gateway_conf }}
+  register: cluster_id_conf
+  changed_when: false
+  ignore_errors: true
+
+- name: "CHECK 2 | Record result — cluster_id set and not default"
+  ansible.builtin.set_fact:
+    check_results: "{{ check_results + [
+      {
+        'check': 'CHECK 2 — [application] cluster_id set and not default (cluster_1 causes collisions in GWM)',
+        'expected': 'cluster_id = <unique-value> (not cluster_1)',
+        'actual': cluster_id_conf.stdout | default('NOT SET — defaults to cluster_1'),
+        'status': '✅ PASS' if (cluster_id_conf.stdout != '' and 'cluster_1' not in cluster_id_conf.stdout) else '❌ FAIL'
+      }
+    ] }}"
+
+# -----------------------------------------------------------------------
+# [connect] section — hosts, cert, key (gated on connect_is_enabled)
+# -----------------------------------------------------------------------
+
+- name: "CHECK 3 | Read hosts — node section {{ node_section }}"
+  ansible.builtin.shell:
+    cmd: >
+      awk '/^\[{{ node_section }}\]/{f=1} f && /^\[/{if(!/^\[{{ node_section }}\]/) f=0} f && /^\s*hosts/' {{ gateway_conf }}
+  register: connect_hosts
+  changed_when: false
+  ignore_errors: true
+  when: connect_is_enabled
+
+- name: "CHECK 3 | Extract GWM endpoint from hosts"
+  ansible.builtin.set_fact:
+    gwm_endpoint: "{{ connect_hosts.stdout.split('=')[1] | trim | replace(\"'\", '') | replace('\"', '') }}"
+  when: connect_is_enabled and connect_hosts.stdout != ''
+
+- name: "CHECK 3 | Record result — hosts set — node section {{ node_section }}"
+  ansible.builtin.set_fact:
+    check_results: "{{ check_results + [
+      {
+        'check': 'CHECK 3 — [' + node_section + '] hosts is set (IP:port of Gateway Manager)',
+        'expected': 'hosts = <gwm-ip>:<port>',
+        'actual': connect_hosts.stdout | default('NOT FOUND') if connect_is_enabled else 'N/A',
+        'status': '✅ PASS' if (connect_is_enabled and connect_hosts.stdout != '') else ('⏭ SKIPPED — Connect disabled' if not connect_is_enabled else '❌ FAIL')
+      }
+    ] }}"
+
+- name: "CHECK 4 | Read certificate_file — node section {{ node_section }}"
+  ansible.builtin.shell:
+    cmd: >
+      awk '/^\[{{ node_section }}\]/{f=1} f && /^\[/{if(!/^\[{{ node_section }}\]/) f=0} f && /certificate_file/' {{ gateway_conf }}
+  register: node_cert_conf
+  changed_when: false
+  ignore_errors: true
+  when: connect_is_enabled
+
+- name: "CHECK 4 | Extract certificate_file path"
+  ansible.builtin.set_fact:
+    node_cert_path: "{{ node_cert_conf.stdout.split('=')[1] | trim | replace(\"'\", '') | replace('\"', '') }}"
+  when: connect_is_enabled and node_cert_conf.stdout != ''
+
+- name: "CHECK 4 | Record result — certificate_file set — node section {{ node_section }}"
+  ansible.builtin.set_fact:
+    check_results: "{{ check_results + [
+      {
+        'check': 'CHECK 4 — [' + node_section + '] certificate_file is set',
+        'expected': 'certificate_file = /path/to/cert',
+        'actual': node_cert_conf.stdout | default('NOT FOUND') if connect_is_enabled else 'N/A',
+        'status': '✅ PASS' if (connect_is_enabled and node_cert_conf.stdout != '') else ('⏭ SKIPPED — Connect disabled' if not connect_is_enabled else '❌ FAIL')
+      }
+    ] }}"
+
+- name: "CHECK 5 | Verify certificate_file exists on disk"
+  ansible.builtin.stat:
+    path: "{{ node_cert_path }}"
+  register: node_cert_stat
+  when: connect_is_enabled and node_cert_path is defined and node_cert_path != ''
+
+- name: "CHECK 5 | Record result — certificate_file exists on disk"
+  ansible.builtin.set_fact:
+    check_results: "{{ check_results + [
+      {
+        'check': 'CHECK 5 — [' + node_section + '] certificate_file exists on disk',
+        'expected': 'File exists at ' + (node_cert_path | default('N/A')),
+        'actual': 'EXISTS' if (node_cert_stat.stat.exists | default(false)) else 'NOT FOUND on disk',
+        'status': '✅ PASS' if (node_cert_stat.stat.exists | default(false)) else ('⏭ SKIPPED — Connect disabled' if not connect_is_enabled else '❌ FAIL')
+      }
+    ] }}"
+  when: connect_is_enabled
+
+- name: "CHECK 6 | Read private_key_file — node section {{ node_section }}"
+  ansible.builtin.shell:
+    cmd: >
+      awk '/^\[{{ node_section }}\]/{f=1} f && /^\[/{if(!/^\[{{ node_section }}\]/) f=0} f && /private_key_file/' {{ gateway_conf }}
+  register: node_key_conf
+  changed_when: false
+  ignore_errors: true
+  when: connect_is_enabled
+
+- name: "CHECK 6 | Extract private_key_file path"
+  ansible.builtin.set_fact:
+    node_key_path: "{{ node_key_conf.stdout.split('=')[1] | trim | replace(\"'\", '') | replace('\"', '') }}"
+  when: connect_is_enabled and node_key_conf.stdout != ''
+
+- name: "CHECK 6 | Record result — private_key_file set — node section {{ node_section }}"
+  ansible.builtin.set_fact:
+    check_results: "{{ check_results + [
+      {
+        'check': 'CHECK 6 — [' + node_section + '] private_key_file is set',
+        'expected': 'private_key_file = /path/to/key',
+        'actual': node_key_conf.stdout | default('NOT FOUND') if connect_is_enabled else 'N/A',
+        'status': '✅ PASS' if (connect_is_enabled and node_key_conf.stdout != '') else ('⏭ SKIPPED — Connect disabled' if not connect_is_enabled else '❌ FAIL')
+      }
+    ] }}"
+
+- name: "CHECK 7 | Verify private_key_file exists on disk"
+  ansible.builtin.stat:
+    path: "{{ node_key_path }}"
+  register: node_key_stat
+  when: connect_is_enabled and node_key_path is defined and node_key_path != ''
+
+- name: "CHECK 7 | Record result — private_key_file exists on disk"
+  ansible.builtin.set_fact:
+    check_results: "{{ check_results + [
+      {
+        'check': 'CHECK 7 — [' + node_section + '] private_key_file exists on disk',
+        'expected': 'File exists at ' + (node_key_path | default('N/A')),
+        'actual': 'EXISTS' if (node_key_stat.stat.exists | default(false)) else 'NOT FOUND on disk',
+        'status': '✅ PASS' if (node_key_stat.stat.exists | default(false)) else ('⏭ SKIPPED — Connect disabled' if not connect_is_enabled else '❌ FAIL')
+      }
+    ] }}"
+  when: connect_is_enabled
+
+- name: "CHECK 8 | Get cert modulus"
+  ansible.builtin.shell:
+    cmd: openssl x509 -noout -modulus -in {{ node_cert_path }} | md5sum
+  register: node_cert_mod
+  changed_when: false
+  ignore_errors: true
+  when: connect_is_enabled and node_cert_path is defined and node_cert_path != ''
+
+- name: "CHECK 8 | Get key modulus"
+  ansible.builtin.shell:
+    cmd: openssl rsa -noout -modulus -in {{ node_key_path }} | md5sum
+  register: node_key_mod
+  changed_when: false
+  ignore_errors: true
+  when: connect_is_enabled and node_key_path is defined and node_key_path != ''
+
+- name: "CHECK 8 | Record result — cert and key matched pair"
+  ansible.builtin.set_fact:
+    check_results: "{{ check_results + [
+      {
+        'check': 'CHECK 8 — [' + node_section + '] cert and key are a matched pair',
+        'expected': 'Matching md5 hashes',
+        'actual': 'cert=' + (node_cert_mod.stdout | default('ERROR')) + ' key=' + (node_key_mod.stdout | default('ERROR')) if connect_is_enabled else 'N/A',
+        'status': '✅ PASS' if (connect_is_enabled and node_cert_mod.stdout == node_key_mod.stdout) else ('⏭ SKIPPED — Connect disabled' if not connect_is_enabled else '❌ FAIL')
+      }
+    ] }}"
+
+- name: "CHECK 9 | Verify cert not expired"
+  ansible.builtin.shell:
+    cmd: openssl x509 -in {{ node_cert_path }} -noout -checkend 0 && openssl x509 -in {{ node_cert_path }} -noout -dates
+  register: node_expiry
+  changed_when: false
+  ignore_errors: true
+  when: connect_is_enabled and node_cert_path is defined and node_cert_path != ''
+
+- name: "CHECK 9 | Record result — cert not expired"
+  ansible.builtin.set_fact:
+    check_results: "{{ check_results + [
+      {
+        'check': 'CHECK 9 — [' + node_section + '] cert is not expired',
+        'expected': 'Certificate is valid',
+        'actual': node_expiry.stdout | default(node_expiry.stderr | default('ERROR')) if connect_is_enabled else 'N/A',
+        'status': '✅ PASS' if (connect_is_enabled and node_expiry.rc == 0) else ('⏭ SKIPPED — Connect disabled' if not connect_is_enabled else '❌ FAIL')
+      }
+    ] }}"
+
+- name: "CHECK 10 | Get days remaining on cert"
+  ansible.builtin.shell:
+    cmd: echo $(( ( $(date -d "$(openssl x509 -enddate -noout -in {{ node_cert_path }} | cut -d= -f2)" +%s) - $(date +%s) ) / 86400 ))
+  register: node_days_remaining
+  changed_when: false
+  ignore_errors: true
+  when: connect_is_enabled and node_cert_path is defined and node_cert_path != ''
+
+- name: "CHECK 10 | Record result — cert days remaining"
+  ansible.builtin.set_fact:
+    check_results: "{{ check_results + [
+      {
+        'check': 'CHECK 10 — [' + node_section + '] cert days remaining until expiry',
+        'expected': 'More than 30 days remaining',
+        'actual': (node_days_remaining.stdout | default('ERROR')) + ' days remaining',
+        'status': '✅ PASS' if (node_days_remaining.stdout | default('0') | int > 30)
+                  else ('⚠️  WARN — expiring within 30 days' if (node_days_remaining.stdout | default('0') | int > 0)
+                  else '❌ FAIL — expired')
+      }
+    ] }}"
+  when: connect_is_enabled
+
+- name: "CHECK 11 | Identify cert type (self-signed leaf vs CA-signed — both valid for connect)"
+  ansible.builtin.command:
+    cmd: openssl x509 -in {{ node_cert_path }} -noout -subject -issuer
+  register: node_self_signed
+  changed_when: false
+  ignore_errors: true
+  when: connect_is_enabled and node_cert_path is defined and node_cert_path != ''
+
+- name: "CHECK 11 | Record result — cert type"
+  ansible.builtin.set_fact:
+    check_results: "{{ check_results + [
+      {
+        'check': 'CHECK 11 — [' + node_section + '] cert type (self-signed leaf is OK for connect per doc)',
+        'expected': 'Self-signed (subject == issuer) or CA-signed (subject != issuer) — both valid',
+        'actual': node_self_signed.stdout | default('ERROR') if connect_is_enabled else 'N/A',
+        'status': '✅ PASS' if (connect_is_enabled and node_self_signed.stdout != '') else ('⏭ SKIPPED — Connect disabled' if not connect_is_enabled else '❌ FAIL')
+      }
+    ] }}"
+  when: connect_is_enabled
+
+- name: "CHECK 12 | Verify extendedKeyUsage on cert (clientAuth needed for GWM auth)"
+  ansible.builtin.shell:
+    cmd: openssl x509 -in {{ node_cert_path }} -noout -text | grep -A3 "Extended Key Usage"
+  register: node_eku
+  changed_when: false
+  ignore_errors: true
+  when: connect_is_enabled and node_cert_path is defined and node_cert_path != ''
+
+- name: "CHECK 12 | Record result — cert extendedKeyUsage"
+  ansible.builtin.set_fact:
+    check_results: "{{ check_results + [
+      {
+        'check': 'CHECK 12 — [' + node_section + '] cert extendedKeyUsage (clientAuth needed for GWM auth)',
+        'expected': 'TLS Web Client Authentication (at minimum)',
+        'actual': node_eku.stdout | default('NOT FOUND — may be self-signed leaf with no EKU') if connect_is_enabled else 'N/A',
+        'status': '✅ PASS' if (connect_is_enabled and 'Client Authentication' in (node_eku.stdout | default('')))
+                  else ('⚠️  INFO — no extendedKeyUsage set, self-signed leaf without EKU is valid for connect per doc' if (connect_is_enabled and node_eku.stdout == '')
+                  else ('⏭ SKIPPED — Connect disabled' if not connect_is_enabled
+                  else '⚠️  WARN — EKU present but clientAuth missing'))
+      }
+    ] }}"
+  when: connect_is_enabled
+
+# -----------------------------------------------------------------------
+# SAN check — verify server cert SANs contain private_ip and ansible_host
+# -----------------------------------------------------------------------
+
+- name: "CHECK 12b | Get SANs from server cert"
+  ansible.builtin.shell:
+    cmd: openssl x509 -in {{ node_cert_path }} -noout -text | grep -A2 "Subject Alternative Name"
+  register: node_sans
+  changed_when: false
+  ignore_errors: true
+  when: connect_is_enabled and node_cert_path is defined and node_cert_path != ''
+
+- name: "CHECK 12b | Record result — cert SANs present"
+  ansible.builtin.set_fact:
+    check_results: "{{ check_results + [
+      {
+        'check': 'CHECK 12b — [' + node_section + '] cert SANs present',
+        'expected': 'Subject Alternative Name extension present',
+        'actual': node_sans.stdout | default('NO SANs FOUND') if connect_is_enabled else 'N/A',
+        'status': '✅ PASS' if (connect_is_enabled and node_sans.stdout != '')
+                  else ('⏭ SKIPPED — Connect disabled' if not connect_is_enabled
+                  else '⚠️  WARN — no SAN extension (self-signed leaf without SANs may still work for connect)')
+      }
+    ] }}"
+  when: connect_is_enabled
+
+- name: "CHECK 12c | Record result — cert SAN contains server private_ip"
+  ansible.builtin.set_fact:
+    check_results: "{{ check_results + [
+      {
+        'check': 'CHECK 12c — [' + node_section + '] cert SAN contains server private_ip',
+        'expected': 'IP:' + hostvars[inventory_hostname]['private_ip'] + ' in Subject Alternative Name',
+        'actual': node_sans.stdout | default('NO SANs FOUND'),
+        'status': '✅ PASS' if (connect_is_enabled and ('IP:' + hostvars[inventory_hostname]['private_ip']) in (node_sans.stdout | default('')))
+                  else ('⏭ SKIPPED — Connect disabled' if not connect_is_enabled
+                  else '⚠️  WARN — private_ip not in cert SANs (required if GWM validates client cert by IP)')
+      }
+    ] }}"
+  when: connect_is_enabled and node_sans is defined
+
+# -----------------------------------------------------------------------
+# Proxy checks — verify GWM host is in no_proxy (if internal)
+# -----------------------------------------------------------------------
+
+- name: "CHECK 13 | Read no_proxy and NO_PROXY from systemd service"
+  ansible.builtin.shell:
+    cmd: systemctl show {{ service_name }} | grep Environ | grep -oE "(no_proxy|NO_PROXY)=[^ ]*"
+  register: proxy_env
+  changed_when: false
+  ignore_errors: true
+
+- name: "CHECK 13 | Record result — no_proxy is set"
+  ansible.builtin.set_fact:
+    check_results: "{{ check_results + [
+      {
+        'check': 'CHECK 13 — no_proxy/NO_PROXY is set in systemd service',
+        'expected': 'no_proxy and NO_PROXY env vars present',
+        'actual': proxy_env.stdout | default('NOT SET'),
+        'status': '✅ PASS' if proxy_env.stdout != '' else '⚠️  WARN — no proxy exclusions set'
+      }
+    ] }}"
+
+- name: "CHECK 14 | Verify GWM host exclusion in no_proxy"
+  ansible.builtin.set_fact:
+    check_results: "{{ check_results + [
+      {
+        'check': 'CHECK 14 — GWM host ' + (gwm_endpoint.split(':')[0] | default('N/A')) + ' exclusion in no_proxy',
+        'expected': 'GWM host in no_proxy OR proxy intentionally used for GWM',
+        'actual': proxy_env.stdout | default('NOT SET'),
+        'status': '✅ PASS' if (gwm_endpoint.split(':')[0] | default('')) in (proxy_env.stdout | default('')) else '⚠️  WARN — GWM host not in no_proxy (may be intentional if GWM is external)'
+      }
+    ] }}"
+  when: connect_is_enabled and gwm_endpoint is defined and gwm_endpoint != ''
+
+# -----------------------------------------------------------------------
+# GWM connectivity checks
+# -----------------------------------------------------------------------
+
+- name: "CHECK 15 | Set GWM host and port"
+  ansible.builtin.set_fact:
+    gwm_host: "{{ gwm_endpoint.split(':')[0] }}"
+    gwm_port: "{{ gwm_endpoint.split(':')[1] }}"
+  when: connect_is_enabled and gwm_endpoint is defined and gwm_endpoint != ''
+
+- name: "CHECK 15 | Resolve GWM host from server"
+  ansible.builtin.command:
+    cmd: "getent ahosts {{ gwm_host }}"
+  register: gwm_resolution
+  changed_when: false
+  ignore_errors: true
+  when: connect_is_enabled and gwm_host is defined and gwm_host != ''
+
+- name: "CHECK 15 | Record result — GWM host resolution"
+  ansible.builtin.set_fact:
+    check_results: "{{ check_results + [
+      {
+        'check': 'CHECK 15 — GWM host resolves from server (' + (gwm_host | default('N/A')) + ')',
+        'expected': 'Host resolves successfully',
+        'actual': gwm_resolution.stdout | default('FAILED TO RESOLVE'),
+        'status': '✅ PASS' if (gwm_resolution.rc | default(1)) == 0 else ('⏭ SKIPPED — Connect disabled' if not connect_is_enabled else '❌ FAIL')
+      }
+    ] }}"
+  when: connect_is_enabled
+
+- name: "CHECK 16 | Test TCP connectivity SERVER → GWM"
+  ansible.builtin.wait_for:
+    host: "{{ gwm_host }}"
+    port: "{{ gwm_port }}"
+    timeout: 5
+  register: tcp_check
+  ignore_errors: true
+  when: connect_is_enabled and gwm_host is defined and gwm_host != ''
+
+- name: "CHECK 16 | Record result — TCP connectivity to GWM"
+  ansible.builtin.set_fact:
+    check_results: "{{ check_results + [
+      {
+        'check': 'CHECK 16 — TCP connectivity SERVER → GWM (' + (gwm_host | default('N/A')) + ':' + (gwm_port | default('N/A') | string) + ')',
+        'expected': 'Port reachable within 5 seconds',
+        'actual': 'REACHABLE' if not tcp_check.failed else 'UNREACHABLE — check security groups',
+        'status': '✅ PASS' if not tcp_check.failed else ('⏭ SKIPPED — Connect disabled' if not connect_is_enabled else '❌ FAIL')
+      }
+    ] }}"
+  when: connect_is_enabled
+
+- name: "CHECK 17 | Verify GWM server cert trusted by OS CA pool (Layer 1 one-way TLS)"
+  ansible.builtin.shell: |
+    set -o pipefail
+    openssl s_client \
+      -connect {{ gwm_host }}:{{ gwm_port }} \
+      -verify_ip {{ gwm_host }} \
+      -verify_return_error \
+      -CAfile {{ os_ca_bundle }} \
+      -showcerts </dev/null
+  args:
+    executable: /bin/bash
+  register: gwm_tls_test
+  changed_when: false
+  ignore_errors: true
+  when: connect_is_enabled and gwm_host is defined and gwm_host != ''
+
+- name: "CHECK 17 | Record result — GWM cert trusted by OS CA pool"
+  ansible.builtin.set_fact:
+    check_results: "{{ check_results + [
+      {
+        'check': 'CHECK 17 — GWM server cert trusted by OS CA pool (must be publicly trusted CA)',
+        'expected': 'Verify return code: 0 (ok)',
+        'actual': (gwm_tls_test.stdout | default('') + gwm_tls_test.stderr | default('')) | regex_search('Verify return code.*') | default('No verify return code found'),
+        'status': '✅ PASS' if 'Verify return code: 0' in (gwm_tls_test.stdout | default('') + gwm_tls_test.stderr | default('')) else ('⏭ SKIPPED — Connect disabled' if not connect_is_enabled else '❌ FAIL')
+      }
+    ] }}"
+  when: connect_is_enabled
+
+- name: "CHECK 18 | Test WebSocket connectivity to GWM"
+  ansible.builtin.shell: |
+    curl -s -o /dev/null -w "%{http_code}" \
+      --http1.1 \
+      -H "Upgrade: websocket" \
+      -H "Connection: Upgrade" \
+      -H "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==" \
+      -H "Sec-WebSocket-Version: 13" \
+      https://{{ gwm_host }}:{{ gwm_port }}/ws 2>&1
+  register: gwm_ws_test
+  changed_when: false
+  ignore_errors: true
+  when: connect_is_enabled and gwm_host is defined and gwm_host != ''
+
+- name: "CHECK 18 | Record result — WebSocket connectivity to GWM"
+  ansible.builtin.set_fact:
+    check_results: "{{ check_results + [
+      {
+        'check': 'CHECK 18 — WebSocket connectivity to GWM (wss://' + (gwm_host | default('N/A')) + ':' + (gwm_port | default('N/A') | string) + '/ws)',
+        'expected': 'HTTP 101 Switching Protocols',
+        'actual': 'HTTP ' + (gwm_ws_test.stdout | default('NO RESPONSE')),
+        'status': '✅ PASS' if '101' in (gwm_ws_test.stdout | default('')) else ('⏭ SKIPPED — Connect disabled' if not connect_is_enabled else '⚠️  WARN — got HTTP ' + (gwm_ws_test.stdout | default('NO RESPONSE')) + ' (101 expected)')
+      }
+    ] }}"
+  when: connect_is_enabled
+
+# -----------------------------------------------------------------------
+# Process environment check
+# -----------------------------------------------------------------------
+
+- name: "CHECK 19 | Get PID of running service"
+  ansible.builtin.shell:
+    cmd: systemctl show {{ service_name }} --property=MainPID | cut -d= -f2
+  register: svc_pid
+  changed_when: false
+  ignore_errors: true
+
+- name: "CHECK 19 | Verify GATEWAY_CONNECT vars in running process environment"
+  ansible.builtin.shell:
+    cmd: cat /proc/{{ svc_pid.stdout }}/environ | tr '\0' '\n' | grep -E "GATEWAY_CONNECT|GATEWAY_APPLICATION_CLUSTER" || true
+  register: proc_env
+  changed_when: false
+  ignore_errors: true
+
+- name: "CHECK 19 | Record result — process running and has GATEWAY_CONNECT vars"
+  ansible.builtin.set_fact:
+    check_results: "{{ check_results + [
+      {
+        'check': 'CHECK 19 — Service is running and GATEWAY_CONNECT vars present in process environment',
+        'expected': 'GATEWAY_CONNECT vars visible in /proc/PID/environ',
+        'actual': proc_env.stdout_lines | default(['NOT FOUND']) | join(', ') if proc_env.stdout != '' else 'NOT FOUND — service may be using gateway.conf only (expected)',
+        'status': '✅ PASS' if proc_env.stdout != '' else '⚠️  INFO — vars not in env, confirm gateway.conf is used'
+      }
+    ] }}"
+
+# -----------------------------------------------------------------------
+# SUMMARY
+# -----------------------------------------------------------------------
+- name: "SUMMARY | Print results"
+  ansible.builtin.include_tasks: ../../certcheck_common/tasks/summary.yml
+  vars:
+    role_title: "CONNECT TLS — SERVER → GATEWAY MANAGER (one-way TLS + app-layer auth) — {{ node_section | upper }} NODE"
