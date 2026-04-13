@@ -7,8 +7,8 @@
 
 - name: "INIT | Determine node section and gateway conf"
   ansible.builtin.set_fact:
-    node_section: "{{ 'client' if inventory_hostname in groups[iag5_client_group] else 'server' }}"
-    gateway_conf: "{{ client_gateway_conf if inventory_hostname in groups[iag5_client_group] else server_gateway_conf }}"
+    node_section: "{{ 'client' if inventory_hostname in groups['client'] else 'server' }}"
+    gateway_conf: "{{ client_gateway_conf if inventory_hostname in groups['client'] else server_gateway_conf }}"
 
 - name: "INIT | Init results tracker"
   ansible.builtin.set_fact:
@@ -59,7 +59,7 @@
       }
     ] }}"
 
-- name: "CHECK 3 | Verify CA bundle contains both intermediate and root (count=2)"
+- name: "CHECK 3 | Verify CA bundle cert count"
   ansible.builtin.shell:
     cmd: grep -c "BEGIN CERTIFICATE" {{ ca_cert_path }}
   register: ca_count
@@ -71,10 +71,13 @@
   ansible.builtin.set_fact:
     check_results: "{{ check_results + [
       {
-        'check': 'CHECK 3 — CA bundle contains 2 certs (intermediate + root)',
-        'expected': '2',
-        'actual': ca_count.stdout | default('ERROR'),
-        'status': '✅ PASS' if ca_count.stdout | int == 2 else '❌ FAIL'
+        'check': 'CHECK 3 — CA bundle cert count',
+        'expected': 'At least 1 cert (root only is valid; 2 = root + intermediate)',
+        'actual': ca_count.stdout | default('ERROR') + ' cert(s) found',
+        'status': '✅ PASS' if ca_count.stdout | int >= 2
+                  else ('⚠️  WARN — only root CA present, no intermediate (valid but less secure)'
+                        if ca_count.stdout | int == 1
+                        else '❌ FAIL — no certificates found in CA bundle')
       }
     ] }}"
   when: ca_cert_path is defined and ca_cert_path != ''
@@ -458,10 +461,10 @@
   ansible.builtin.set_fact:
     check_results: "{{ check_results + [
       {
-        'check': 'CHECK 20 — Server private IP ' + hostvars[groups[iag5_server_group][0]]['private_ip'] + ' is in no_proxy',
-        'expected': hostvars[groups[iag5_server_group][0]]['private_ip'] + ' present in no_proxy',
+        'check': 'CHECK 20 — Server private IP ' + hostvars[groups['server'][0]]['private_ip'] + ' is in no_proxy',
+        'expected': hostvars[groups['server'][0]]['private_ip'] + ' present in no_proxy',
         'actual': proxy_env.stdout | default('NOT SET'),
-        'status': '✅ PASS' if hostvars[groups[iag5_server_group][0]]['private_ip'] in (proxy_env.stdout | default('')) else '❌ FAIL — server IP not in no_proxy, gRPC will route through proxy'
+        'status': '✅ PASS' if hostvars[groups['server'][0]]['private_ip'] in (proxy_env.stdout | default('')) else '❌ FAIL — server IP not in no_proxy, gRPC will route through proxy'
       }
     ] }}"
   when: node_section == 'client'
@@ -470,10 +473,10 @@
   ansible.builtin.set_fact:
     check_results: "{{ check_results + [
       {
-        'check': 'CHECK 21 — Server hostname ' + hostvars[groups[iag5_server_group][0]]['ansible_host'] + ' is in no_proxy',
-        'expected': hostvars[groups[iag5_server_group][0]]['ansible_host'] + ' present in no_proxy',
+        'check': 'CHECK 21 — Server hostname ' + hostvars[groups['server'][0]]['ansible_host'] + ' is in no_proxy',
+        'expected': hostvars[groups['server'][0]]['ansible_host'] + ' present in no_proxy',
         'actual': proxy_env.stdout | default('NOT SET'),
-        'status': '✅ PASS' if hostvars[groups[iag5_server_group][0]]['ansible_host'] in (proxy_env.stdout | default('')) else '❌ FAIL — server hostname not in no_proxy, gRPC will route through proxy'
+        'status': '✅ PASS' if hostvars[groups['server'][0]]['ansible_host'] in (proxy_env.stdout | default('')) else '❌ FAIL — server hostname not in no_proxy, gRPC will route through proxy'
       }
     ] }}"
   when: node_section == 'client'
@@ -486,7 +489,7 @@
   ansible.builtin.shell:
     cmd: >
       echo Q | openssl s_client
-      -connect {{ hostvars[groups[iag5_server_group][0]]['private_ip'] }}:{{ server_port }}
+      -connect {{ hostvars[groups['server'][0]]['private_ip'] }}:{{ server_port }}
       -CAfile {{ ca_cert_path }}
       </dev/null 2>&1 | grep -E "alert|handshake failure|error"
   register: sv_mtls_enforce
@@ -545,7 +548,7 @@
 
 - name: "CHECK 24 | Resolve server hostname/IP from client"
   ansible.builtin.command:
-    cmd: "getent ahosts {{ hostvars[groups[iag5_server_group][0]]['private_ip'] }}"
+    cmd: "getent ahosts {{ hostvars[groups['server'][0]]['private_ip'] }}"
   register: sv_resolution
   changed_when: false
   ignore_errors: true
@@ -555,7 +558,7 @@
   ansible.builtin.set_fact:
     check_results: "{{ check_results + [
       {
-        'check': 'CHECK 24 — Server host resolves from client (' + hostvars[groups[iag5_server_group][0]]['private_ip'] + ')',
+        'check': 'CHECK 24 — Server host resolves from client (' + hostvars[groups['server'][0]]['private_ip'] + ')',
         'expected': 'Host resolves successfully',
         'actual': sv_resolution.stdout | default('FAILED TO RESOLVE'),
         'status': '✅ PASS' if sv_resolution.rc == 0 else '❌ FAIL'
@@ -565,7 +568,7 @@
 
 - name: "CHECK 25 | Test TCP connectivity CLIENT → SERVER"
   ansible.builtin.wait_for:
-    host: "{{ hostvars[groups[iag5_server_group][0]]['private_ip'] }}"
+    host: "{{ hostvars[groups['server'][0]]['private_ip'] }}"
     port: "{{ server_port }}"
     timeout: 5
   register: tcp_check
@@ -576,7 +579,7 @@
   ansible.builtin.set_fact:
     check_results: "{{ check_results + [
       {
-        'check': 'CHECK 25 — TCP connectivity CLIENT → SERVER (' + hostvars[groups[iag5_server_group][0]]['private_ip'] + ':' + server_port | string + ')',
+        'check': 'CHECK 25 — TCP connectivity CLIENT → SERVER (' + hostvars[groups['server'][0]]['private_ip'] + ':' + server_port | string + ')',
         'expected': 'Port reachable within 5 seconds',
         'actual': 'REACHABLE' if not tcp_check.failed else 'UNREACHABLE — check security groups',
         'status': '✅ PASS' if not tcp_check.failed else '❌ FAIL'
@@ -588,8 +591,8 @@
   ansible.builtin.shell: |
     set -o pipefail
     openssl s_client \
-      -connect {{ hostvars[groups[iag5_server_group][0]]['private_ip'] }}:{{ server_port }} \
-      -verify_ip {{ hostvars[groups[iag5_server_group][0]]['private_ip'] }} \
+      -connect {{ hostvars[groups['server'][0]]['private_ip'] }}:{{ server_port }} \
+      -verify_ip {{ hostvars[groups['server'][0]]['private_ip'] }} \
       -verify_return_error \
       -cert {{ node_cert_path }} \
       -key {{ node_key_path }} \
@@ -606,7 +609,7 @@
   ansible.builtin.set_fact:
     check_results: "{{ check_results + [
       {
-        'check': 'CHECK 26 — TLS handshake with IP verification CLIENT → SERVER (' + hostvars[groups[iag5_server_group][0]]['private_ip'] + ')',
+        'check': 'CHECK 26 — TLS handshake with IP verification CLIENT → SERVER (' + hostvars[groups['server'][0]]['private_ip'] + ')',
         'expected': 'Verify return code: 0 (ok)',
         'actual': (tls_handshake.stdout | default('') + tls_handshake.stderr | default('')) | regex_search('Verify return code.*') | default('No verify return code found'),
         'status': '✅ PASS' if (eku_valid | default(false) and 'Verify return code: 0' in (tls_handshake.stdout | default('') + tls_handshake.stderr | default('')))
@@ -620,6 +623,6 @@
 # SUMMARY
 # -----------------------------------------------------------------------
 - name: "SUMMARY | Print results"
-  ansible.builtin.include_tasks: ../../certcheck_common/tasks/summary.yml
+  ansible.builtin.include_tasks: ../../common/tasks/summary.yml
   vars:
     role_title: "CLUSTER TLS — CLIENT ↔ SERVER (gRPC mTLS) — {{ node_section | upper }} NODE"

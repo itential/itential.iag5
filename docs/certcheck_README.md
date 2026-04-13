@@ -67,7 +67,7 @@ The roles do not rely on separate play-level inventory groups to determine what 
 # cluster_server_to_runner
 node_section: "{{ 'server' if inventory_hostname in groups['server'] else 'runner' }}"
 
-# cluster_client_to_server  
+# cluster_client_to_server
 node_section: "{{ 'client' if inventory_hostname in groups['client'] else 'server' }}"
 ```
 
@@ -222,7 +222,7 @@ Config file read: `/etc/gateway/gateway.conf` (both server and runner use the sa
 |-------|-------------|------|-----------|
 | CHECK 1 | `ca_certificate_file` set in `[application]` | Both | Yes |
 | CHECK 2 | CA cert file exists on disk | Both | Yes |
-| CHECK 3 | CA bundle contains exactly 2 certs (intermediate + root) | Both | Yes |
+| CHECK 3 | CA bundle contains at least 1 cert; PASS if ≥ 2 (root + intermediate), WARN if exactly 1 (root only — valid but no intermediate), FAIL if 0 | Both | Warn if 1, fail if 0 |
 | CHECK 4 | CA cert has `CA:TRUE` basic constraint | Both | Yes |
 | CHECK 5 | Last cert in CA bundle is self-signed root (subject hash == issuer hash) | Both | Yes |
 | CHECK 6 | `use_tls = true` in `[server]` or `[runner]` section | Both | Yes — gates all subsequent cert checks |
@@ -267,7 +267,7 @@ Config files read:
 |-------|-------------|------|-----------|
 | CHECK 1 | `ca_certificate_file` set in `[application]` | Both | Yes |
 | CHECK 2 | CA cert file exists on disk | Both | Yes |
-| CHECK 3 | CA bundle contains exactly 2 certs (intermediate + root) | Both | Yes |
+| CHECK 3 | CA bundle contains at least 1 cert; PASS if ≥ 2 (root + intermediate), WARN if exactly 1 (root only — valid but no intermediate), FAIL if 0 | Both | Warn if 1, fail if 0 |
 | CHECK 4 | CA cert has `CA:TRUE` basic constraint | Both | Yes |
 | CHECK 5 | Last cert in CA bundle is self-signed root | Both | Yes |
 | CHECK 6 | `use_tls = true` in `[client]` or `[server]` section | Both | Yes — gates all cert checks |

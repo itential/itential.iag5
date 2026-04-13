@@ -17,7 +17,7 @@
 # [connect] section — read enabled first, gate all checks on it
 # -----------------------------------------------------------------------
 
-- name: "CHECK 1 | Read enabled from [{{ node_section }}] section"
+- name: "CHECK 1 | Read enabled — node section {{ node_section }}"
   ansible.builtin.shell:
     cmd: >
       awk '/^\[{{ node_section }}\]/{f=1} f && /^\[/{if(!/^\[{{ node_section }}\]/) f=0} f && /^\s*enabled/' {{ gateway_conf }}
@@ -29,7 +29,7 @@
   ansible.builtin.set_fact:
     connect_is_enabled: "{{ 'true' in (connect_enabled.stdout | default('')) }}"
 
-- name: "CHECK 1 | Record result — [{{ node_section }}] enabled"
+- name: "CHECK 1 | Record result — enabled — node section {{ node_section }}"
   ansible.builtin.set_fact:
     check_results: "{{ check_results + [
       {
@@ -67,7 +67,7 @@
 # [connect] section — hosts, cert, key (gated on connect_is_enabled)
 # -----------------------------------------------------------------------
 
-- name: "CHECK 3 | Read hosts from [{{ node_section }}] section"
+- name: "CHECK 3 | Read hosts — node section {{ node_section }}"
   ansible.builtin.shell:
     cmd: >
       awk '/^\[{{ node_section }}\]/{f=1} f && /^\[/{if(!/^\[{{ node_section }}\]/) f=0} f && /^\s*hosts/' {{ gateway_conf }}
@@ -81,7 +81,7 @@
     gwm_endpoint: "{{ connect_hosts.stdout.split('=')[1] | trim | replace(\"'\", '') | replace('\"', '') }}"
   when: connect_is_enabled and connect_hosts.stdout != ''
 
-- name: "CHECK 3 | Record result — [{{ node_section }}] hosts set"
+- name: "CHECK 3 | Record result — hosts set — node section {{ node_section }}"
   ansible.builtin.set_fact:
     check_results: "{{ check_results + [
       {
@@ -92,7 +92,7 @@
       }
     ] }}"
 
-- name: "CHECK 4 | Read certificate_file from [{{ node_section }}] section"
+- name: "CHECK 4 | Read certificate_file — node section {{ node_section }}"
   ansible.builtin.shell:
     cmd: >
       awk '/^\[{{ node_section }}\]/{f=1} f && /^\[/{if(!/^\[{{ node_section }}\]/) f=0} f && /certificate_file/' {{ gateway_conf }}
@@ -106,7 +106,7 @@
     node_cert_path: "{{ node_cert_conf.stdout.split('=')[1] | trim | replace(\"'\", '') | replace('\"', '') }}"
   when: connect_is_enabled and node_cert_conf.stdout != ''
 
-- name: "CHECK 4 | Record result — [{{ node_section }}] certificate_file set"
+- name: "CHECK 4 | Record result — certificate_file set — node section {{ node_section }}"
   ansible.builtin.set_fact:
     check_results: "{{ check_results + [
       {
@@ -135,7 +135,7 @@
     ] }}"
   when: connect_is_enabled
 
-- name: "CHECK 6 | Read private_key_file from [{{ node_section }}] section"
+- name: "CHECK 6 | Read private_key_file — node section {{ node_section }}"
   ansible.builtin.shell:
     cmd: >
       awk '/^\[{{ node_section }}\]/{f=1} f && /^\[/{if(!/^\[{{ node_section }}\]/) f=0} f && /private_key_file/' {{ gateway_conf }}
@@ -149,7 +149,7 @@
     node_key_path: "{{ node_key_conf.stdout.split('=')[1] | trim | replace(\"'\", '') | replace('\"', '') }}"
   when: connect_is_enabled and node_key_conf.stdout != ''
 
-- name: "CHECK 6 | Record result — [{{ node_section }}] private_key_file set"
+- name: "CHECK 6 | Record result — private_key_file set — node section {{ node_section }}"
   ansible.builtin.set_fact:
     check_results: "{{ check_results + [
       {
