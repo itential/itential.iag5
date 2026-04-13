@@ -6,11 +6,11 @@
 
 - name: "INIT | Determine node section"
   ansible.builtin.set_fact:
-    node_section: "{{ 'server' if inventory_hostname in groups['server'] else 'runner' }}"
+    node_section: "{{ 'server' if inventory_hostname in groups[iag5_server_group] else 'runner' }}"
 
 - name: "INIT | Set gateway_conf path based on node type"
   ansible.builtin.set_fact:
-    gateway_conf: "{{ server_gateway_conf if inventory_hostname in groups['server'] else client_gateway_conf }}"
+    gateway_conf: "{{ server_gateway_conf if inventory_hostname in groups[iag5_server_group] else client_gateway_conf }}"
 
 - name: "INIT | Init results tracker"
   ansible.builtin.set_fact:
@@ -535,7 +535,7 @@
   ansible.builtin.shell: |
     set -o pipefail
     echo Q | openssl s_client \
-      -connect {{ hostvars[groups['runner'][0]]['private_ip'] }}:{{ runner_port }} \
+      -connect {{ hostvars[groups[iag5_runner_group][0]]['private_ip'] }}:{{ runner_port }} \
       -CAfile {{ ca_cert_path }} \
       </dev/null 2>&1 | grep -E "alert|handshake failure|error"
   args:
@@ -627,7 +627,7 @@
         'status': '✅ PASS' if hostvars[item]['private_ip'] in (proxy_env.stdout | default('')) else '❌ FAIL — runner IP not in no_proxy, gRPC will route through proxy'
       }
     ] }}"
-  loop: "{{ groups['runner'] }}"
+  loop: "{{ groups[iag5_runner_group] }}"
   loop_control:
     label: "{{ hostvars[item]['private_ip'] }}"
   when: node_section == 'server'
@@ -642,7 +642,7 @@
         'status': '✅ PASS' if hostvars[item]['ansible_host'] in (proxy_env.stdout | default('')) else '❌ FAIL — runner hostname not in no_proxy, gRPC will route through proxy'
       }
     ] }}"
-  loop: "{{ groups['runner'] }}"
+  loop: "{{ groups[iag5_runner_group] }}"
   loop_control:
     label: "{{ hostvars[item]['ansible_host'] }}"
   when: node_section == 'server'
@@ -657,7 +657,7 @@
   register: runner_resolutions
   changed_when: false
   ignore_errors: true
-  loop: "{{ groups['runner'] }}"
+  loop: "{{ groups[iag5_runner_group] }}"
   loop_control:
     label: "{{ hostvars[item]['private_ip'] }}"
   when: node_section == 'server' and tls_enabled
@@ -684,7 +684,7 @@
     timeout: 5
   register: tcp_checks
   ignore_errors: true
-  loop: "{{ groups['runner'] }}"
+  loop: "{{ groups[iag5_runner_group] }}"
   loop_control:
     label: "{{ hostvars[item]['private_ip'] }}"
   when: node_section == 'server' and tls_enabled
@@ -720,7 +720,7 @@
   register: tls_handshakes
   changed_when: false
   ignore_errors: true
-  loop: "{{ groups['runner'] }}"
+  loop: "{{ groups[iag5_runner_group] }}"
   loop_control:
     label: "{{ hostvars[item]['private_ip'] }}"
   when: node_section == 'server' and tls_enabled and eku_valid | default(false) and node_cert_path is defined and node_cert_path != '' and node_key_path is defined and node_key_path != '' and ca_cert_path is defined and ca_cert_path != ''
@@ -746,6 +746,6 @@
 # SUMMARY
 # -----------------------------------------------------------------------
 - name: "SUMMARY | Print results"
-  ansible.builtin.include_tasks: ../../common/tasks/summary.yml
+  ansible.builtin.include_tasks: ../../certcheck_common/tasks/summary.yml
   vars:
     role_title: "CLUSTER TLS — SERVER ↔ RUNNER (gRPC mTLS) — {{ node_section | upper }} NODE"
