@@ -1,0 +1,30 @@
+# Copyright (c) 2025, Itential, Inc
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+---
+# ROLE: cluster_client_to_server
+# Runs on: CLIENT node and SERVER node (via separate plays in verify_cert.yml)
+# TLS Type: Mutual TLS (mTLS) — gRPC over TCP
+# node_section is set automatically based on which host group the node belongs to
+# Client node uses: ~/.gateway.d/gateway.conf → [client] section
+# Server node uses: /etc/gateway/gateway.conf → [server] section
+
+- name: "INIT | Determine node section and gateway conf"
+  ansible.builtin.set_fact:
+    node_section: "{{ 'client' if inventory_hostname in groups[iag5_client_group] else 'server' }}"
+    gateway_conf: "{{ client_gateway_conf if inventory_hostname in groups[iag5_client_group] else server_gateway_conf }}"
+
+- name: "INIT | Init results tracker"
+  ansible.builtin.set_fact:
+    check_results: []
+
+- name: "Run cert verification checks"
+  ansible.builtin.include_tasks:
+    file: verify_cluster_client_to_server.yml
+
+# -----------------------------------------------------------------------
+# SUMMARY
+# -----------------------------------------------------------------------
+- name: "SUMMARY | Print results"
+  ansible.builtin.include_tasks: ../../verify_cert_common/tasks/summary.yml
+  vars:
+    role_title: "CLUSTER TLS — CLIENT ↔ SERVER (gRPC mTLS) — {{ node_section | upper }} NODE"

@@ -1,0 +1,82 @@
+# Copyright (c) 2025, Itential, Inc
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+---
+# IAG5 TLS Certificate Verification
+#
+# Runs after deployment to verify that all TLS certificates are correctly
+# configured across all IAG5 node types. All variables are defined in each
+# role's defaults/main.yml and derived from the deployer's existing variables.
+#
+# Runs automatically as the final step of site.yml.
+# Can also be run standalone:
+#
+#   ansible-playbook itential.iag5.verify_cert -i <inventory>
+#
+# Or for a specific check suite only:
+#   ansible-playbook itential.iag5.verify_cert -i <inventory> --tags cluster_server_to_runner
+#   ansible-playbook itential.iag5.verify_cert -i <inventory> --tags cluster_client_to_server
+#   ansible-playbook itential.iag5.verify_cert -i <inventory> --tags connect_server_to_gwm
+
+# -----------------------------------------------------------------------
+# CLUSTER TLS — SERVER ↔ RUNNER (gRPC mTLS)
+# -----------------------------------------------------------------------
+- name: "VERIFY_CERT | Cluster TLS — SERVER to RUNNER — SERVER node"
+  hosts: iag5_servers
+  become: true
+  tags: [verify_cert, cluster_server_to_runner]
+  roles:
+    - role: itential.iag5.gateway
+      tags: always
+    - role: itential.iag5.verify_cert_cluster_server_to_runner
+      when: gateway_server_use_tls | bool
+
+- name: "VERIFY_CERT | Cluster TLS — SERVER to RUNNER — RUNNER node"
+  hosts: iag5_runners
+  become: true
+  tags: [verify_cert, cluster_server_to_runner]
+  roles:
+    - role: itential.iag5.gateway
+      tags: always
+    - role: itential.iag5.verify_cert_cluster_server_to_runner
+      when: gateway_server_use_tls | bool
+
+# -----------------------------------------------------------------------
+# CLUSTER TLS — CLIENT ↔ SERVER (gRPC mTLS)
+# -----------------------------------------------------------------------
+- name: "VERIFY_CERT | Cluster TLS — CLIENT to SERVER — CLIENT node"
+  hosts: iag5_clients
+  become: true
+  tags: [verify_cert, cluster_client_to_server]
+  roles:
+    - role: itential.iag5.gateway
+      tags: always
+    - role: itential.iag5.verify_cert_cluster_client_to_server
+      when: gateway_client_use_tls | bool
+
+- name: "VERIFY_CERT | Cluster TLS — CLIENT to SERVER — SERVER node"
+  hosts: iag5_servers
+  become: true
+  tags: [verify_cert, cluster_client_to_server]
+  roles:
+    - role: itential.iag5.gateway
+      tags: always
+    - role: itential.iag5.verify_cert_cluster_client_to_server
+      when: gateway_client_use_tls | bool
+
+# -----------------------------------------------------------------------
+# CONNECT TLS — SERVER → Gateway Manager (WebSocket)
+# Only runs when gateway_manager group is defined in inventory.
+# -----------------------------------------------------------------------
+- name: "VERIFY_CERT | Connect TLS — SERVER to Gateway Manager"
+  hosts: iag5_servers
+  become: true
+  tags: [verify_cert, connect_server_to_gwm]
+  pre_tasks:
+    - name: "VERIFY_CERT | Skip connect checks if gateway_manager group not in inventory"
+      ansible.builtin.meta: end_host
+      when: "'gateway_manager' not in groups or groups['gateway_manager'] | length == 0"
+  roles:
+    - role: itential.iag5.gateway
+      tags: always
+    - role: itential.iag5.verify_cert_connect_server_to_gwm
+      when: gateway_server_use_tls | bool

@@ -1,0 +1,28 @@
+# Copyright (c) 2025, Itential, Inc
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+---
+# ROLE: connect_server_to_gwm
+# Runs on: SERVER node only (via verify_cert.yml)
+# TLS Type: One-way TLS (NOT mTLS) — WebSocket (wss://)
+# node_section = 'connect' — reads from [connect] section of gateway.conf
+
+- name: "INIT | Set node section and gateway conf"
+  ansible.builtin.set_fact:
+    node_section: "connect"
+    gateway_conf: "{{ server_gateway_conf }}"
+
+- name: "INIT | Init results tracker"
+  ansible.builtin.set_fact:
+    check_results: []
+
+- name: "Run cert verification checks"
+  ansible.builtin.include_tasks:
+    file: verify_connect_server_to_gwm.yml
+
+# -----------------------------------------------------------------------
+# SUMMARY
+# -----------------------------------------------------------------------
+- name: "SUMMARY | Print results"
+  ansible.builtin.include_tasks: ../../verify_cert_common/tasks/summary.yml
+  vars:
+    role_title: "CONNECT TLS — SERVER → GATEWAY MANAGER (one-way TLS + app-layer auth) — {{ node_section | upper }} NODE"
