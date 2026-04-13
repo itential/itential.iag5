@@ -133,7 +133,7 @@
 # [server] or [runner] section — read use_tls first, gate cert checks on it
 # -----------------------------------------------------------------------
 
-- name: "CHECK 6 | Read use_tls from [{{ node_section }}] section"
+- name: "CHECK 6 | Read use_tls — node section {{ node_section }}"
   ansible.builtin.shell:
     cmd: >
       awk '/^\[{{ node_section }}\]/{f=1} f && /^\[/{if(!/^\[{{ node_section }}\]/) f=0} f && /use_tls/' {{ gateway_conf }}
@@ -145,7 +145,7 @@
   ansible.builtin.set_fact:
     tls_enabled: "{{ 'true' in (node_usetls.stdout | default('')) }}"
 
-- name: "CHECK 6 | Record result — [{{ node_section }}] use_tls"
+- name: "CHECK 6 | Record result — use_tls — node section {{ node_section }}"
   ansible.builtin.set_fact:
     check_results: "{{ check_results + [
       {
@@ -233,7 +233,7 @@
 # CHECK 9-16 — cert checks, same logic for both nodes
 # -----------------------------------------------------------------------
 
-- name: "CHECK 9 | Read certificate_file from [{{ node_section }}] section"
+- name: "CHECK 9 | Read certificate_file — node section {{ node_section }}"
   ansible.builtin.shell:
     cmd: >
       awk '/^\[{{ node_section }}\]/{f=1} f && /^\[/{if(!/^\[{{ node_section }}\]/) f=0} f && /certificate_file/' {{ gateway_conf }}
@@ -247,7 +247,7 @@
     node_cert_path: "{{ node_cert_conf.stdout.split('=')[1] | trim | replace(\"'\", '') | replace('\"', '') }}"
   when: tls_enabled
 
-- name: "CHECK 9 | Record result — [{{ node_section }}] certificate_file set"
+- name: "CHECK 9 | Record result — certificate_file set — node section {{ node_section }}"
   ansible.builtin.set_fact:
     check_results: "{{ check_results + [
       {
@@ -296,7 +296,7 @@
     ] }}"
   when: node_section == 'runner' and tls_enabled
 
-- name: "CHECK 11 | Read private_key_file from [{{ node_section }}] section"
+- name: "CHECK 11 | Read private_key_file — node section {{ node_section }}"
   ansible.builtin.shell:
     cmd: >
       awk '/^\[{{ node_section }}\]/{f=1} f && /^\[/{if(!/^\[{{ node_section }}\]/) f=0} f && /private_key_file/' {{ gateway_conf }}
@@ -310,7 +310,7 @@
     node_key_path: "{{ node_key_conf.stdout.split('=')[1] | trim | replace(\"'\", '') | replace('\"', '') }}"
   when: tls_enabled
 
-- name: "CHECK 11 | Record result — [{{ node_section }}] private_key_file set"
+- name: "CHECK 11 | Record result — private_key_file set — node section {{ node_section }}"
   ansible.builtin.set_fact:
     check_results: "{{ check_results + [
       {
