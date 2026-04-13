@@ -10,5 +10,6 @@ warn_list:
   - yaml[line-length]
   - var-naming[no-role-prefix]
   - jinja[spacing]
+  - command-instead-of-module[systemctl]
   - meta-runtime[unsupported-version]
   - run-once[task]

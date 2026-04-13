@@ -61,7 +61,7 @@
     ] }}"
 
 - name: "CHECK 3 | Verify CA bundle cert count"
-  ansible.builtin.shell:
+  ansible.builtin.command:
     cmd: grep -c "BEGIN CERTIFICATE" {{ ca_cert_path }}
   register: ca_count
   changed_when: false
@@ -409,7 +409,7 @@
     ] }}"
 
 - name: "CHECK 16 | Verify cert is not a self-signed leaf (subject != issuer)"
-  ansible.builtin.shell:
+  ansible.builtin.command:
     cmd: openssl x509 -in {{ node_cert_path }} -noout -subject -issuer
   register: node_self_signed
   changed_when: false
@@ -478,7 +478,7 @@
   when: tls_enabled and node_section == 'server'"
 
 - name: "CHECK 18 | Verify cert signed by CA"
-  ansible.builtin.shell:
+  ansible.builtin.command:
     cmd: openssl verify -CAfile {{ ca_cert_path }} {{ node_cert_path }}
   register: node_verify
   changed_when: false

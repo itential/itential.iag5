@@ -312,7 +312,7 @@
     ] }}"
 
 - name: "CHECK 14 | Verify cert is not a self-signed leaf (subject != issuer)"
-  ansible.builtin.shell:
+  ansible.builtin.command:
     cmd: openssl x509 -in {{ node_cert_path }} -noout -subject -issuer
   register: node_self_signed
   changed_when: false
@@ -334,7 +334,7 @@
     ] }}"
 
 - name: "CHECK 15 | Verify cert signed by CA"
-  ansible.builtin.shell:
+  ansible.builtin.command:
     cmd: openssl verify -CAfile {{ ca_cert_path }} {{ node_cert_path }}
   register: node_verify
   changed_when: false
