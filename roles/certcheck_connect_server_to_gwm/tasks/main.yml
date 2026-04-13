@@ -247,7 +247,7 @@
   when: connect_is_enabled
 
 - name: "CHECK 11 | Identify cert type (self-signed leaf vs CA-signed — both valid for connect)"
-  ansible.builtin.shell:
+  ansible.builtin.command:
     cmd: openssl x509 -in {{ node_cert_path }} -noout -subject -issuer
   register: node_self_signed
   changed_when: false
