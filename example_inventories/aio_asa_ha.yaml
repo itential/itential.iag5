@@ -16,21 +16,22 @@ all:
   children:
     iag5_servers:
       hosts:
-        example-active-server:
-          ansible_host: <ACTIVE-SERVER-IP>
-        example-standby-server:
-          ansible_host: <STANDBY-SERVER-IP>
+        gateway-server01.example.com:  # active gateway server
+          ansible_host: <GATEWAY-SERVER01-IP>
+        gateway-server02.example.com:  # standby gateway server
+          ansible_host: <GATEWAY-SERVER02-IP>
       vars:
+        gateway_server_connect_hosts: <GATEWAY-MANAGER-IP>:8080
         gateway_server_packages:
           - <IAGCTL-RPM>
         gateway_server_store_backend: etcd
-        gateway_server_store_etcd_hosts: <ETCD-SERVER1-IP>:2379 <ETCD-SERVER2-IP>:2379 <ETCD-SERVER3-IP>:2379
+        gateway_server_store_etcd_hosts: <ETCD-SERVER01-IP>:2379 <ETCD-SERVER02-IP>:2379 <ETCD-SERVER03-IP>:2379
 
     iag5_clients:
       hosts:
-        example-client:
-          ansible_host: <CLIENT-IP>
-          gateway_client_host: <ACTIVE-SERVER-IP>
+        gateway-client01.example.com:
+          ansible_host: <GATEWAY-CLIENT01-IP>
+          gateway_client_host: <GATEWAY-SERVER01-IP>
       vars:
         gateway_client_packages:
           - <IAGCTL-TARBALL>

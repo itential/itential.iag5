@@ -1,4 +1,4 @@
-# Note:
+# Notes:
 #  - All example inventory_hostname entries must be replaced with the actual server hostnames.
 #  - All hostnames must be resolvable.
 #  - Backend 'dynamodb' is also supported; see Reference Guide for details.
@@ -16,90 +16,90 @@ all:
   children:
     iag5_servers:
       hosts:
-        example-cluster1_server:
-          ansible_host: <CLUSTER1-SERVER-IP>
-        example-cluster2_server:
-          ansible_host: <CLUSTER2-SERVER-IP>
+        cluster1-server01.example.com:
+          ansible_host: <CLUSTER1-SERVER01-IP>
+        cluster2-server01.example.com:
+          ansible_host: <CLUSTER2-SERVER01-IP>
       vars:
         gateway_server_connect_hosts: <GATEWAY-MANAGER-IP>:8080
         gateway_server_distributed_execution: true
 
     iag5_runners:
       hosts:
-        example-cluster1_runner1:
-          ansible_host: <CLUSTER1-RUNNER1-IP>
-        example-cluster1_runner2:
-          ansible_host: <CLUSTER1-RUNNER2-IP>
-        example-cluster1_runner3:
-          ansible_host: <CLUSTER1-RUNNER3-IP>
-        example-cluster2_runner1:
-          ansible_host: <CLUSTER2-RUNNER1-IP>
-        example-cluster2_runner2:
-          ansible_host: <CLUSTER2-RUNNER2-IP>
-        example-cluster2_runner3:
-          ansible_host: <CLUSTER2-RUNNER3-IP>
+        cluster1-runner01.example.com:
+          ansible_host: <CLUSTER1-RUNNER01-IP>
+        cluster1-runner02.example.com:
+          ansible_host: <CLUSTER1-RUNNER02-IP>
+        cluster1-runner03.example.com:
+          ansible_host: <CLUSTER1-RUNNER03-IP>
+        cluster2-runner01.example.com:
+          ansible_host: <CLUSTER2-RUNNER01-IP>
+        cluster2-runner02.example.com:
+          ansible_host: <CLUSTER2-RUNNER02-IP>
+        cluster2-runner03.example.com:
+          ansible_host: <CLUSTER2-RUNNER03-IP>
 
     iag5_servers_runners:
       hosts:
-        example-cluster1_server:
-        example-cluster1_runner1:
-        example-cluster1_runner2:
-        example-cluster1_runner3:
-        example-cluster2_server:
-        example-cluster2_runner1:
-        example-cluster2_runner2:
-        example-cluster2_runner3:
+        cluster1-server01.example.com:
+        cluster1-runner01.example.com:
+        cluster1-runner02.example.com:
+        cluster1-runner03.example.com:
+        cluster2-server01.example.com:
+        cluster2-runner01.example.com:
+        cluster2-runner02.example.com:
+        cluster2-runner03.example.com:
       vars:
         gateway_server_packages:
           - <IAGCTL-RPM>
         gateway_server_store_backend: etcd
 
-    cluster1_iag5_all:
+    iag5_cluster1_all:
       hosts:
-        example-cluster1_client:
-        example-cluster1_server:
-        example-cluster1_runner1:
-        example-cluster1_runner2:
-        example-cluster1_runner3:
+        cluster1-client01.example.com:
+        cluster1-server01.example.com:
+        cluster1-runner01.example.com:
+        cluster1-runner02.example.com:
+        cluster1-runner03.example.com:
       vars:
         gateway_cluster_id: cluster_1
 
-    cluster1_iag5_servers_runners:
+    iag5_cluster1_servers_runners:
       hosts:
-        example-cluster1_server:
-        example-cluster1_runner1:
-        example-cluster1_runner2:
-        example-cluster1_runner3:
+        cluster1-server01.example.com:
+        cluster1-runner01.example.com:
+        cluster1-runner02.example.com:
+        cluster1-runner03.example.com:
       vars:
         gateway_server_store_etcd_hosts: <CLUSTER1-ETCD-SERVER1-IP>:2379 <CLUSTER1-ETCD-SERVER2-IP>:2379 <CLUSTER1-ETCD-SERVER3-IP>:2379
 
-    cluster2_iag5_all:
+    iag5_cluster2_all:
       hosts:
-        example-cluster2_client:
-        example-cluster2_server:
-        example-cluster2_runner1:
-        example-cluster2_runner2:
-        example-cluster2_runner3:
+        cluster2-client01.example.com:
+        cluster2-server01.example.com:
+        cluster2-runner01.example.com:
+        cluster2-runner02.example.com:
+        cluster2-runner03.example.com:
       vars:
         gateway_cluster_id: cluster_2
 
-    cluster2_iag5_servers_runners:
+    iag5_cluster2_servers_runners:
       hosts:
-        example-cluster2_server:
-        example-cluster2_runner1:
-        example-cluster2_runner2:
-        example-cluster2_runner3:
+        cluster2-server01.example.com:
+        cluster2-runner01.example.com:
+        cluster2-runner02.example.com:
+        cluster2-runner03.example.com:
       vars:
-        gateway_server_store_etcd_hosts: <CLUSTER2-ETCD-SERVER1-IP>:2379 <CLUSTER2-ETCD-SERVER2-IP>:2379 <CLUSTER2-TCD-SERVER3-IP>:2379
+        gateway_server_store_etcd_hosts: <CLUSTER2-ETCD-SERVER1-IP>:2379 <CLUSTER2-ETCD-SERVER2-IP>:2379 <CLUSTER2-ETCD-SERVER3-IP>:2379
 
     iag5_clients:
       hosts:
-        example-cluster1_client:
-          ansible_host: <CLUSTER1-CLIENT-IP>
-          gateway_client_host: <CLUSTER1-SERVER-IP>
-        example-cluster2_client:
-          ansible_host: <CLUSTER2-CLIENT-IP>
-          gateway_client_host: <CLUSTER2-SERVER-IP>
+        cluster1-client01.example.com:
+          ansible_host: <CLUSTER1-CLIENT01-IP>
+          gateway_client_host: <CLUSTER1-SERVER01-IP>
+        cluster2-client01.example.com:
+          ansible_host: <CLUSTER2-CLIENT01-IP>
+          gateway_client_host: <CLUSTER2-SERVER01-IP>
       vars:
         gateway_client_packages:
           - <IAGCTL-TARBALL>

@@ -1,4 +1,4 @@
-# Note:
+# Notes:
 #  - All example inventory_hostname entries must be replaced with the actual server hostnames.
 #  - All hostnames must be resolvable.
 #  - Backend 'dynamodb' is also supported; see Reference Guide for details.
@@ -16,38 +16,38 @@ all:
   children:
     iag5_servers:
       hosts:
-        example-server:
-          ansible_host: <SERVER-IP>
-
-    iag5_runners:
-      hosts:
-        example-runner1:
-          ansible_host: <RUNNER1-IP>
-        example-runner2:
-          ansible_host: <RUNNER2-IP>
-        example-runner3:
-          ansible_host: <RUNNER3-IP>
+        gateway-server01.example.com:
+          ansible_host: <GATEWAY-SERVER01-IP>
       vars:
         gateway_server_connect_hosts: <GATEWAY-MANAGER-IP>:8080
         gateway_server_distributed_execution: true
 
-    servers_runners:
+    iag5_runners:
       hosts:
-        example-server:
-        example-runner1:
-        example-runner2:
-        example-runner3:
+        gateway-runner01.example.com:
+          ansible_host: <GATEWAY-RUNNER01-IP>
+        gateway-runner02.example.com:
+          ansible_host: <GATEWAY-RUNNER02-IP>
+        gateway-runner03.example.com:
+          ansible_host: <GATEWAY-RUNNER03-IP>
+
+    iag5_servers_runners:
+      hosts:
+        gateway-server01.example.com:
+        gateway-runner01.example.com:
+        gateway-runner02.example.com:
+        gateway-runner03.example.com:
       vars:
         gateway_server_packages:
           - <IAGCTL-RPM>
         gateway_server_store_backend: etcd
-        gateway_server_store_etcd_hosts: <ETCD-SERVER1-IP>:2379 <ETCD-SERVER2-IP>:2379 <ETCD-SERVER3-IP>:2379
+        gateway_server_store_etcd_hosts: <ETCD-SERVER01-IP>:2379 <ETCD-SERVER02-IP>:2379 <ETCD-SERVER03-IP>:2379
 
     iag5_clients:
       hosts:
-        example-client:
-          ansible_host: <CLIENT-IP>
-          gateway_client_host: <SERVER-IP>
+        gateway-client01.example.com:
+          ansible_host: <GATEWAY-CLIENT01-IP>
+          gateway_client_host: <GATEWAY-SERVER01-IP>
       vars:
         gateway_client_packages:
           - <IAGCTL-TARBALL>
