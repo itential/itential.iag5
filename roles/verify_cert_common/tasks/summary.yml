@@ -32,3 +32,23 @@
 - name: "SUMMARY | Print footer"
   ansible.builtin.debug:
     msg: "============================================================"
+
+- name: "SUMMARY | Generate report on remote host"
+  ansible.builtin.template:
+    src: "{{ verify_cert_report_template }}"
+    dest: "{{ verify_cert_report_file }}"
+    mode: '0644'
+
+- name: "SUMMARY | Fetch report to control node"
+  ansible.builtin.fetch:
+    src: "{{ verify_cert_report_file }}"
+    dest: "{{ verify_cert_report_dir_local }}/"
+    flat: true
+    fail_on_missing: false
+
+- name: "SUMMARY | Display completion message"
+  ansible.builtin.debug:
+    msg:
+      - "verify_cert complete for {{ inventory_hostname }}"
+      - "Overall Status: {{ 'PASSED ✓' if (check_results | selectattr('status', 'search', '❌') | list | length == 0) else 'FAILED ✗' }}"
+      - "Report saved to: {{ verify_cert_report_file }} (remote) and {{ verify_cert_report_dir_local }}/ (control node)"

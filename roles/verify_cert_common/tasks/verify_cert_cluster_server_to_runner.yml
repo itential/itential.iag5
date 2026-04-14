@@ -204,9 +204,9 @@
     check_results: "{{ check_results + [
       {
         'check': 'CHECK 8a — [runner] inventory private_ip present on actual interface',
-        'expected': 'IP ' + hostvars[inventory_hostname]['private_ip'] + ' found on interface',
+        'expected': 'IP ' + private_ip + ' found on interface',
         'actual': runner_interface_ips.stdout_lines | default([]) | join(', '),
-        'status': '✅ PASS' if hostvars[inventory_hostname]['private_ip'] in (runner_interface_ips.stdout_lines | default([])) else '❌ FAIL — private_ip not found on any interface'
+        'status': '✅ PASS' if private_ip in (runner_interface_ips.stdout_lines | default([])) else '❌ FAIL — private_ip not found on any interface'
       }
     ] }}"
   when: node_section == 'runner'
@@ -271,9 +271,9 @@
     check_results: "{{ check_results + [
       {
         'check': 'CHECK 10b — [runner] inventory private_ip present in cert SANs',
-        'expected': 'IP:' + hostvars[inventory_hostname]['private_ip'] + ' in Subject Alternative Name',
+        'expected': 'IP:' + private_ip + ' in Subject Alternative Name',
         'actual': runner_cert_sans.stdout | default('NO SANs FOUND'),
-        'status': '✅ PASS' if ('IP:' + hostvars[inventory_hostname]['private_ip']) in (runner_cert_sans.stdout | default(''))
+        'status': '✅ PASS' if ('IP:' + private_ip) in (runner_cert_sans.stdout | default(''))
                   else '❌ FAIL — runner private_ip missing from cert SANs, TLS will reject connection'
       }
     ] }}"
@@ -437,9 +437,9 @@
     check_results: "{{ check_results + [
       {
         'check': 'CHECK 17b — [server] cert SAN contains server private_ip',
-        'expected': 'IP:' + hostvars[inventory_hostname]['private_ip'] + ' in Subject Alternative Name',
+        'expected': 'IP:' + private_ip + ' in Subject Alternative Name',
         'actual': node_sans.stdout | default('NO SANs FOUND'),
-        'status': '✅ PASS' if (tls_enabled and ('IP:' + hostvars[inventory_hostname]['private_ip']) in (node_sans.stdout | default('')))
+        'status': '✅ PASS' if (tls_enabled and ('IP:' + private_ip) in (node_sans.stdout | default('')))
                   else ('⏭ SKIPPED — TLS disabled' if not tls_enabled
                   else '❌ FAIL — server private_ip missing from cert SANs')
       }
@@ -458,7 +458,7 @@
                   else '⚠️  WARN — ansible_host not in cert SANs (only an issue if connecting by hostname)')
       }
     ] }}"
-  when: tls_enabled and node_section == 'server'"
+  when: tls_enabled and node_section == 'server'
 
 - name: "CHECK 18 | Verify cert signed by CA"
   ansible.builtin.command:
@@ -511,14 +511,13 @@
 
 # -----------------------------------------------------------------------
 # Server enforces mTLS — server node only
-# (CHECK 20b — separate from EKU check above)
 # -----------------------------------------------------------------------
 
 - name: "CHECK 20 | Verify runner enforces mTLS (reject connection without client cert)"
   ansible.builtin.shell: |
     set -o pipefail
     echo Q | openssl s_client \
-      -connect {{ hostvars[groups[iag5_runner_group][0]]['private_ip'] }}:{{ runner_port }} \
+      -connect {{ hostvars[groups[iag5_runner_group][0]]['ansible_default_ipv4']['address'] | default(hostvars[groups[iag5_runner_group][0]]['ansible_host']) }}:{{ runner_port }} \
       -CAfile {{ ca_cert_path }} \
       </dev/null 2>&1 | grep -E "alert|handshake failure|error"
   args:
@@ -575,9 +574,6 @@
 
 # -----------------------------------------------------------------------
 # Proxy checks — SERVER only
-# Verify runner hostnames and IPs are in no_proxy
-# Go reads proxy env vars for all outbound connections including gRPC
-# openssl s_client bypasses proxy so this must be checked separately
 # -----------------------------------------------------------------------
 
 - name: "CHECK 22 | Read no_proxy and NO_PROXY from systemd service"
@@ -604,15 +600,15 @@
   ansible.builtin.set_fact:
     check_results: "{{ check_results + [
       {
-        'check': 'CHECK 23 — Runner private IP ' + hostvars[item]['private_ip'] + ' is in no_proxy',
-        'expected': hostvars[item]['private_ip'] + ' present in no_proxy',
+        'check': 'CHECK 23 — Runner private IP ' + hostvars[item]['ansible_default_ipv4']['address'] | default(hostvars[item]['ansible_host']) + ' is in no_proxy',
+        'expected': hostvars[item]['ansible_default_ipv4']['address'] | default(hostvars[item]['ansible_host']) + ' present in no_proxy',
         'actual': proxy_env.stdout | default('NOT SET'),
-        'status': '✅ PASS' if hostvars[item]['private_ip'] in (proxy_env.stdout | default('')) else '❌ FAIL — runner IP not in no_proxy, gRPC will route through proxy'
+        'status': '✅ PASS' if hostvars[item]['ansible_default_ipv4']['address'] | default(hostvars[item]['ansible_host']) in (proxy_env.stdout | default('')) else '❌ FAIL — runner IP not in no_proxy, gRPC will route through proxy'
       }
     ] }}"
   loop: "{{ groups[iag5_runner_group] }}"
   loop_control:
-    label: "{{ hostvars[item]['private_ip'] }}"
+    label: "{{ hostvars[item]['ansible_default_ipv4']['address'] | default(hostvars[item]['ansible_host']) }}"
   when: node_section == 'server'
 
 - name: "CHECK 24 | Verify each runner hostname is in no_proxy"
@@ -636,20 +632,20 @@
 
 - name: "CHECK 25 | Resolve all runner IPs from server"
   ansible.builtin.command:
-    cmd: "getent ahosts {{ hostvars[item]['private_ip'] }}"
+    cmd: "getent ahosts {{ hostvars[item]['ansible_default_ipv4']['address'] | default(hostvars[item]['ansible_host']) }}"
   register: runner_resolutions
   changed_when: false
   ignore_errors: true
   loop: "{{ groups[iag5_runner_group] }}"
   loop_control:
-    label: "{{ hostvars[item]['private_ip'] }}"
+    label: "{{ hostvars[item]['ansible_default_ipv4']['address'] | default(hostvars[item]['ansible_host']) }}"
   when: node_section == 'server' and tls_enabled
 
 - name: "CHECK 25 | Record result — runner host resolution"
   ansible.builtin.set_fact:
     check_results: "{{ check_results + [
       {
-        'check': 'CHECK 25 — Runner host resolves from server (' + hostvars[item.item]['private_ip'] + ')',
+        'check': 'CHECK 25 — Runner host resolves from server (' + hostvars[item.item]['ansible_default_ipv4']['address'] | default(hostvars[item.item]['ansible_host']) + ')',
         'expected': 'Host resolves successfully',
         'actual': item.stdout | default('FAILED TO RESOLVE'),
         'status': '✅ PASS' if item.rc == 0 else '❌ FAIL'
@@ -657,26 +653,26 @@
     ] }}"
   loop: "{{ runner_resolutions.results }}"
   loop_control:
-    label: "{{ hostvars[item.item]['private_ip'] }}"
+    label: "{{ hostvars[item.item]['ansible_default_ipv4']['address'] | default(hostvars[item.item]['ansible_host']) }}"
   when: node_section == 'server' and tls_enabled
 
 - name: "CHECK 26 | Test TCP connectivity SERVER → all runners"
   ansible.builtin.wait_for:
-    host: "{{ hostvars[item]['private_ip'] }}"
+    host: "{{ hostvars[item]['ansible_default_ipv4']['address'] | default(hostvars[item]['ansible_host']) }}"
     port: "{{ runner_port }}"
     timeout: 5
   register: tcp_checks
   ignore_errors: true
   loop: "{{ groups[iag5_runner_group] }}"
   loop_control:
-    label: "{{ hostvars[item]['private_ip'] }}"
+    label: "{{ hostvars[item]['ansible_default_ipv4']['address'] | default(hostvars[item]['ansible_host']) }}"
   when: node_section == 'server' and tls_enabled
 
 - name: "CHECK 26 | Record result — TCP connectivity to all runners"
   ansible.builtin.set_fact:
     check_results: "{{ check_results + [
       {
-        'check': 'CHECK 26 — TCP connectivity SERVER → RUNNER (' + hostvars[item.item]['private_ip'] + ':' + runner_port | string + ')',
+        'check': 'CHECK 26 — TCP connectivity SERVER → RUNNER (' + hostvars[item.item]['ansible_default_ipv4']['address'] | default(hostvars[item.item]['ansible_host']) + ':' + runner_port | string + ')',
         'expected': 'Port reachable within 5 seconds',
         'actual': 'REACHABLE' if not item.failed else 'UNREACHABLE — check security groups',
         'status': '✅ PASS' if not item.failed else '❌ FAIL'
@@ -684,15 +680,15 @@
     ] }}"
   loop: "{{ tcp_checks.results }}"
   loop_control:
-    label: "{{ hostvars[item.item]['private_ip'] }}"
+    label: "{{ hostvars[item.item]['ansible_default_ipv4']['address'] | default(hostvars[item.item]['ansible_host']) }}"
   when: node_section == 'server' and tls_enabled
 
 - name: "CHECK 27 | Run TLS handshake with IP verification SERVER → all runners"
   ansible.builtin.shell: |
     set -o pipefail
     openssl s_client \
-      -connect {{ hostvars[item]['private_ip'] }}:{{ runner_port }} \
-      -verify_ip {{ hostvars[item]['private_ip'] }} \
+      -connect {{ hostvars[item]['ansible_default_ipv4']['address'] | default(hostvars[item]['ansible_host']) }}:{{ runner_port }} \
+      -verify_ip {{ hostvars[item]['ansible_default_ipv4']['address'] | default(hostvars[item]['ansible_host']) }} \
       -verify_return_error \
       -cert {{ node_cert_path }} \
       -key {{ node_key_path }} \
@@ -705,14 +701,14 @@
   ignore_errors: true
   loop: "{{ groups[iag5_runner_group] }}"
   loop_control:
-    label: "{{ hostvars[item]['private_ip'] }}"
+    label: "{{ hostvars[item]['ansible_default_ipv4']['address'] | default(hostvars[item]['ansible_host']) }}"
   when: node_section == 'server' and tls_enabled and eku_valid | default(false) and node_cert_path is defined and node_cert_path != '' and node_key_path is defined and node_key_path != '' and ca_cert_path is defined and ca_cert_path != ''
 
 - name: "CHECK 27 | Record result — TLS handshake with IP verification"
   ansible.builtin.set_fact:
     check_results: "{{ check_results + [
       {
-        'check': 'CHECK 27 — TLS handshake with IP verification SERVER → RUNNER (' + hostvars[item.item]['private_ip'] + ')',
+        'check': 'CHECK 27 — TLS handshake with IP verification SERVER → RUNNER (' + hostvars[item.item]['ansible_default_ipv4']['address'] | default(hostvars[item.item]['ansible_host']) + ')',
         'expected': 'Verify return code: 0 (ok)',
         'actual': (item.stdout | default('') + item.stderr | default('')) | regex_search('Verify return code.*') | default('No verify return code found'),
         'status': '✅ PASS' if (eku_valid | default(false) and 'Verify return code: 0' in (item.stdout | default('') + item.stderr | default('')))
@@ -722,6 +718,5 @@
     ] }}"
   loop: "{{ tls_handshakes.results }}"
   loop_control:
-    label: "{{ hostvars[item.item]['private_ip'] }}"
+    label: "{{ hostvars[item.item]['ansible_default_ipv4']['address'] | default(hostvars[item.item]['ansible_host']) }}"
   when: node_section == 'server' and tls_enabled
-
