@@ -121,13 +121,14 @@ On the target servers, the IAG5 collection will install RPM packages using the s
 repositories. When packages are not available for the distribution, the IAG collection will either
 install the required repository or download the packages.
 
-| Component | Location | Notes |
+| Server | Location | Notes |
 | :-------- | :------- | :---- |
 | Ansible Control Node | <https://pypi.org> | |
 | Ansible Control Node | <https://galaxy.ansible.com> | |
 | IAG5 | <https://registry.aws.itential.com> | |
 | IAG5 | <https://galaxy.ansible.com> | When Ansible is enabled |
 | IAG5 | <https://python.org> | When Python is enabled |
+| IAG5 | <https://pythonhosted.org> | When Python is enabled |
 | IAG5 | <https://pypi.org> | When Python is enabled |
 | IAG5 | <https://packages.opentofu.org> | When OpenTofu is enabled |
 | IAG5 | <https://get.opentofu.org> | When OpenTofu is enabled |
@@ -135,7 +136,7 @@ install the required repository or download the packages.
 > [! WARNING]
 > Neither the IAG5 collection nor the maintainers of the project can not know if any of the above
 > URLs will result in a redirect. If a customer is using a proxy or other such method to restrict
-> access this list may not represent the final URLs that are used.
+> access this list may not represent the final URLs or IP addresses that are required.
 
 ### Ports and Networking
 
