@@ -15,6 +15,8 @@
     verify_cert_report_file: "/tmp/verify_cert_{{ inventory_hostname }}.md"
     verify_cert_report_dir_local: "./verify_cert_reports"
     verify_cert_report_template: "{{ role_path }}/../verify_cert_common/templates/verify-cert-report.md.j2"
+    report_file_owner: "{{ gateway_client_user }}"
+    report_file_group: "{{ gateway_client_group }}"
     check_results: []
 
 # -----------------------------------------------------------------------

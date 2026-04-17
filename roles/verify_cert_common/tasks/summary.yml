@@ -37,7 +37,10 @@
   ansible.builtin.template:
     src: "{{ verify_cert_report_template }}"
     dest: "{{ verify_cert_report_file }}"
+    owner: "{{ report_file_owner }}"
+    group: "{{ report_file_group }}"
     mode: '0644'
+    backup: true
 
 - name: "SUMMARY | Fetch report to control node"
   ansible.builtin.fetch:
