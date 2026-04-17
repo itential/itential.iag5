@@ -347,62 +347,59 @@
 # Proxy checks — verify server IP and hostname are in no_proxy
 # -----------------------------------------------------------------------
 
-- name: "CHECK 19 | Read no_proxy and NO_PROXY from systemd service"  # noqa: command-instead-of-module
-  ansible.builtin.shell:
-    cmd: systemctl show {{ service_name }} | grep Environ | grep -oE "(no_proxy|NO_PROXY)=[^ ]*"
-  register: proxy_env
-  changed_when: false
-  ignore_errors: true
-  when: node_section == 'client'
+- block:
+    - name: "CHECK 19 | Read no_proxy and NO_PROXY from systemd service"  # noqa: command-instead-of-module
+      ansible.builtin.shell:
+        cmd: systemctl show {{ service_name }} | grep Environ | grep -oE "(no_proxy|NO_PROXY)=[^ ]*"
+      register: proxy_env
+      changed_when: false
+      ignore_errors: true
 
-- name: "CHECK 19 | Record result — no_proxy is set"
-  ansible.builtin.set_fact:
-    check_results: "{{ check_results + [{'check': 'CHECK 19 — no_proxy/NO_PROXY is set in systemd service',
-        'expected': 'no_proxy and NO_PROXY env vars present',
-        'actual': proxy_env.stdout | default('NOT SET'),
-        'status': '✅ PASS' if proxy_env.stdout != '' else '⚠️  WARN — no proxy exclusions set, all traffic may go through proxy'}] }}"
-  when: node_section == 'client'
+    - name: "CHECK 19 | Record result — no_proxy is set"
+      ansible.builtin.set_fact:
+        check_results: "{{ check_results + [{'check': 'CHECK 19 — no_proxy/NO_PROXY is set in systemd service',
+            'expected': 'no_proxy and NO_PROXY env vars present',
+            'actual': proxy_env.stdout | default('NOT SET'),
+            'status': '✅ PASS' if proxy_env.stdout != '' else '⚠️  WARN — no proxy exclusions set, all traffic may go through proxy'}] }}"
 
-- name: "CHECK 20 | Verify server private IP is in no_proxy (client node only)"
-  ansible.builtin.set_fact:
-    check_results: "{{ check_results + [{'check': 'CHECK 20 — Server private IP ' + hostvars[groups[iag5_server_group][0]]['ansible_default_ipv4']['address'] | default(hostvars[groups[iag5_server_group][0]]['ansible_host']) + ' is in no_proxy',
-        'expected': hostvars[groups[iag5_server_group][0]]['ansible_default_ipv4']['address'] | default(hostvars[groups[iag5_server_group][0]]['ansible_host']) + ' present in no_proxy',
-        'actual': proxy_env.stdout | default('NOT SET'),
-        'status': '✅ PASS' if hostvars[groups[iag5_server_group][0]]['ansible_default_ipv4']['address'] | default(hostvars[groups[iag5_server_group][0]]['ansible_host']) in (proxy_env.stdout | default('')) else '❌ FAIL — server IP not in no_proxy, gRPC will route through proxy'}] }}"
-  when: node_section == 'client'
+    - name: "CHECK 20 | Verify server private IP is in no_proxy (client node only)"
+      ansible.builtin.set_fact:
+        check_results: "{{ check_results + [{'check': 'CHECK 20 — Server private IP ' + hostvars[groups[iag5_server_group][0]]['ansible_default_ipv4']['address'] | default(hostvars[groups[iag5_server_group][0]]['ansible_host']) + ' is in no_proxy',
+            'expected': hostvars[groups[iag5_server_group][0]]['ansible_default_ipv4']['address'] | default(hostvars[groups[iag5_server_group][0]]['ansible_host']) + ' present in no_proxy',
+            'actual': proxy_env.stdout | default('NOT SET'),
+            'status': '✅ PASS' if hostvars[groups[iag5_server_group][0]]['ansible_default_ipv4']['address'] | default(hostvars[groups[iag5_server_group][0]]['ansible_host']) in (proxy_env.stdout | default('')) else '❌ FAIL — server IP not in no_proxy, gRPC will route through proxy'}] }}"
 
-- name: "CHECK 21 | Verify server hostname is in no_proxy (client node only)"
-  ansible.builtin.set_fact:
-    check_results: "{{ check_results + [{'check': 'CHECK 21 — Server hostname ' + hostvars[groups[iag5_server_group][0]]['ansible_host'] + ' is in no_proxy',
-        'expected': hostvars[groups[iag5_server_group][0]]['ansible_host'] + ' present in no_proxy',
-        'actual': proxy_env.stdout | default('NOT SET'),
-        'status': '✅ PASS' if hostvars[groups[iag5_server_group][0]]['ansible_host'] in (proxy_env.stdout | default('')) else '❌ FAIL — server hostname not in no_proxy, gRPC will route through proxy'}] }}"
-  when: node_section == 'client'
+    - name: "CHECK 21 | Verify server hostname is in no_proxy (client node only)"
+      ansible.builtin.set_fact:
+        check_results: "{{ check_results + [{'check': 'CHECK 21 — Server hostname ' + hostvars[groups[iag5_server_group][0]]['ansible_host'] + ' is in no_proxy',
+            'expected': hostvars[groups[iag5_server_group][0]]['ansible_host'] + ' present in no_proxy',
+            'actual': proxy_env.stdout | default('NOT SET'),
+            'status': '✅ PASS' if hostvars[groups[iag5_server_group][0]]['ansible_host'] in (proxy_env.stdout | default('')) else '❌ FAIL — server hostname not in no_proxy, gRPC will route through proxy'}] }}"
 
 # -----------------------------------------------------------------------
-# mTLS enforcement — server enforces client cert (test from client only)
+#   mTLS enforcement — server enforces client cert (test from client only)
 # -----------------------------------------------------------------------
 
-- name: "CHECK 22 | Verify server enforces mTLS (reject connection without client cert)"
-  ansible.builtin.shell:
-    cmd: >
-      echo Q | openssl s_client
-      -connect {{ hostvars[groups[iag5_server_group][0]]['ansible_default_ipv4']['address'] | default(hostvars[groups[iag5_server_group][0]]['ansible_host']) }}:{{ server_port }}
-      -CAfile {{ ca_cert_path }}
-      </dev/null 2>&1 | grep -E "alert|handshake failure|error"
-  register: sv_mtls_enforce
-  changed_when: false
-  ignore_errors: true
-  when: node_section == 'client' and tls_enabled and eku_valid | default(false) and ca_cert_path is defined and ca_cert_path != ''
+    - name: "CHECK 22 | Verify server enforces mTLS (reject connection without client cert)"
+      ansible.builtin.shell:
+        cmd: >
+          echo Q | openssl s_client
+          -connect {{ hostvars[groups[iag5_server_group][0]]['ansible_default_ipv4']['address'] | default(hostvars[groups[iag5_server_group][0]]['ansible_host']) }}:{{ server_port }}
+          -CAfile {{ ca_cert_path }}
+          </dev/null 2>&1 | grep -E "alert|handshake failure|error"
+      register: sv_mtls_enforce
+      changed_when: false
+      ignore_errors: true
+      when: tls_enabled and eku_valid | default(false) and ca_cert_path is defined and ca_cert_path != ''
 
-- name: "CHECK 22 | Record result — server enforces mTLS"
-  ansible.builtin.set_fact:
-    check_results: "{{ check_results + [{'check': 'CHECK 22 — Server enforces mTLS (rejects connection without client cert)',
-        'expected': 'Connection rejected — alert or handshake failure',
-        'actual': sv_mtls_enforce.stdout | default('NO OUTPUT') if (eku_valid | default(false)) else 'N/A — skipped, EKU check failed',
-        'status': '✅ PASS' if (eku_valid | default(false) and ('alert' in (sv_mtls_enforce.stdout | default('')) or 'handshake failure' in (sv_mtls_enforce.stdout | default(''))))
-          else ('⏭ SKIPPED — EKU invalid, mTLS will fail at handshake' if not (eku_valid | default(false))
-          else '❌ FAIL — server accepted connection without client cert')}] }}"
+    - name: "CHECK 22 | Record result — server enforces mTLS"
+      ansible.builtin.set_fact:
+        check_results: "{{ check_results + [{'check': 'CHECK 22 — Server enforces mTLS (rejects connection without client cert)',
+            'expected': 'Connection rejected — alert or handshake failure',
+            'actual': sv_mtls_enforce.stdout | default('NO OUTPUT') if (eku_valid | default(false)) else 'N/A — skipped, EKU check failed',
+            'status': '✅ PASS' if (eku_valid | default(false) and ('alert' in (sv_mtls_enforce.stdout | default('')) or 'handshake failure' in (sv_mtls_enforce.stdout | default(''))))
+              else ('⏭ SKIPPED — EKU invalid, mTLS will fail at handshake' if not (eku_valid | default(false))
+              else '❌ FAIL — server accepted connection without client cert')}] }}"
   when: node_section == 'client'
 
 # -----------------------------------------------------------------------
@@ -436,63 +433,62 @@
 # Live mTLS connection CLIENT → SERVER (from client node only)
 # -----------------------------------------------------------------------
 
-- name: "CHECK 24 | Resolve server hostname/IP from client"
-  ansible.builtin.command:
-    cmd: "getent ahosts {{ hostvars[groups[iag5_server_group][0]]['ansible_default_ipv4']['address'] | default(hostvars[groups[iag5_server_group][0]]['ansible_host']) }}"
-  register: sv_resolution
-  changed_when: false
-  ignore_errors: true
-  when: node_section == 'client' and tls_enabled
+- block:
+    - name: "CHECK 24 | Resolve server hostname/IP from client"
+      ansible.builtin.command:
+        cmd: "getent ahosts {{ hostvars[groups[iag5_server_group][0]]['ansible_default_ipv4']['address'] | default(hostvars[groups[iag5_server_group][0]]['ansible_host']) }}"
+      register: sv_resolution
+      changed_when: false
+      ignore_errors: true
+      when: tls_enabled
 
-- name: "CHECK 24 | Record result — server host resolution"
-  ansible.builtin.set_fact:
-    check_results: "{{ check_results + [{'check': 'CHECK 24 — Server host resolves from client (' + hostvars[groups[iag5_server_group][0]]['ansible_default_ipv4']['address'] | default(hostvars[groups[iag5_server_group][0]]['ansible_host']) + ')',
-        'expected': 'Host resolves successfully',
-        'actual': sv_resolution.stdout | default('FAILED TO RESOLVE'),
-        'status': '✅ PASS' if sv_resolution.rc == 0 else '❌ FAIL'}] }}"
-  when: node_section == 'client'
+    - name: "CHECK 24 | Record result — server host resolution"
+      ansible.builtin.set_fact:
+        check_results: "{{ check_results + [{'check': 'CHECK 24 — Server host resolves from client (' + hostvars[groups[iag5_server_group][0]]['ansible_default_ipv4']['address'] | default(hostvars[groups[iag5_server_group][0]]['ansible_host']) + ')',
+            'expected': 'Host resolves successfully',
+            'actual': sv_resolution.stdout | default('FAILED TO RESOLVE'),
+            'status': '✅ PASS' if sv_resolution.rc == 0 else '❌ FAIL'}] }}"
 
-- name: "CHECK 25 | Test TCP connectivity CLIENT → SERVER"
-  ansible.builtin.wait_for:
-    host: "{{ hostvars[groups[iag5_server_group][0]]['ansible_default_ipv4']['address'] | default(hostvars[groups[iag5_server_group][0]]['ansible_host']) }}"
-    port: "{{ server_port }}"
-    timeout: 5
-  register: tcp_check
-  ignore_errors: true
-  when: node_section == 'client' and tls_enabled
+    - name: "CHECK 25 | Test TCP connectivity CLIENT → SERVER"
+      ansible.builtin.wait_for:
+        host: "{{ hostvars[groups[iag5_server_group][0]]['ansible_default_ipv4']['address'] | default(hostvars[groups[iag5_server_group][0]]['ansible_host']) }}"
+        port: "{{ server_port }}"
+        timeout: 5
+      register: tcp_check
+      ignore_errors: true
+      when: tls_enabled
 
-- name: "CHECK 25 | Record result — TCP connectivity to server"
-  ansible.builtin.set_fact:
-    check_results: "{{ check_results + [{'check': 'CHECK 25 — TCP connectivity CLIENT → SERVER (' + hostvars[groups[iag5_server_group][0]]['ansible_default_ipv4']['address'] | default(hostvars[groups[iag5_server_group][0]]['ansible_host']) + ':' + server_port | string + ')',
-        'expected': 'Port reachable within 5 seconds',
-        'actual': 'REACHABLE' if not tcp_check.failed else 'UNREACHABLE — check security groups',
-        'status': '✅ PASS' if not tcp_check.failed else '❌ FAIL'}] }}"
-  when: node_section == 'client'
+    - name: "CHECK 25 | Record result — TCP connectivity to server"
+      ansible.builtin.set_fact:
+        check_results: "{{ check_results + [{'check': 'CHECK 25 — TCP connectivity CLIENT → SERVER (' + hostvars[groups[iag5_server_group][0]]['ansible_default_ipv4']['address'] | default(hostvars[groups[iag5_server_group][0]]['ansible_host']) + ':' + server_port | string + ')',
+            'expected': 'Port reachable within 5 seconds',
+            'actual': 'REACHABLE' if not tcp_check.failed else 'UNREACHABLE — check security groups',
+            'status': '✅ PASS' if not tcp_check.failed else '❌ FAIL'}] }}"
 
-- name: "CHECK 26 | Run TLS handshake with IP verification CLIENT → SERVER"
-  ansible.builtin.shell: |
-    set -o pipefail
-    openssl s_client \
-      -connect {{ hostvars[groups[iag5_server_group][0]]['ansible_default_ipv4']['address'] | default(hostvars[groups[iag5_server_group][0]]['ansible_host']) }}:{{ server_port }} \
-      -verify_ip {{ hostvars[groups[iag5_server_group][0]]['ansible_default_ipv4']['address'] | default(hostvars[groups[iag5_server_group][0]]['ansible_host']) }} \
-      -verify_return_error \
-      -cert {{ node_cert_path }} \
-      -key {{ node_key_path }} \
-      -CAfile {{ ca_cert_path }} \
-      -showcerts </dev/null
-  args:
-    executable: /bin/bash
-  register: tls_handshake
-  changed_when: false
-  ignore_errors: true
-  when: node_section == 'client' and tls_enabled and eku_valid | default(false) and node_cert_path is defined and node_cert_path != ''
+    - name: "CHECK 26 | Run TLS handshake with IP verification CLIENT → SERVER"
+      ansible.builtin.shell: |
+        set -o pipefail
+        openssl s_client \
+          -connect {{ hostvars[groups[iag5_server_group][0]]['ansible_default_ipv4']['address'] | default(hostvars[groups[iag5_server_group][0]]['ansible_host']) }}:{{ server_port }} \
+          -verify_ip {{ hostvars[groups[iag5_server_group][0]]['ansible_default_ipv4']['address'] | default(hostvars[groups[iag5_server_group][0]]['ansible_host']) }} \
+          -verify_return_error \
+          -cert {{ node_cert_path }} \
+          -key {{ node_key_path }} \
+          -CAfile {{ ca_cert_path }} \
+          -showcerts </dev/null
+      args:
+        executable: /bin/bash
+      register: tls_handshake
+      changed_when: false
+      ignore_errors: true
+      when: tls_enabled and eku_valid | default(false) and node_cert_path is defined and node_cert_path != ''
 
-- name: "CHECK 26 | Record result — TLS handshake with IP verification"
-  ansible.builtin.set_fact:
-    check_results: "{{ check_results + [{'check': 'CHECK 26 — TLS handshake with IP verification CLIENT → SERVER (' + hostvars[groups[iag5_server_group][0]]['ansible_default_ipv4']['address'] | default(hostvars[groups[iag5_server_group][0]]['ansible_host']) + ')',
-        'expected': 'Verify return code: 0 (ok)',
-        'actual': (tls_handshake.stdout | default('') + tls_handshake.stderr | default('')) | regex_search('Verify return code.*') | default('No verify return code found'),
-        'status': '✅ PASS' if (eku_valid | default(false) and 'Verify return code: 0' in (tls_handshake.stdout | default('') + tls_handshake.stderr | default('')))
-          else ('⏭ SKIPPED — EKU invalid, mTLS handshake will be rejected' if not (eku_valid | default(false))
-          else '❌ FAIL')}] }}"
+    - name: "CHECK 26 | Record result — TLS handshake with IP verification"
+      ansible.builtin.set_fact:
+        check_results: "{{ check_results + [{'check': 'CHECK 26 — TLS handshake with IP verification CLIENT → SERVER (' + hostvars[groups[iag5_server_group][0]]['ansible_default_ipv4']['address'] | default(hostvars[groups[iag5_server_group][0]]['ansible_host']) + ')',
+            'expected': 'Verify return code: 0 (ok)',
+            'actual': (tls_handshake.stdout | default('') + tls_handshake.stderr | default('')) | regex_search('Verify return code.*') | default('No verify return code found'),
+            'status': '✅ PASS' if (eku_valid | default(false) and 'Verify return code: 0' in (tls_handshake.stdout | default('') + tls_handshake.stderr | default('')))
+              else ('⏭ SKIPPED — EKU invalid, mTLS handshake will be rejected' if not (eku_valid | default(false))
+              else '❌ FAIL')}] }}"
   when: node_section == 'client'
