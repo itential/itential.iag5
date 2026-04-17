@@ -15,14 +15,16 @@
 # -----------------------------------------------------------------------
 # PLAY 1 — Gateway server and runner nodes
 # -----------------------------------------------------------------------
-- name: "VERIFY_CERT | Gateway server and runner TLS certificate verification"
+- name: "Gateway server and runner TLS certificate verification"
   hosts: iag5_servers:iag5_runners
   become: true
   tags: [verify_cert]
-  roles:
-    - role: itential.iag5.gateway
-      tags: always
   tasks:
+    - name: "Load gateway shared variables"
+      ansible.builtin.import_role:
+        name: itential.iag5.gateway
+      when: false
+
     - name: "Run gateway server/runner cert verification"
       ansible.builtin.include_role:
         name: itential.iag5.gateway_server
@@ -31,14 +33,16 @@
 # -----------------------------------------------------------------------
 # PLAY 2 — Gateway client nodes (only runs when iag5_clients hosts exist)
 # -----------------------------------------------------------------------
-- name: "VERIFY_CERT | Gateway client TLS certificate verification"
+- name: "Gateway client TLS certificate verification"
   hosts: iag5_clients
   become: true
   tags: [verify_cert]
-  roles:
-    - role: itential.iag5.gateway
-      tags: always
   tasks:
+    - name: "Load gateway shared variables"
+      ansible.builtin.import_role:
+        name: itential.iag5.gateway
+      when: false
+
     - name: "Run gateway client cert verification"
       ansible.builtin.include_role:
         name: itential.iag5.gateway_client
