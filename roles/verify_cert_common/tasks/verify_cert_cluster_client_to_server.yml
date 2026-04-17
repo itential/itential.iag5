@@ -347,7 +347,9 @@
 # Proxy checks — verify server IP and hostname are in no_proxy
 # -----------------------------------------------------------------------
 
-- block:
+- name: "Proxy and mTLS enforcement checks — client node only"
+  when: node_section == 'client'
+  block:
     - name: "CHECK 19 | Read no_proxy and NO_PROXY from systemd service"  # noqa: command-instead-of-module
       ansible.builtin.shell:
         cmd: systemctl show {{ service_name }} | grep Environ | grep -oE "(no_proxy|NO_PROXY)=[^ ]*"
@@ -400,7 +402,6 @@
             'status': '✅ PASS' if (eku_valid | default(false) and ('alert' in (sv_mtls_enforce.stdout | default('')) or 'handshake failure' in (sv_mtls_enforce.stdout | default(''))))
               else ('⏭ SKIPPED — EKU invalid, mTLS will fail at handshake' if not (eku_valid | default(false))
               else '❌ FAIL — server accepted connection without client cert')}] }}"
-  when: node_section == 'client'
 
 # -----------------------------------------------------------------------
 # Process environment check
@@ -433,7 +434,9 @@
 # Live mTLS connection CLIENT → SERVER (from client node only)
 # -----------------------------------------------------------------------
 
-- block:
+- name: "Live mTLS connection checks — client node only"
+  when: node_section == 'client'
+  block:
     - name: "CHECK 24 | Resolve server hostname/IP from client"
       ansible.builtin.command:
         cmd: "getent ahosts {{ hostvars[groups[iag5_server_group][0]]['ansible_default_ipv4']['address'] | default(hostvars[groups[iag5_server_group][0]]['ansible_host']) }}"
@@ -491,4 +494,3 @@
             'status': '✅ PASS' if (eku_valid | default(false) and 'Verify return code: 0' in (tls_handshake.stdout | default('') + tls_handshake.stderr | default('')))
               else ('⏭ SKIPPED — EKU invalid, mTLS handshake will be rejected' if not (eku_valid | default(false))
               else '❌ FAIL')}] }}"
-  when: node_section == 'client'
