@@ -6,19 +6,19 @@
 #     vars:
 #       role_title: "CLUSTER TLS — SERVER ↔ RUNNER (gRPC mTLS)"
 
-- name: "SUMMARY | Print header"
+- name: "Print header"
   ansible.builtin.debug:
     msg: "============================================================"
 
-- name: "SUMMARY | Print title"
+- name: "Print title"
   ansible.builtin.debug:
     msg: "{{ role_title }} — {{ inventory_hostname }}"
 
-- name: "SUMMARY | Print separator"
+- name: "Print separator"
   ansible.builtin.debug:
     msg: "============================================================"
 
-- name: "SUMMARY | Print each check result"
+- name: "Print each check result"
   ansible.builtin.debug:
     msg:
       - "{{ item.status }} | {{ item.check }}"
@@ -29,11 +29,11 @@
   loop_control:
     label: "{{ item.check }}"
 
-- name: "SUMMARY | Print footer"
+- name: "Print footer"
   ansible.builtin.debug:
     msg: "============================================================"
 
-- name: "SUMMARY | Generate report on remote host"
+- name: "Generate report on remote host"
   ansible.builtin.template:
     src: "{{ verify_cert_report_template }}"
     dest: "{{ verify_cert_report_file }}"
@@ -42,14 +42,14 @@
     mode: '0644'
     backup: true
 
-- name: "SUMMARY | Fetch report to control node"
+- name: "Fetch report to control node"
   ansible.builtin.fetch:
     src: "{{ verify_cert_report_file }}"
     dest: "{{ verify_cert_report_dir_local }}/"
     flat: true
     fail_on_missing: false
 
-- name: "SUMMARY | Display completion message"
+- name: "Display completion message"
   ansible.builtin.debug:
     msg:
       - "verify_cert complete for {{ inventory_hostname }}"
