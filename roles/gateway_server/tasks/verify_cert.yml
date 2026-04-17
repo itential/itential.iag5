@@ -3,7 +3,7 @@
 # Called via: include_role: name: itential.iag5.gateway_server tasks_from: verify_cert.yml
 # Requires: itential.iag5.gateway role to have been loaded (provides gateway_* vars).
 
-- name: "INIT | Set verification context"
+- name: "Set verification context"
   ansible.builtin.set_fact:
     node_section: "{{ gateway_application_mode | default('server') }}"
     is_server_node: "{{ (gateway_application_mode | default('server')) == 'server' }}"
