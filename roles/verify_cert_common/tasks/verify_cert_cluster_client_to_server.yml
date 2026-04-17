@@ -18,14 +18,10 @@
 
 - name: "CHECK 1 | Record result — ca_certificate_file set in [application]"
   ansible.builtin.set_fact:
-    check_results: "{{ check_results + [
-      {
-        'check': 'CHECK 1 — [application] ca_certificate_file is set',
+    check_results: "{{ check_results + [{'check': 'CHECK 1 — [application] ca_certificate_file is set',
         'expected': 'ca_certificate_file = /path/to/ca-bundle.crt',
         'actual': ca_conf_line.stdout | default('NOT FOUND'),
-        'status': '✅ PASS' if ca_conf_line.stdout != '' else '❌ FAIL'
-      }
-    ] }}"
+        'status': '✅ PASS' if ca_conf_line.stdout != '' else '❌ FAIL'}] }}"
 
 - name: "CHECK 2 | Verify ca_certificate_file exists on disk"
   ansible.builtin.stat:
@@ -35,14 +31,10 @@
 
 - name: "CHECK 2 | Record result — ca_certificate_file exists on disk"
   ansible.builtin.set_fact:
-    check_results: "{{ check_results + [
-      {
-        'check': 'CHECK 2 — [application] ca_certificate_file exists on disk',
+    check_results: "{{ check_results + [{'check': 'CHECK 2 — [application] ca_certificate_file exists on disk',
         'expected': 'File exists at ' + (ca_cert_path | default('N/A')),
         'actual': 'EXISTS' if (ca_file_stat.stat.exists | default(false)) else 'NOT FOUND on disk',
-        'status': '✅ PASS' if (ca_file_stat.stat.exists | default(false)) else '❌ FAIL'
-      }
-    ] }}"
+        'status': '✅ PASS' if (ca_file_stat.stat.exists | default(false)) else '❌ FAIL'}] }}"
 
 - name: "CHECK 3 | Verify CA bundle cert count"
   ansible.builtin.command:
@@ -54,17 +46,13 @@
 
 - name: "CHECK 3 | Record result — CA bundle cert count"
   ansible.builtin.set_fact:
-    check_results: "{{ check_results + [
-      {
-        'check': 'CHECK 3 — CA bundle cert count',
+    check_results: "{{ check_results + [{'check': 'CHECK 3 — CA bundle cert count',
         'expected': 'At least 1 cert (root only is valid; 2 = root + intermediate)',
         'actual': ca_count.stdout | default('ERROR') + ' cert(s) found',
         'status': '✅ PASS' if ca_count.stdout | int >= 2
                   else ('⚠️  WARN — only root CA present, no intermediate (valid but less secure)'
                         if ca_count.stdout | int == 1
-                        else '❌ FAIL — no certificates found in CA bundle')
-      }
-    ] }}"
+                        else '❌ FAIL — no certificates found in CA bundle')}] }}"
   when: ca_cert_path is defined and ca_cert_path != ''
 
 - name: "CHECK 4 | Verify CA cert has CA:TRUE"
@@ -77,14 +65,10 @@
 
 - name: "CHECK 4 | Record result — CA cert has CA:TRUE"
   ansible.builtin.set_fact:
-    check_results: "{{ check_results + [
-      {
-        'check': 'CHECK 4 — CA cert has CA:TRUE (can sign other certs)',
+    check_results: "{{ check_results + [{'check': 'CHECK 4 — CA cert has CA:TRUE (can sign other certs)',
         'expected': 'CA:TRUE',
         'actual': ca_basic_constraints.stdout | default('NOT FOUND'),
-        'status': '✅ PASS' if 'TRUE' in (ca_basic_constraints.stdout | default('')) else '❌ FAIL'
-      }
-    ] }}"
+        'status': '✅ PASS' if 'TRUE' in (ca_basic_constraints.stdout | default('')) else '❌ FAIL'}] }}"
   when: ca_cert_path is defined and ca_cert_path != ''
 
 - name: "CHECK 5 | Verify last cert in CA bundle is self-signed root (subject hash == issuer hash)"
@@ -103,14 +87,10 @@
 
 - name: "CHECK 5 | Record result — last cert in CA bundle is self-signed root"
   ansible.builtin.set_fact:
-    check_results: "{{ check_results + [
-      {
-        'check': 'CHECK 5 — Last cert in CA bundle is self-signed root (subject hash == issuer hash)',
+    check_results: "{{ check_results + [{'check': 'CHECK 5 — Last cert in CA bundle is self-signed root (subject hash == issuer hash)',
         'expected': 'Both hashes match',
         'actual': ca_hash_check.stdout | default('ERROR'),
-        'status': '✅ PASS' if (ca_hash_check.stdout_lines | default([]) | length == 2 and ca_hash_check.stdout_lines[0] == ca_hash_check.stdout_lines[1]) else '❌ FAIL'
-      }
-    ] }}"
+        'status': '✅ PASS' if (ca_hash_check.stdout_lines | default([]) | length == 2 and ca_hash_check.stdout_lines[0] == ca_hash_check.stdout_lines[1]) else '❌ FAIL'}] }}"
   when: ca_cert_path is defined and ca_cert_path != ''
 
 # -----------------------------------------------------------------------
@@ -131,14 +111,10 @@
 
 - name: "CHECK 6 | Record result — use_tls — node section {{ node_section }}"
   ansible.builtin.set_fact:
-    check_results: "{{ check_results + [
-      {
-        'check': 'CHECK 6 — [' + node_section + '] use_tls',
+    check_results: "{{ check_results + [{'check': 'CHECK 6 — [' + node_section + '] use_tls',
         'expected': 'use_tls = true',
         'actual': node_usetls.stdout | default('NOT FOUND'),
-        'status': '✅ PASS' if tls_enabled else '❌ FAIL — TLS disabled, skipping cert checks'
-      }
-    ] }}"
+        'status': '✅ PASS' if tls_enabled else '❌ FAIL — TLS disabled, skipping cert checks'}] }}"
 
 # -----------------------------------------------------------------------
 # CHECK 7 — server specific: SANs required
@@ -161,14 +137,10 @@
 
 - name: "CHECK 7 | Record result — certificate_file set — node section {{ node_section }}"
   ansible.builtin.set_fact:
-    check_results: "{{ check_results + [
-      {
-        'check': 'CHECK 7 — [' + node_section + '] certificate_file is set',
+    check_results: "{{ check_results + [{'check': 'CHECK 7 — [' + node_section + '] certificate_file is set',
         'expected': 'certificate_file = /path/to/cert',
         'actual': node_cert_conf.stdout | default('NOT FOUND') if tls_enabled else 'N/A',
-        'status': '✅ PASS' if (tls_enabled and (node_cert_conf.stdout | default('')) != '') else ('⏭ SKIPPED — TLS disabled' if not tls_enabled else '❌ FAIL')
-      }
-    ] }}"
+        'status': '✅ PASS' if (tls_enabled and (node_cert_conf.stdout | default('')) != '') else ('⏭ SKIPPED — TLS disabled' if not tls_enabled else '❌ FAIL')}] }}"
 
 - name: "CHECK 8 | Verify certificate_file exists on disk"
   ansible.builtin.stat:
@@ -178,14 +150,10 @@
 
 - name: "CHECK 8 | Record result — certificate_file exists on disk"
   ansible.builtin.set_fact:
-    check_results: "{{ check_results + [
-      {
-        'check': 'CHECK 8 — [' + node_section + '] certificate_file exists on disk',
+    check_results: "{{ check_results + [{'check': 'CHECK 8 — [' + node_section + '] certificate_file exists on disk',
         'expected': 'File exists at ' + (node_cert_path | default('N/A')),
         'actual': 'EXISTS' if (node_cert_stat.stat.exists | default(false)) else 'NOT FOUND on disk',
-        'status': '✅ PASS' if (node_cert_stat.stat.exists | default(false)) else ('⏭ SKIPPED — TLS disabled' if not tls_enabled else '❌ FAIL')
-      }
-    ] }}"
+        'status': '✅ PASS' if (node_cert_stat.stat.exists | default(false)) else ('⏭ SKIPPED — TLS disabled' if not tls_enabled else '❌ FAIL')}] }}"
 
 - name: "CHECK 9 | Read private_key_file — node section {{ node_section }}"
   ansible.builtin.shell:
@@ -203,14 +171,10 @@
 
 - name: "CHECK 9 | Record result — private_key_file set — node section {{ node_section }}"
   ansible.builtin.set_fact:
-    check_results: "{{ check_results + [
-      {
-        'check': 'CHECK 9 — [' + node_section + '] private_key_file is set',
+    check_results: "{{ check_results + [{'check': 'CHECK 9 — [' + node_section + '] private_key_file is set',
         'expected': 'private_key_file = /path/to/key',
         'actual': node_key_conf.stdout | default('NOT FOUND') if tls_enabled else 'N/A',
-        'status': '✅ PASS' if (tls_enabled and (node_key_conf.stdout | default('')) != '') else ('⏭ SKIPPED — TLS disabled' if not tls_enabled else '❌ FAIL')
-      }
-    ] }}"
+        'status': '✅ PASS' if (tls_enabled and (node_key_conf.stdout | default('')) != '') else ('⏭ SKIPPED — TLS disabled' if not tls_enabled else '❌ FAIL')}] }}"
 
 - name: "CHECK 10 | Verify private_key_file exists on disk"
   ansible.builtin.stat:
@@ -220,14 +184,10 @@
 
 - name: "CHECK 10 | Record result — private_key_file exists on disk"
   ansible.builtin.set_fact:
-    check_results: "{{ check_results + [
-      {
-        'check': 'CHECK 10 — [' + node_section + '] private_key_file exists on disk',
+    check_results: "{{ check_results + [{'check': 'CHECK 10 — [' + node_section + '] private_key_file exists on disk',
         'expected': 'File exists at ' + (node_key_path | default('N/A')),
         'actual': 'EXISTS' if (node_key_stat.stat.exists | default(false)) else 'NOT FOUND on disk',
-        'status': '✅ PASS' if (node_key_stat.stat.exists | default(false)) else ('⏭ SKIPPED — TLS disabled' if not tls_enabled else '❌ FAIL')
-      }
-    ] }}"
+        'status': '✅ PASS' if (node_key_stat.stat.exists | default(false)) else ('⏭ SKIPPED — TLS disabled' if not tls_enabled else '❌ FAIL')}] }}"
 
 - name: "CHECK 11 | Get cert modulus"
   ansible.builtin.shell:
@@ -247,14 +207,10 @@
 
 - name: "CHECK 11 | Record result — cert and key matched pair"
   ansible.builtin.set_fact:
-    check_results: "{{ check_results + [
-      {
-        'check': 'CHECK 11 — [' + node_section + '] cert and key are a matched pair',
+    check_results: "{{ check_results + [{'check': 'CHECK 11 — [' + node_section + '] cert and key are a matched pair',
         'expected': 'Matching md5 hashes',
         'actual': 'cert=' + (node_cert_mod.stdout | default('ERROR')) + ' key=' + (node_key_mod.stdout | default('ERROR')) if tls_enabled else 'N/A',
-        'status': '✅ PASS' if (tls_enabled and node_cert_mod.stdout == node_key_mod.stdout) else ('⏭ SKIPPED — TLS disabled' if not tls_enabled else '❌ FAIL')
-      }
-    ] }}"
+        'status': '✅ PASS' if (tls_enabled and node_cert_mod.stdout == node_key_mod.stdout) else ('⏭ SKIPPED — TLS disabled' if not tls_enabled else '❌ FAIL')}] }}"
 
 - name: "CHECK 12 | Verify cert not expired"
   ansible.builtin.shell:
@@ -266,14 +222,10 @@
 
 - name: "CHECK 12 | Record result — cert not expired"
   ansible.builtin.set_fact:
-    check_results: "{{ check_results + [
-      {
-        'check': 'CHECK 12 — [' + node_section + '] cert is not expired',
+    check_results: "{{ check_results + [{'check': 'CHECK 12 — [' + node_section + '] cert is not expired',
         'expected': 'Certificate is valid',
         'actual': node_expiry.stdout | default(node_expiry.stderr | default('ERROR')) if tls_enabled else 'N/A',
-        'status': '✅ PASS' if (tls_enabled and node_expiry.rc == 0) else ('⏭ SKIPPED — TLS disabled' if not tls_enabled else '❌ FAIL')
-      }
-    ] }}"
+        'status': '✅ PASS' if (tls_enabled and node_expiry.rc == 0) else ('⏭ SKIPPED — TLS disabled' if not tls_enabled else '❌ FAIL')}] }}"
 
 - name: "CHECK 13 | Get days remaining on cert"
   ansible.builtin.shell:
@@ -285,16 +237,12 @@
 
 - name: "CHECK 13 | Record result — cert days remaining"
   ansible.builtin.set_fact:
-    check_results: "{{ check_results + [
-      {
-        'check': 'CHECK 13 — [' + node_section + '] cert days remaining until expiry',
+    check_results: "{{ check_results + [{'check': 'CHECK 13 — [' + node_section + '] cert days remaining until expiry',
         'expected': 'More than 30 days remaining',
         'actual': (node_days_remaining.stdout | default('ERROR')) + ' days remaining',
         'status': '✅ PASS' if (node_days_remaining.stdout | default('0') | int > 30)
                   else ('⚠️  WARN — expiring within 30 days' if (node_days_remaining.stdout | default('0') | int > 0)
-                  else '❌ FAIL — expired')
-      }
-    ] }}"
+                  else '❌ FAIL — expired')}] }}"
 
 - name: "CHECK 14 | Verify cert is not a self-signed leaf (subject != issuer)"
   ansible.builtin.command:
@@ -306,17 +254,13 @@
 
 - name: "CHECK 14 | Record result — cert is not self-signed leaf"
   ansible.builtin.set_fact:
-    check_results: "{{ check_results + [
-      {
-        'check': 'CHECK 14 — [' + node_section + '] cert is not a self-signed leaf (subject != issuer)',
+    check_results: "{{ check_results + [{'check': 'CHECK 14 — [' + node_section + '] cert is not a self-signed leaf (subject != issuer)',
         'expected': 'subject != issuer (CA-signed)',
         'actual': node_self_signed.stdout | default('ERROR') if tls_enabled else 'N/A',
         'status': '✅ PASS' if (tls_enabled and
           node_self_signed.stdout_lines | default([]) | length == 2 and
           node_self_signed.stdout_lines[0] != node_self_signed.stdout_lines[1])
-          else ('⏭ SKIPPED — TLS disabled' if not tls_enabled else '❌ FAIL — self-signed leaf rejected by cluster TLS')
-      }
-    ] }}"
+          else ('⏭ SKIPPED — TLS disabled' if not tls_enabled else '❌ FAIL — self-signed leaf rejected by cluster TLS')}] }}"
 
 - name: "CHECK 15 | Verify cert signed by CA"
   ansible.builtin.command:
@@ -328,14 +272,10 @@
 
 - name: "CHECK 15 | Record result — cert signed by CA"
   ansible.builtin.set_fact:
-    check_results: "{{ check_results + [
-      {
-        'check': 'CHECK 15 — [' + node_section + '] cert is signed by CA',
+    check_results: "{{ check_results + [{'check': 'CHECK 15 — [' + node_section + '] cert is signed by CA',
         'expected': 'OK',
         'actual': node_verify.stdout | default(node_verify.stderr | default('ERROR')) if tls_enabled else 'N/A',
-        'status': '✅ PASS' if (tls_enabled and 'OK' in (node_verify.stdout | default(''))) else ('⏭ SKIPPED — TLS disabled' if not tls_enabled else '❌ FAIL')
-      }
-    ] }}"
+        'status': '✅ PASS' if (tls_enabled and 'OK' in (node_verify.stdout | default(''))) else ('⏭ SKIPPED — TLS disabled' if not tls_enabled else '❌ FAIL')}] }}"
 
 - name: "CHECK 16 | Verify extendedKeyUsage (needs serverAuth + clientAuth for mTLS)"
   ansible.builtin.shell:
@@ -347,9 +287,7 @@
 
 - name: "CHECK 16 | Record result — cert extendedKeyUsage"
   ansible.builtin.set_fact:
-    check_results: "{{ check_results + [
-      {
-        'check': 'CHECK 16 — [' + node_section + '] cert has both serverAuth and clientAuth in extendedKeyUsage',
+    check_results: "{{ check_results + [{'check': 'CHECK 16 — [' + node_section + '] cert has both serverAuth and clientAuth in extendedKeyUsage',
         'expected': 'TLS Web Server Authentication, TLS Web Client Authentication',
         'actual': node_eku.stdout | default('NOT FOUND') if tls_enabled else 'N/A',
         'status': '✅ PASS' if (tls_enabled and
@@ -357,9 +295,7 @@
           'Client Authentication' in (node_eku.stdout | default('')))
           else ('⚠️  WARN — extendedKeyUsage not set, relying on defaults' if (tls_enabled and node_eku.stdout == '')
           else ('⏭ SKIPPED — TLS disabled' if not tls_enabled
-          else '❌ FAIL — missing clientAuth or serverAuth, mTLS handshake will be rejected'))
-      }
-    ] }}"
+          else '❌ FAIL — missing clientAuth or serverAuth, mTLS handshake will be rejected'))}] }}"
 
 - name: "CHECK 16 | Set eku_valid gate — both serverAuth and clientAuth must be present"
   ansible.builtin.set_fact:
@@ -381,49 +317,37 @@
 
 - name: "CHECK 17 | Record result — server cert SANs present"
   ansible.builtin.set_fact:
-    check_results: "{{ check_results + [
-      {
-        'check': 'CHECK 17a — [server] cert SANs present',
+    check_results: "{{ check_results + [{'check': 'CHECK 17a — [server] cert SANs present',
         'expected': 'Subject Alternative Name extension present',
         'actual': node_sans.stdout | default('NO SANs FOUND') if tls_enabled else 'N/A',
-        'status': '✅ PASS' if (tls_enabled and node_sans.stdout != '') else ('⏭ SKIPPED — TLS disabled' if not tls_enabled else '❌ FAIL — no SAN extension found')
-      }
-    ] }}"
+        'status': '✅ PASS' if (tls_enabled and node_sans.stdout != '') else ('⏭ SKIPPED — TLS disabled' if not tls_enabled else '❌ FAIL — no SAN extension found')}] }}"
   when: node_section == 'server'
 
 - name: "CHECK 17 | Record result — server cert SAN contains private_ip"
   ansible.builtin.set_fact:
-    check_results: "{{ check_results + [
-      {
-        'check': 'CHECK 17b — [server] cert SAN contains server private_ip',
+    check_results: "{{ check_results + [{'check': 'CHECK 17b — [server] cert SAN contains server private_ip',
         'expected': 'IP:' + private_ip + ' in Subject Alternative Name',
         'actual': node_sans.stdout | default('NO SANs FOUND'),
         'status': '✅ PASS' if (tls_enabled and ('IP:' + private_ip) in (node_sans.stdout | default('')))
                   else ('⏭ SKIPPED — TLS disabled' if not tls_enabled
-                  else '❌ FAIL — server private_ip missing from cert SANs, client TLS verify will fail')
-      }
-    ] }}"
+                  else '❌ FAIL — server private_ip missing from cert SANs, client TLS verify will fail')}] }}"
   when: tls_enabled and node_section == 'server'
 
 - name: "CHECK 17 | Record result — server cert SAN contains ansible_host (DNS/hostname)"
   ansible.builtin.set_fact:
-    check_results: "{{ check_results + [
-      {
-        'check': 'CHECK 17c — [server] cert SAN contains ansible_host',
+    check_results: "{{ check_results + [{'check': 'CHECK 17c — [server] cert SAN contains ansible_host',
         'expected': 'DNS:' + hostvars[inventory_hostname]['ansible_host'] + ' in Subject Alternative Name',
         'actual': node_sans.stdout | default('NO SANs FOUND'),
         'status': '✅ PASS' if (tls_enabled and ('DNS:' + hostvars[inventory_hostname]['ansible_host']) in (node_sans.stdout | default('')))
                   else ('⏭ SKIPPED — TLS disabled' if not tls_enabled
-                  else '⚠️  WARN — ansible_host not in cert SANs (only an issue if connecting by hostname)')
-      }
-    ] }}"
+                  else '⚠️  WARN — ansible_host not in cert SANs (only an issue if connecting by hostname)')}] }}"
   when: tls_enabled and node_section == 'server'
 
 # -----------------------------------------------------------------------
 # Proxy checks — verify server IP and hostname are in no_proxy
 # -----------------------------------------------------------------------
 
-- name: "CHECK 19 | Read no_proxy and NO_PROXY from systemd service"
+- name: "CHECK 19 | Read no_proxy and NO_PROXY from systemd service"  # noqa: command-instead-of-module
   ansible.builtin.shell:
     cmd: systemctl show {{ service_name }} | grep Environ | grep -oE "(no_proxy|NO_PROXY)=[^ ]*"
   register: proxy_env
@@ -433,38 +357,26 @@
 
 - name: "CHECK 19 | Record result — no_proxy is set"
   ansible.builtin.set_fact:
-    check_results: "{{ check_results + [
-      {
-        'check': 'CHECK 19 — no_proxy/NO_PROXY is set in systemd service',
+    check_results: "{{ check_results + [{'check': 'CHECK 19 — no_proxy/NO_PROXY is set in systemd service',
         'expected': 'no_proxy and NO_PROXY env vars present',
         'actual': proxy_env.stdout | default('NOT SET'),
-        'status': '✅ PASS' if proxy_env.stdout != '' else '⚠️  WARN — no proxy exclusions set, all traffic may go through proxy'
-      }
-    ] }}"
+        'status': '✅ PASS' if proxy_env.stdout != '' else '⚠️  WARN — no proxy exclusions set, all traffic may go through proxy'}] }}"
   when: node_section == 'client'
 
 - name: "CHECK 20 | Verify server private IP is in no_proxy (client node only)"
   ansible.builtin.set_fact:
-    check_results: "{{ check_results + [
-      {
-        'check': 'CHECK 20 — Server private IP ' + hostvars[groups[iag5_server_group][0]]['ansible_default_ipv4']['address'] | default(hostvars[groups[iag5_server_group][0]]['ansible_host']) + ' is in no_proxy',
+    check_results: "{{ check_results + [{'check': 'CHECK 20 — Server private IP ' + hostvars[groups[iag5_server_group][0]]['ansible_default_ipv4']['address'] | default(hostvars[groups[iag5_server_group][0]]['ansible_host']) + ' is in no_proxy',
         'expected': hostvars[groups[iag5_server_group][0]]['ansible_default_ipv4']['address'] | default(hostvars[groups[iag5_server_group][0]]['ansible_host']) + ' present in no_proxy',
         'actual': proxy_env.stdout | default('NOT SET'),
-        'status': '✅ PASS' if hostvars[groups[iag5_server_group][0]]['ansible_default_ipv4']['address'] | default(hostvars[groups[iag5_server_group][0]]['ansible_host']) in (proxy_env.stdout | default('')) else '❌ FAIL — server IP not in no_proxy, gRPC will route through proxy'
-      }
-    ] }}"
+        'status': '✅ PASS' if hostvars[groups[iag5_server_group][0]]['ansible_default_ipv4']['address'] | default(hostvars[groups[iag5_server_group][0]]['ansible_host']) in (proxy_env.stdout | default('')) else '❌ FAIL — server IP not in no_proxy, gRPC will route through proxy'}] }}"
   when: node_section == 'client'
 
 - name: "CHECK 21 | Verify server hostname is in no_proxy (client node only)"
   ansible.builtin.set_fact:
-    check_results: "{{ check_results + [
-      {
-        'check': 'CHECK 21 — Server hostname ' + hostvars[groups[iag5_server_group][0]]['ansible_host'] + ' is in no_proxy',
+    check_results: "{{ check_results + [{'check': 'CHECK 21 — Server hostname ' + hostvars[groups[iag5_server_group][0]]['ansible_host'] + ' is in no_proxy',
         'expected': hostvars[groups[iag5_server_group][0]]['ansible_host'] + ' present in no_proxy',
         'actual': proxy_env.stdout | default('NOT SET'),
-        'status': '✅ PASS' if hostvars[groups[iag5_server_group][0]]['ansible_host'] in (proxy_env.stdout | default('')) else '❌ FAIL — server hostname not in no_proxy, gRPC will route through proxy'
-      }
-    ] }}"
+        'status': '✅ PASS' if hostvars[groups[iag5_server_group][0]]['ansible_host'] in (proxy_env.stdout | default('')) else '❌ FAIL — server hostname not in no_proxy, gRPC will route through proxy'}] }}"
   when: node_section == 'client'
 
 # -----------------------------------------------------------------------
@@ -485,23 +397,19 @@
 
 - name: "CHECK 22 | Record result — server enforces mTLS"
   ansible.builtin.set_fact:
-    check_results: "{{ check_results + [
-      {
-        'check': 'CHECK 22 — Server enforces mTLS (rejects connection without client cert)',
+    check_results: "{{ check_results + [{'check': 'CHECK 22 — Server enforces mTLS (rejects connection without client cert)',
         'expected': 'Connection rejected — alert or handshake failure',
         'actual': sv_mtls_enforce.stdout | default('NO OUTPUT') if (eku_valid | default(false)) else 'N/A — skipped, EKU check failed',
         'status': '✅ PASS' if (eku_valid | default(false) and ('alert' in (sv_mtls_enforce.stdout | default('')) or 'handshake failure' in (sv_mtls_enforce.stdout | default(''))))
           else ('⏭ SKIPPED — EKU invalid, mTLS will fail at handshake' if not (eku_valid | default(false))
-          else '❌ FAIL — server accepted connection without client cert')
-      }
-    ] }}"
+          else '❌ FAIL — server accepted connection without client cert')}] }}"
   when: node_section == 'client'
 
 # -----------------------------------------------------------------------
 # Process environment check
 # -----------------------------------------------------------------------
 
-- name: "CHECK 23 | Get PID of running service"
+- name: "CHECK 23 | Get PID of running service"  # noqa: command-instead-of-module
   ansible.builtin.shell:
     cmd: systemctl show {{ service_name }} --property=MainPID | cut -d= -f2
   register: svc_pid
@@ -519,14 +427,10 @@
 
 - name: "CHECK 23 | Record result — process running and has GATEWAY vars"
   ansible.builtin.set_fact:
-    check_results: "{{ check_results + [
-      {
-        'check': 'CHECK 23 — Service is running and GATEWAY vars present in process environment',
+    check_results: "{{ check_results + [{'check': 'CHECK 23 — Service is running and GATEWAY vars present in process environment',
         'expected': 'GATEWAY vars visible in /proc/PID/environ',
         'actual': proc_env.stdout_lines | default(['NOT FOUND']) | join(', ') if proc_env.stdout != '' else 'NOT FOUND — service may be using gateway.conf only (expected)',
-        'status': '✅ PASS' if proc_env.stdout != '' else '⚠️  INFO — vars not in env, confirm gateway.conf is used'
-      }
-    ] }}"
+        'status': '✅ PASS' if proc_env.stdout != '' else '⚠️  INFO — vars not in env, confirm gateway.conf is used'}] }}"
 
 # -----------------------------------------------------------------------
 # Live mTLS connection CLIENT → SERVER (from client node only)
@@ -542,14 +446,10 @@
 
 - name: "CHECK 24 | Record result — server host resolution"
   ansible.builtin.set_fact:
-    check_results: "{{ check_results + [
-      {
-        'check': 'CHECK 24 — Server host resolves from client (' + hostvars[groups[iag5_server_group][0]]['ansible_default_ipv4']['address'] | default(hostvars[groups[iag5_server_group][0]]['ansible_host']) + ')',
+    check_results: "{{ check_results + [{'check': 'CHECK 24 — Server host resolves from client (' + hostvars[groups[iag5_server_group][0]]['ansible_default_ipv4']['address'] | default(hostvars[groups[iag5_server_group][0]]['ansible_host']) + ')',
         'expected': 'Host resolves successfully',
         'actual': sv_resolution.stdout | default('FAILED TO RESOLVE'),
-        'status': '✅ PASS' if sv_resolution.rc == 0 else '❌ FAIL'
-      }
-    ] }}"
+        'status': '✅ PASS' if sv_resolution.rc == 0 else '❌ FAIL'}] }}"
   when: node_section == 'client'
 
 - name: "CHECK 25 | Test TCP connectivity CLIENT → SERVER"
@@ -563,14 +463,10 @@
 
 - name: "CHECK 25 | Record result — TCP connectivity to server"
   ansible.builtin.set_fact:
-    check_results: "{{ check_results + [
-      {
-        'check': 'CHECK 25 — TCP connectivity CLIENT → SERVER (' + hostvars[groups[iag5_server_group][0]]['ansible_default_ipv4']['address'] | default(hostvars[groups[iag5_server_group][0]]['ansible_host']) + ':' + server_port | string + ')',
+    check_results: "{{ check_results + [{'check': 'CHECK 25 — TCP connectivity CLIENT → SERVER (' + hostvars[groups[iag5_server_group][0]]['ansible_default_ipv4']['address'] | default(hostvars[groups[iag5_server_group][0]]['ansible_host']) + ':' + server_port | string + ')',
         'expected': 'Port reachable within 5 seconds',
         'actual': 'REACHABLE' if not tcp_check.failed else 'UNREACHABLE — check security groups',
-        'status': '✅ PASS' if not tcp_check.failed else '❌ FAIL'
-      }
-    ] }}"
+        'status': '✅ PASS' if not tcp_check.failed else '❌ FAIL'}] }}"
   when: node_section == 'client'
 
 - name: "CHECK 26 | Run TLS handshake with IP verification CLIENT → SERVER"
@@ -593,14 +489,10 @@
 
 - name: "CHECK 26 | Record result — TLS handshake with IP verification"
   ansible.builtin.set_fact:
-    check_results: "{{ check_results + [
-      {
-        'check': 'CHECK 26 — TLS handshake with IP verification CLIENT → SERVER (' + hostvars[groups[iag5_server_group][0]]['ansible_default_ipv4']['address'] | default(hostvars[groups[iag5_server_group][0]]['ansible_host']) + ')',
+    check_results: "{{ check_results + [{'check': 'CHECK 26 — TLS handshake with IP verification CLIENT → SERVER (' + hostvars[groups[iag5_server_group][0]]['ansible_default_ipv4']['address'] | default(hostvars[groups[iag5_server_group][0]]['ansible_host']) + ')',
         'expected': 'Verify return code: 0 (ok)',
         'actual': (tls_handshake.stdout | default('') + tls_handshake.stderr | default('')) | regex_search('Verify return code.*') | default('No verify return code found'),
         'status': '✅ PASS' if (eku_valid | default(false) and 'Verify return code: 0' in (tls_handshake.stdout | default('') + tls_handshake.stderr | default('')))
           else ('⏭ SKIPPED — EKU invalid, mTLS handshake will be rejected' if not (eku_valid | default(false))
-          else '❌ FAIL')
-      }
-    ] }}"
+          else '❌ FAIL')}] }}"
   when: node_section == 'client'
