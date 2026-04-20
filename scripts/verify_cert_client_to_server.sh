@@ -8,12 +8,21 @@
 #
 # Run this ON the client node.
 #
-# Usage:
+# Usage (read cert paths from gateway.conf):
 #   ./verify_cert_client_to_server.sh \
 #       --gateway-conf ~/.gateway.d/gateway.conf \
 #       --server-ip 1.1.1.1 \
 #       --server-port 50051 \
 #       --service-name iagctl
+#
+# Usage (supply cert paths directly — no gateway.conf needed):
+#   ./verify_cert_client_to_server.sh \
+#       --server-ip 1.1.1.1 \
+#       --ca-cert  /path/to/ca-bundle.crt \
+#       --cert     /path/to/client.crt \
+#       --key      /path/to/client.key
+#
+# Cert flags override whatever is found in gateway.conf when both are supplied.
 # =============================================================================
 
 set -euo pipefail
@@ -26,6 +35,10 @@ SERVER_IP=""
 SERVER_PORT="50051"
 SERVICE_NAME="iagctl"
 NODE_SECTION="client"
+# Optional overrides — if set, skip parsing gateway.conf for these values
+OPT_CA_CERT=""
+OPT_CERT=""
+OPT_KEY=""
 
 # -----------------------------------------------------------------------------
 # Parse arguments
@@ -36,6 +49,9 @@ while [[ $# -gt 0 ]]; do
     --server-ip)     SERVER_IP="$2";     shift 2 ;;
     --server-port)   SERVER_PORT="$2";   shift 2 ;;
     --service-name)  SERVICE_NAME="$2";  shift 2 ;;
+    --ca-cert)       OPT_CA_CERT="$2";   shift 2 ;;
+    --cert)          OPT_CERT="$2";      shift 2 ;;
+    --key)           OPT_KEY="$2";       shift 2 ;;
     *) echo "Unknown argument: $1"; exit 1 ;;
   esac
 done
@@ -45,8 +61,13 @@ if [[ -z "$SERVER_IP" ]]; then
   exit 1
 fi
 
-if [[ ! -f "$GATEWAY_CONF" ]]; then
+# gateway.conf is only required when cert paths aren't supplied directly
+CONF_REQUIRED=true
+[[ -n "$OPT_CA_CERT" && -n "$OPT_CERT" && -n "$OPT_KEY" ]] && CONF_REQUIRED=false
+
+if [[ "$CONF_REQUIRED" == true && ! -f "$GATEWAY_CONF" ]]; then
   echo "ERROR: gateway.conf not found at: $GATEWAY_CONF"
+  echo "       Either fix the path with --gateway-conf or supply --ca-cert, --cert, and --key directly."
   exit 1
 fi
 
@@ -73,9 +94,11 @@ record() {
 }
 
 section_value() {
-  # Extract a key's value from a named INI section in gateway.conf
+  # Extract a key's value from a named INI section in gateway.conf.
+  # Returns empty string safely when gateway.conf does not exist.
   local section="$1"
   local key="$2"
+  [[ -f "$GATEWAY_CONF" ]] || { echo ""; return; }
   awk "/^\[$section\]/{f=1} f && /^\[/{if(!/^\[$section\]/) f=0} f && /^$key/" "$GATEWAY_CONF" 2>/dev/null || true
 }
 
@@ -90,7 +113,13 @@ print_header() {
 # =============================================================================
 CA_CONF_LINE=$(section_value "application" "ca_certificate_file")
 CA_CERT_PATH=""
-if [[ -n "$CA_CONF_LINE" ]]; then
+if [[ -n "$OPT_CA_CERT" ]]; then
+  # CLI override — skip conf parsing for this value
+  CA_CERT_PATH="$OPT_CA_CERT"
+  record "CHECK 1 — [application] ca_certificate_file is set" \
+         "ca_certificate_file = /path/to/ca-bundle.crt" \
+         "supplied via --ca-cert: $CA_CERT_PATH" "$PASS"
+elif [[ -n "$CA_CONF_LINE" ]]; then
   CA_CERT_PATH=$(echo "$CA_CONF_LINE" | cut -d= -f2- | tr -d " '\"")
   record "CHECK 1 — [application] ca_certificate_file is set" \
          "ca_certificate_file = /path/to/ca-bundle.crt" \
@@ -166,7 +195,12 @@ fi
 # =============================================================================
 NODE_USETLS=$(section_value "$NODE_SECTION" "use_tls")
 TLS_ENABLED=false
-if echo "$NODE_USETLS" | grep -q "true"; then
+if [[ -n "$OPT_CERT" && -n "$OPT_KEY" && -n "$OPT_CA_CERT" ]]; then
+  # All cert paths supplied directly — assume TLS is enabled
+  TLS_ENABLED=true
+  record "CHECK 6 — [$NODE_SECTION] use_tls" "use_tls = true" \
+         "assumed true (cert paths supplied via CLI flags)" "$PASS"
+elif echo "$NODE_USETLS" | grep -q "true"; then
   TLS_ENABLED=true
   record "CHECK 6 — [$NODE_SECTION] use_tls" "use_tls = true" "$NODE_USETLS" "$PASS"
 else
@@ -179,14 +213,21 @@ fi
 # =============================================================================
 NODE_CERT_PATH=""
 if [[ "$TLS_ENABLED" == true ]]; then
-  NODE_CERT_CONF=$(section_value "$NODE_SECTION" "certificate_file")
-  if [[ -n "$NODE_CERT_CONF" ]]; then
-    NODE_CERT_PATH=$(echo "$NODE_CERT_CONF" | cut -d= -f2- | tr -d " '\"")
+  if [[ -n "$OPT_CERT" ]]; then
+    NODE_CERT_PATH="$OPT_CERT"
     record "CHECK 7 — [$NODE_SECTION] certificate_file is set" \
-           "certificate_file = /path/to/cert" "$NODE_CERT_CONF" "$PASS"
+           "certificate_file = /path/to/cert" \
+           "supplied via --cert: $NODE_CERT_PATH" "$PASS"
   else
-    record "CHECK 7 — [$NODE_SECTION] certificate_file is set" \
-           "certificate_file = /path/to/cert" "NOT FOUND" "$FAIL"
+    NODE_CERT_CONF=$(section_value "$NODE_SECTION" "certificate_file")
+    if [[ -n "$NODE_CERT_CONF" ]]; then
+      NODE_CERT_PATH=$(echo "$NODE_CERT_CONF" | cut -d= -f2- | tr -d " '\"")
+      record "CHECK 7 — [$NODE_SECTION] certificate_file is set" \
+             "certificate_file = /path/to/cert" "$NODE_CERT_CONF" "$PASS"
+    else
+      record "CHECK 7 — [$NODE_SECTION] certificate_file is set" \
+             "certificate_file = /path/to/cert" "NOT FOUND" "$FAIL"
+    fi
   fi
 else
   record "CHECK 7 — [$NODE_SECTION] certificate_file is set" \
@@ -212,14 +253,21 @@ fi
 # =============================================================================
 NODE_KEY_PATH=""
 if [[ "$TLS_ENABLED" == true ]]; then
-  NODE_KEY_CONF=$(section_value "$NODE_SECTION" "private_key_file")
-  if [[ -n "$NODE_KEY_CONF" ]]; then
-    NODE_KEY_PATH=$(echo "$NODE_KEY_CONF" | cut -d= -f2- | tr -d " '\"")
+  if [[ -n "$OPT_KEY" ]]; then
+    NODE_KEY_PATH="$OPT_KEY"
     record "CHECK 9 — [$NODE_SECTION] private_key_file is set" \
-           "private_key_file = /path/to/key" "$NODE_KEY_CONF" "$PASS"
+           "private_key_file = /path/to/key" \
+           "supplied via --key: $NODE_KEY_PATH" "$PASS"
   else
-    record "CHECK 9 — [$NODE_SECTION] private_key_file is set" \
-           "private_key_file = /path/to/key" "NOT FOUND" "$FAIL"
+    NODE_KEY_CONF=$(section_value "$NODE_SECTION" "private_key_file")
+    if [[ -n "$NODE_KEY_CONF" ]]; then
+      NODE_KEY_PATH=$(echo "$NODE_KEY_CONF" | cut -d= -f2- | tr -d " '\"")
+      record "CHECK 9 — [$NODE_SECTION] private_key_file is set" \
+             "private_key_file = /path/to/key" "$NODE_KEY_CONF" "$PASS"
+    else
+      record "CHECK 9 — [$NODE_SECTION] private_key_file is set" \
+             "private_key_file = /path/to/key" "NOT FOUND" "$FAIL"
+    fi
   fi
 else
   record "CHECK 9 — [$NODE_SECTION] private_key_file is set" \
