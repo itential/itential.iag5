@@ -1,0 +1,88 @@
+---
+# TLS certificate verification for gateway server and runner nodes.
+# Called via: include_role: name: itential.iag5.gateway_server tasks_from: verify_cert.yml
+# Requires: itential.iag5.gateway role to have been loaded (provides gateway_* vars).
+
+- name: "Set verification context"
+  ansible.builtin.set_fact:
+    node_section: "{{ gateway_application_mode | default('server') }}"
+    is_server_node: "{{ (gateway_application_mode | default('server')) == 'server' }}"
+    gateway_conf: "{{ gateway_server_config_dir }}/gateway.conf"
+    runner_port: "{{ gateway_server_port }}"
+    server_port: "{{ gateway_server_port }}"
+    service_name: iagctl
+    iag5_server_group: iag5_servers
+    iag5_runner_group: iag5_runners
+    iag5_client_group: iag5_clients
+    os_ca_bundle: /etc/pki/tls/certs/ca-bundle.crt
+    private_ip: "{{ ansible_default_ipv4.address | default(ansible_host) }}"
+    verify_cert_report_file: "/tmp/verify_cert_{{ inventory_hostname }}.md"
+    verify_cert_report_dir_local: "./verify_cert_reports"
+    verify_cert_report_template: "{{ role_path }}/../verify_cert_common/templates/verify-cert-report.md.j2"
+    report_file_owner: "{{ gateway_server_user }}"
+    report_file_group: "{{ gateway_server_group }}"
+    check_results: []
+
+# -----------------------------------------------------------------------
+# SUITE 1 — Cluster TLS: SERVER ↔ RUNNER (gRPC mTLS)
+# Runners always run this suite.
+# Servers only run when runners exist in inventory (some checks reference
+# groups['iag5_runners'][0] which would error on an empty group).
+# -----------------------------------------------------------------------
+
+- name: "SUITE 1 | Run cluster server↔runner checks"
+  ansible.builtin.include_tasks: ../../verify_cert_common/tasks/verify_cert_cluster_server_to_runner.yml
+  when: >
+    node_section == 'runner' or
+    ('iag5_runners' in groups and groups['iag5_runners'] | length > 0)
+
+- name: "SUITE 1 | Print summary"
+  ansible.builtin.include_tasks: ../../verify_cert_common/tasks/summary.yml
+  vars:
+    role_title: "CLUSTER TLS — SERVER ↔ RUNNER (gRPC mTLS) — {{ node_section | upper }} NODE"
+  when: >
+    node_section == 'runner' or
+    ('iag5_runners' in groups and groups['iag5_runners'] | length > 0)
+
+# -----------------------------------------------------------------------
+# SUITE 2 — Cluster TLS: CLIENT ↔ SERVER (gRPC mTLS) — server side
+# Only runs on server nodes when clients exist in inventory.
+# -----------------------------------------------------------------------
+
+- name: "SUITE 2 | Reset check_results"
+  ansible.builtin.set_fact:
+    check_results: []
+  when: is_server_node | bool and 'iag5_clients' in groups and groups['iag5_clients'] | length > 0
+
+- name: "SUITE 2 | Run cluster client↔server checks (server side)"
+  ansible.builtin.include_tasks: ../../verify_cert_common/tasks/verify_cert_cluster_client_to_server.yml
+  when: is_server_node | bool and 'iag5_clients' in groups and groups['iag5_clients'] | length > 0
+
+- name: "SUITE 2 | Print summary"
+  ansible.builtin.include_tasks: ../../verify_cert_common/tasks/summary.yml
+  vars:
+    role_title: "CLUSTER TLS — CLIENT ↔ SERVER (gRPC mTLS) — SERVER NODE"
+  when: is_server_node | bool and 'iag5_clients' in groups and groups['iag5_clients'] | length > 0
+
+# -----------------------------------------------------------------------
+# SUITE 3 — Connect TLS: SERVER → Gateway Manager (one-way TLS + app-layer auth)
+# Always runs on server nodes — GWM is always present in every deployment.
+# node_section is set to 'connect' so the check file reads [connect] in gateway.conf.
+# is_server_node (set in INIT, never modified) guards the when conditions.
+# -----------------------------------------------------------------------
+
+- name: "SUITE 3 | Reset check_results and set connect section"
+  ansible.builtin.set_fact:
+    check_results: []
+    node_section: connect   # connect check file reads [connect] in gateway.conf
+  when: is_server_node | bool
+
+- name: "SUITE 3 | Run connect server→GWM checks"
+  ansible.builtin.include_tasks: ../../verify_cert_common/tasks/verify_cert_connect_server_to_gwm.yml
+  when: is_server_node | bool
+
+- name: "SUITE 3 | Print summary"
+  ansible.builtin.include_tasks: ../../verify_cert_common/tasks/summary.yml
+  vars:
+    role_title: "CONNECT TLS — SERVER → GATEWAY MANAGER (one-way TLS + app-layer auth) — CONNECT NODE"
+  when: is_server_node | bool

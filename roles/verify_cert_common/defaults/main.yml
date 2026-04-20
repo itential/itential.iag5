@@ -1,0 +1,12 @@
+# Copyright (c) 2025, Itential, Inc
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+---
+# OS CA bundle used to verify the GWM server certificate (one-way TLS / connect suite).
+# Override if your OS stores trusted CA certs in a different location.
+os_ca_bundle: /etc/pki/tls/certs/ca-bundle.crt
+
+# Path where the report is written on the remote host
+verify_cert_report_file: "/tmp/verify_cert_{{ inventory_hostname }}.md"
+
+# Directory on the control node where reports are fetched to
+verify_cert_report_dir_local: "./verify_cert_reports"

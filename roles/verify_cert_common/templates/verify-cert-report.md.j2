@@ -1,0 +1,23 @@
+# IAG5 TLS Certificate Verification Report
+
+| Field | Value |
+|-------|-------|
+| Host | {{ inventory_hostname }} |
+| Role | {{ role_title }} |
+| Generated | {{ ansible_date_time.iso8601 }} |
+| Overall Status | {% set failures = check_results | selectattr('status', 'search', '❌') | list %}{{ 'PASSED ✓' if failures | length == 0 else 'FAILED ✗ — ' + (failures | length | string) + ' failure(s)' }} |
+
+---
+
+## Check Results
+
+{% for item in check_results %}
+### {{ item.check }}
+
+| | |
+|-|-|
+| **Status** | {{ item.status }} |
+| **Expected** | {{ item.expected }} |
+| **Actual** | {{ item.actual }} |
+
+{% endfor %}
