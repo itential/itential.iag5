@@ -48,6 +48,14 @@ The variables in this section may be overridden in the inventory in the `iag5_cl
 If `gateway_client_packages` contains links to artifacts in the Itential Nexus repository, the
 `repository_username`/`repository_password` must be defined.
 
+The role also configures the following environment variables in `~/.bash_profile` for the
+`gateway_client_user` account:
+
+| Variable | Value |
+| :------- | :---- |
+| `GATEWAY_CONFIG` | `{{ gateway_client_working_dir }}/gateway.conf` |
+| `PATH` | Appends `{{ gateway_client_install_dir }}` |
+
 # Common Server/Runner Variables
 
 The variables in this section are common to the server and runner roles. They can be overridden in
