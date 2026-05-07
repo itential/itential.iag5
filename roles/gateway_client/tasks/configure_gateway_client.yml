@@ -18,3 +18,15 @@
     mode: "0600"
     owner: "{{ gateway_client_user }}"
     group: "{{ gateway_client_group }}"
+
+- name: Configure gateway environment variables in .bash_profile
+  ansible.builtin.blockinfile:
+    path: "/home/{{ gateway_client_user }}/.bash_profile"
+    create: true
+    owner: "{{ gateway_client_user }}"
+    group: "{{ gateway_client_group }}"
+    mode: "0644"
+    marker: "# {mark} ANSIBLE MANAGED BLOCK - gateway"
+    block: |
+      export GATEWAY_CONFIG={{ gateway_client_working_dir }}/gateway.conf
+      export PATH=$PATH:{{ gateway_client_install_dir }}
