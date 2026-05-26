@@ -1,0 +1,282 @@
+# Copyright (c) 2026, Itential, Inc
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+---
+# Validates TLS source files on the Ansible control node before deployment.
+# All tasks run delegate_to: localhost since files reside on the control node.
+#
+# Variables required:
+#   pki_cert_src:    local path to the node certificate file
+#   pki_key_src:     local path to the node private key file
+#   pki_ca_cert_src: local path to the CA certificate file
+#   check_san:       true to assert SANs are present (required for server/runner nodes)
+
+# -----------------------------------------------------------------------
+# File existence
+# -----------------------------------------------------------------------
+
+- name: Stat cert file
+  ansible.builtin.stat:
+    path: "{{ pki_cert_src }}"
+  register: tls_cert_stat
+  delegate_to: localhost
+  become: false
+
+- name: Assert cert file exists
+  ansible.builtin.assert:
+    that: tls_cert_stat.stat.exists and tls_cert_stat.stat.isreg
+    fail_msg: "Cert file not found: {{ pki_cert_src }}"
+    quiet: true
+
+- name: Stat key file
+  ansible.builtin.stat:
+    path: "{{ pki_key_src }}"
+  register: tls_key_stat
+  delegate_to: localhost
+  become: false
+
+- name: Assert key file exists
+  ansible.builtin.assert:
+    that: tls_key_stat.stat.exists and tls_key_stat.stat.isreg
+    fail_msg: "Key file not found: {{ pki_key_src }}"
+    quiet: true
+
+- name: Stat CA cert file
+  ansible.builtin.stat:
+    path: "{{ pki_ca_cert_src }}"
+  register: tls_ca_stat
+  delegate_to: localhost
+  become: false
+
+- name: Assert CA cert file exists
+  ansible.builtin.assert:
+    that: tls_ca_stat.stat.exists and tls_ca_stat.stat.isreg
+    fail_msg: "CA cert file not found: {{ pki_ca_cert_src }}"
+    quiet: true
+
+# -----------------------------------------------------------------------
+# PEM format validation
+# -----------------------------------------------------------------------
+
+- name: Validate cert is parseable PEM
+  ansible.builtin.command:
+    cmd: openssl x509 -noout -in {{ pki_cert_src }}
+  register: tls_cert_parse
+  changed_when: false
+  delegate_to: localhost
+  become: false
+
+- name: Assert cert is valid PEM
+  ansible.builtin.assert:
+    that: tls_cert_parse.rc == 0
+    fail_msg: "Cert is not valid PEM: {{ pki_cert_src }}"
+    quiet: true
+
+- name: Validate CA cert is parseable PEM
+  ansible.builtin.command:
+    cmd: openssl x509 -noout -in {{ pki_ca_cert_src }}
+  register: tls_ca_parse
+  changed_when: false
+  delegate_to: localhost
+  become: false
+
+- name: Assert CA cert is valid PEM
+  ansible.builtin.assert:
+    that: tls_ca_parse.rc == 0
+    fail_msg: "CA cert is not valid PEM: {{ pki_ca_cert_src }}"
+    quiet: true
+
+- name: Validate private key is parseable
+  ansible.builtin.command:
+    cmd: openssl pkey -noout -in {{ pki_key_src }}
+  register: tls_key_parse
+  changed_when: false
+  delegate_to: localhost
+  become: false
+
+- name: Assert private key is valid
+  ansible.builtin.assert:
+    that: tls_key_parse.rc == 0
+    fail_msg: "Key file is not a valid private key: {{ pki_key_src }}"
+    quiet: true
+
+# -----------------------------------------------------------------------
+# Expiry
+# -----------------------------------------------------------------------
+
+- name: Check cert is not expired
+  ansible.builtin.command:
+    cmd: openssl x509 -noout -checkend 0 -in {{ pki_cert_src }}
+  register: tls_cert_expiry
+  changed_when: false
+  delegate_to: localhost
+  become: false
+
+- name: Assert cert is not expired
+  ansible.builtin.assert:
+    that: tls_cert_expiry.rc == 0
+    fail_msg: "Cert has expired: {{ pki_cert_src }}"
+    quiet: true
+
+- name: Check cert does not expire within 30 days
+  ansible.builtin.command:
+    cmd: openssl x509 -noout -checkend 2592000 -in {{ pki_cert_src }}
+  register: tls_cert_expiry_warn
+  changed_when: false
+  ignore_errors: true
+  delegate_to: localhost
+  become: false
+
+- name: Warn if cert expires within 30 days
+  ansible.builtin.debug:
+    msg: "WARNING: cert expires within 30 days: {{ pki_cert_src }}"
+  when: tls_cert_expiry_warn.rc != 0
+
+# -----------------------------------------------------------------------
+# Cert/key matched pair
+# -----------------------------------------------------------------------
+
+- name: Extract public key from cert
+  ansible.builtin.command:
+    cmd: openssl x509 -noout -pubkey -in {{ pki_cert_src }}
+  register: tls_cert_pubkey
+  changed_when: false
+  delegate_to: localhost
+  become: false
+
+- name: Extract public key from private key
+  ansible.builtin.command:
+    cmd: openssl pkey -pubout -in {{ pki_key_src }}
+  register: tls_key_pubkey
+  changed_when: false
+  delegate_to: localhost
+  become: false
+
+- name: Assert cert and key are a matched pair
+  ansible.builtin.assert:
+    that: tls_cert_pubkey.stdout | trim == tls_key_pubkey.stdout | trim
+    fail_msg: "Cert and key are not a matched pair: {{ pki_cert_src }}, {{ pki_key_src }}"
+    quiet: true
+
+# -----------------------------------------------------------------------
+# CA validation
+# -----------------------------------------------------------------------
+
+- name: Check CA cert has CA:TRUE basic constraint
+  ansible.builtin.shell:
+    cmd: openssl x509 -noout -text -in {{ pki_ca_cert_src }} | grep "CA:TRUE"
+  args:
+    executable: /bin/bash
+  register: tls_ca_flag
+  changed_when: false
+  ignore_errors: true
+  delegate_to: localhost
+  become: false
+
+- name: Assert CA cert has CA:TRUE
+  ansible.builtin.assert:
+    that: tls_ca_flag.rc == 0
+    fail_msg: "CA cert does not have CA:TRUE basic constraint: {{ pki_ca_cert_src }}"
+    quiet: true
+
+- name: Verify cert is signed by CA
+  ansible.builtin.command:
+    cmd: openssl verify -CAfile {{ pki_ca_cert_src }} {{ pki_cert_src }}
+  register: tls_cert_verify
+  changed_when: false
+  ignore_errors: true
+  delegate_to: localhost
+  become: false
+
+- name: Assert cert is signed by CA
+  ansible.builtin.assert:
+    that: "'OK' in tls_cert_verify.stdout"
+    fail_msg: "Cert is not signed by the provided CA: {{ pki_cert_src }}"
+    quiet: true
+
+# -----------------------------------------------------------------------
+# Cert properties — self-signed and Extended Key Usage
+# -----------------------------------------------------------------------
+
+- name: Get cert subject hash
+  ansible.builtin.command:
+    cmd: openssl x509 -noout -subject_hash -in {{ pki_cert_src }}
+  register: tls_cert_subject_hash
+  changed_when: false
+  delegate_to: localhost
+  become: false
+
+- name: Get cert issuer hash
+  ansible.builtin.command:
+    cmd: openssl x509 -noout -issuer_hash -in {{ pki_cert_src }}
+  register: tls_cert_issuer_hash
+  changed_when: false
+  delegate_to: localhost
+  become: false
+
+- name: Assert cert is not self-signed
+  ansible.builtin.assert:
+    that: tls_cert_subject_hash.stdout | trim != tls_cert_issuer_hash.stdout | trim
+    fail_msg: "Cert is self-signed (subject hash == issuer hash). Provide a CA-signed cert: {{ pki_cert_src }}"
+    quiet: true
+
+- name: Get cert Extended Key Usage
+  ansible.builtin.shell:
+    cmd: openssl x509 -noout -text -in {{ pki_cert_src }} | grep -A3 "Extended Key Usage"
+  args:
+    executable: /bin/bash
+  register: tls_cert_eku
+  changed_when: false
+  ignore_errors: true
+  delegate_to: localhost
+  become: false
+
+- name: Warn if cert is missing serverAuth in Extended Key Usage
+  ansible.builtin.debug:
+    msg: "WARNING: cert is missing serverAuth in Extended Key Usage (recommended for mTLS): {{ pki_cert_src }}"
+  when: "'Server Authentication' not in tls_cert_eku.stdout"
+
+- name: Warn if cert is missing clientAuth in Extended Key Usage
+  ansible.builtin.debug:
+    msg: "WARNING: cert is missing clientAuth in Extended Key Usage (recommended for mTLS): {{ pki_cert_src }}"
+  when: "'Client Authentication' not in tls_cert_eku.stdout"
+
+# -----------------------------------------------------------------------
+# Subject Alternative Names (servers and runners only)
+# -----------------------------------------------------------------------
+
+- name: Subject Alternative Name checks
+  when: check_san | bool
+  block:
+    - name: Get cert Subject Alternative Names
+      ansible.builtin.shell:
+        cmd: openssl x509 -noout -text -in {{ pki_cert_src }} | grep -A2 "Subject Alternative Name"
+      args:
+        executable: /bin/bash
+      register: tls_cert_sans
+      changed_when: false
+      ignore_errors: true
+      delegate_to: localhost
+      become: false
+
+    - name: Assert cert has Subject Alternative Name extension
+      ansible.builtin.assert:
+        that: tls_cert_sans.stdout != ''
+        fail_msg: "Cert has no Subject Alternative Name extension (required for server mTLS): {{ pki_cert_src }}"
+        quiet: true
+
+    - name: Warn if inventory_hostname not found in SANs
+      ansible.builtin.debug:
+        msg: >-
+          WARNING: '{{ inventory_hostname }}' not found in cert SANs.
+          Clients connecting by hostname may fail TLS verification.
+      when: tls_cert_sans.stdout != '' and inventory_hostname not in tls_cert_sans.stdout
+
+    - name: Warn if ansible_host not found in SANs
+      ansible.builtin.debug:
+        msg: >-
+          WARNING: ansible_host '{{ ansible_host }}' not found in cert SANs.
+          Clients connecting by IP may fail TLS verification.
+      when: >-
+        tls_cert_sans.stdout != '' and
+        ansible_host != inventory_hostname and
+        ansible_host not in tls_cert_sans.stdout

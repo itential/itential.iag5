@@ -38,20 +38,23 @@ itential.iag5/
 │   ├── ansible-lint.yml           # CI: lint on push/PR to main
 │   └── publish_ansible_collection.yml  # CI: publish to Galaxy on release
 ├── docs/
-│   ├── reference_guide.md         # Full variable reference (100+ vars)
-│   └── verify_cert_README.md      # TLS verification guide
+│   ├── reference_guide.md              # Full variable reference (100+ vars)
+│   ├── certify.md                  # Post-deployment TLS verification guide
+│   └── verify.md           # Pre-flight environment verification guide
 ├── example_inventories/           # Five reference inventory files
 ├── playbooks/
 │   ├── site.yml                   # Meta playbook — imports all others in order
 │   ├── servers.yml
 │   ├── runners.yml
 │   ├── clients.yml
-│   └── verify_cert.yml
+│   ├── certify.yml            # Post-deployment TLS verification (standalone)
+│   └── verify.yml     # Pre-flight checks — run before install or upgrade
 ├── roles/
 │   ├── gateway/                   # Common variables only (no tasks)
 │   ├── gateway_client/            # IAG5 client install + configure
 │   ├── gateway_server/            # IAG5 server/runner install + configure
-│   └── verify_cert_common/        # Shared TLS verification task files
+│   ├── certify_common/        # Shared TLS verification task files
+│   └── verify_common/ # Shared pre-flight check task files
 └── scripts/
     └── changelog.py              # Generates CHANGELOG.md from git tags
 ```
@@ -78,14 +81,17 @@ Deploys server **or** runner depending on `gateway_application_mode`. Task execu
 5. `upload_certs.yml` — uploads TLS cert/key and CA cert
 6. `configure_gateway.yml` — renders `server.conf.j2` or `runner.conf.j2` to `/etc/gateway/gateway.conf`
 7. `configure_firewalld.yml` — opens ports in firewalld (optional)
-8. `verify_cert.yml` — live TLS handshake tests post-deployment
+8. `certify.yml` — live TLS handshake tests post-deployment
 
 Handler: `restart iagctl` — restarts the `iagctl` systemd service (4 retries, 5s delay,
 validates `ActiveState == "active"`).
 
 Defaults are split by domain: `install.yml`, `server.yml`, `store.yml`, `connect.yml`,
 `features.yml`, `registry.yml`, `pki.yml`, `secrets.yml`, `log.yml`, `runner.yml`,
-`common.yml`, `terminal.yml`.
+`common.yml`, `terminal.yml`, `specs.yml`.
+
+`specs.yml` defines minimum hardware requirements for servers and runners used by the
+`verify` pre-flight check.
 
 ### gateway\_client
 
@@ -95,19 +101,29 @@ Deploys the IAG5 CLI client. Task execution order:
 2. `install_gateway_client.yml` — creates user/dirs, downloads + unpacks tarball
 3. `upload_certs.yml` — uploads TLS material
 4. `configure_gateway_client.yml` — renders `gateway.conf.j2` to `~/.gateway.d/gateway.conf`
-5. `verify_cert.yml`
+5. `certify.yml`
 
 Defaults split by domain: `install.yml`, `server.yml`, `pki.yml`, `secrets.yml`, `log.yml`,
 `terminal.yml`.
 
-### verify\_cert\_common
+### certify\_common
 
-Provides shared task files (not called directly) for TLS verification:
+Provides shared task files (not called directly) for post-deployment TLS certification:
 
-- `verify_cert_cluster_server_to_runner.yml`
-- `verify_cert_cluster_client_to_server.yml`
-- `verify_cert_connect_server_to_gwm.yml`
-- `summary.yml` (renders a Markdown report via `verify-cert-report.md.j2`)
+- `certify_cluster_server_to_runner.yml`
+- `certify_cluster_client_to_server.yml`
+- `certify_connect_server_to_gwm.yml`
+- `summary.yml` (renders a Markdown report via `certify-report.md.j2`)
+
+### verify\_common
+
+Provides shared task files (not called directly) for pre-flight environment verification.
+All TLS tasks run `delegate_to: localhost` since cert files reside on the control node.
+
+- `verify-os.yml` — asserts RHEL/Rocky 8/9, x86\_64
+- `verify-specs.yml` — asserts CPU, RAM, and disk against documented minimums
+- `verify-tls-files.yml` — 14 checks on TLS source files (existence, PEM validity, expiry,
+  cert/key match, CA chain, EKU, SANs)
 
 ## Running the Collection
 
@@ -165,7 +181,7 @@ ansible-playbook itential.iag5.runners  -i inventories/production
 ansible-playbook itential.iag5.clients  -i inventories/production
 
 # Post-deployment TLS verification only
-ansible-playbook itential.iag5.verify_cert -i inventories/production
+ansible-playbook itential.iag5.certify -i inventories/production
 ```
 
 ### Ansible Tags
@@ -177,7 +193,7 @@ Tasks are tagged for selective execution:
 | `install` | Package download and installation |
 | `configure` | Configuration file rendering |
 | `upload_certs` | TLS certificate upload |
-| `verify_cert` | Post-deployment TLS verification |
+| `certify` | Post-deployment TLS verification |
 
 ```bash
 ansible-playbook itential.iag5.site -i inventories/production --tags configure

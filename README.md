@@ -27,6 +27,7 @@
         1. [Clients Playbook](#clients-playbook)
         2. [Servers Playbook](#servers-playbook)
         3. [Runners Playbook](#runners-playbook)
+        4. [Verify Environment Playbook](#verify-playbook)
 6. [Sample Inventories](#sample-inventories)
     1. [All-in-one Single Node Inventory](#all-in-one-single-node-inventory)
     2. [All-in-one Active/Standby High Availability Inventory](#all-in-one-activestandby-high-availability-inventory)
@@ -422,6 +423,19 @@ all:
           - <IAGCTL-TARBALL>
 ```
 
+### Verify the Environment
+
+Before running the installation, run the pre-flight verification playbook to confirm that all
+target nodes meet OS, hardware, and TLS requirements:
+
+```bash
+cd <WORKING-DIR>
+ansible-playbook itential.iag5.verify -i inventories/<env>
+```
+
+All checks must pass before proceeding. See the [verify guide](docs/verify.md)
+for a full description of checks and how to interpret failures.
+
 ### Run the IAG5 Site Playbook
 
 Navigate to the working directory and execute the following run command.
@@ -468,6 +482,18 @@ ansible-playbook itential.iag5.servers -i inventories/dev
 cd <WORKING-DIR>
 ansible-playbook itential.iag5.runners -i inventories/dev
 ```
+
+#### Verify Environment Playbook
+
+Verifies OS, hardware, and TLS file requirements across all node types before installation or
+upgrade. Can be run at any time — does not require IAG5 to be installed.
+
+```bash
+cd <WORKING-DIR>
+ansible-playbook itential.iag5.verify -i inventories/dev
+```
+
+See the [verify guide](docs/verify.md) for full details.
 
 ## Sample Inventories
 

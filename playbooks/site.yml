@@ -10,5 +10,5 @@
 - name: Install and configure Gateway5 clients
   import_playbook: itential.iag5.clients
 
-- name: Verify IAG5 TLS certificates post-deployment
-  import_playbook: itential.iag5.verify_cert
+- name: Certify IAG5 TLS certificates post-deployment
+  import_playbook: itential.iag5.certify
