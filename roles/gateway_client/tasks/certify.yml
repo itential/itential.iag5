@@ -1,6 +1,6 @@
 ---
 # TLS certificate verification for gateway client nodes.
-# Called via: include_role: name: itential.iag5.gateway_client tasks_from: verify_cert.yml
+# Called via: include_role: name: itential.iag5.gateway_client tasks_from: certify.yml
 # Requires: itential.iag5.gateway role to have been loaded (provides gateway_* vars).
 
 - name: "Set verification context"
@@ -12,9 +12,9 @@
     iag5_server_group: iag5_servers
     iag5_client_group: iag5_clients
     private_ip: "{{ ansible_default_ipv4.address | default(ansible_host) }}"
-    verify_cert_report_file: "/tmp/verify_cert_{{ inventory_hostname }}.md"
-    verify_cert_report_dir_local: "./verify_cert_reports"
-    verify_cert_report_template: "{{ role_path }}/../verify_cert_common/templates/verify-cert-report.md.j2"
+    certify_report_file: "/tmp/certify_{{ inventory_hostname }}.md"
+    certify_report_dir_local: "./certify_reports"
+    certify_report_template: "{{ role_path }}/../certify_common/templates/certify-report.md.j2"
     report_file_owner: "{{ gateway_client_user }}"
     report_file_group: "{{ gateway_client_group }}"
     check_results: []
@@ -24,9 +24,9 @@
 # -----------------------------------------------------------------------
 
 - name: "SUITE 1 | Run cluster client↔server checks (client side)"
-  ansible.builtin.include_tasks: ../../verify_cert_common/tasks/verify_cert_cluster_client_to_server.yml
+  ansible.builtin.include_tasks: ../../certify_common/tasks/certify_cluster_client_to_server.yml
 
 - name: "SUITE 1 | Print summary"
-  ansible.builtin.include_tasks: ../../verify_cert_common/tasks/summary.yml
+  ansible.builtin.include_tasks: ../../certify_common/tasks/summary.yml
   vars:
     role_title: "CLUSTER TLS — CLIENT ↔ SERVER (gRPC mTLS) — CLIENT NODE"

@@ -1,4 +1,4 @@
-# verify_cert — IAG5 TLS Certificate Verification
+# certify — IAG5 TLS Certificate Verification
 
 An Ansible playbook suite that verifies TLS certificate configuration across all IAG5 node types after deployment. Runs against live nodes, reads actual `gateway.conf` files, and performs live TLS handshakes to confirm that mTLS is working end-to-end — not just that files exist.
 
@@ -34,32 +34,32 @@ IAG5 uses three distinct TLS connection paths, each with different certificate r
 
 > **EKU (Extended Key Usage)** — an X.509 certificate extension that defines the purposes the certificate may be used for. `serverAuth` allows the cert to authenticate a server; `clientAuth` allows it to authenticate a client. mTLS requires both on every node cert.
 
-verify_cert covers all three paths. For each path it runs on both sides of the connection independently, so a misconfiguration on either end is caught.
+certify covers all three paths. For each path it runs on both sides of the connection independently, so a misconfiguration on either end is caught.
 
 ---
 
 ## Architecture
 
-verify_cert is colocated with the roles being verified. Each gateway role has a `tasks/verify_cert.yml` orchestrator that runs the appropriate check suites. A shared `verify_cert_common` role provides the check task files and report template.
+certify is colocated with the roles being verified. Each gateway role has a `tasks/certify.yml` orchestrator that runs the appropriate check suites. A shared `certify_common` role provides the check task files and report template.
 
 ```
 itential.iag5/
 ├── playbooks/
-│   ├── site.yml                                          Main playbook — imports verify_cert at end
-│   └── verify_cert.yml                                   2-play verify_cert playbook
+│   ├── site.yml                                          Main playbook — imports certify at end
+│   └── certify.yml                                   2-play certify playbook
 └── roles/
     ├── gateway_server/
-    │   └── tasks/verify_cert.yml                         Orchestrator — runs SUITE 1, 2, 3 conditionally
+    │   └── tasks/certify.yml                         Orchestrator — runs SUITE 1, 2, 3 conditionally
     ├── gateway_client/
-    │   └── tasks/verify_cert.yml                         Orchestrator — runs SUITE 1 (client side)
-    └── verify_cert_common/
+    │   └── tasks/certify.yml                         Orchestrator — runs SUITE 1 (client side)
+    └── certify_common/
         ├── defaults/main.yml                             Report path defaults and os_ca_bundle
         ├── tasks/
         │   ├── summary.yml                               Shared summary printer and report generator
-        │   ├── verify_cert_cluster_server_to_runner.yml  27 checks — server and runner nodes
-        │   ├── verify_cert_cluster_client_to_server.yml  26 checks — client and server nodes
-        │   └── verify_cert_connect_server_to_gwm.yml    20 checks — server → GWM
-        └── templates/verify-cert-report.md.j2           Markdown report template
+        │   ├── certify_cluster_server_to_runner.yml  27 checks — server and runner nodes
+        │   ├── certify_cluster_client_to_server.yml  26 checks — client and server nodes
+        │   └── certify_connect_server_to_gwm.yml    20 checks — server → GWM
+        └── templates/certify-report.md.j2           Markdown report template
 ```
 
 ### How node identity is determined
@@ -72,7 +72,7 @@ node_section: "{{ gateway_application_mode | default('server') }}"
 
 ### Test suite selection
 
-The `gateway_server/tasks/verify_cert.yml` orchestrator targets `iag5_servers:iag5_runners` and selects suites automatically from inventory topology — no extra variables required:
+The `gateway_server/tasks/certify.yml` orchestrator targets `iag5_servers:iag5_runners` and selects suites automatically from inventory topology — no extra variables required:
 
 | Suite | Condition |
 |-------|-----------|
@@ -80,7 +80,7 @@ The `gateway_server/tasks/verify_cert.yml` orchestrator targets `iag5_servers:ia
 | SUITE 2 — Cluster client ↔ server (server side) | Server nodes only when `iag5_clients` group has hosts |
 | SUITE 3 — Connect server → GWM | Always on server nodes (GWM is always present) |
 
-The `gateway_client/tasks/verify_cert.yml` orchestrator runs SUITE 1 (client side) on all `iag5_clients` hosts. The play itself only runs when those hosts exist, so no guard is needed.
+The `gateway_client/tasks/certify.yml` orchestrator runs SUITE 1 (client side) on all `iag5_clients` hosts. The play itself only runs when those hosts exist, so no guard is needed.
 
 ### EKU gating
 
@@ -112,33 +112,33 @@ Any check that requires a working mTLS connection carries `when: eku_valid | def
 itential.iag5/
 ├── playbooks/
 │   ├── site.yml
-│   └── verify_cert.yml
+│   └── certify.yml
 └── roles/
     ├── gateway_server/
     │   └── tasks/
-    │       └── verify_cert.yml                            Orchestrator (INIT + 3 suites)
+    │       └── certify.yml                            Orchestrator (INIT + 3 suites)
     ├── gateway_client/
     │   └── tasks/
-    │       └── verify_cert.yml                            Orchestrator (INIT + 1 suite)
-    └── verify_cert_common/
+    │       └── certify.yml                            Orchestrator (INIT + 1 suite)
+    └── certify_common/
         ├── defaults/main.yml
         ├── tasks/
         │   ├── summary.yml
-        │   ├── verify_cert_cluster_server_to_runner.yml
-        │   ├── verify_cert_cluster_client_to_server.yml
-        │   └── verify_cert_connect_server_to_gwm.yml
-        └── templates/verify-cert-report.md.j2
+        │   ├── certify_cluster_server_to_runner.yml
+        │   ├── certify_cluster_client_to_server.yml
+        │   └── certify_connect_server_to_gwm.yml
+        └── templates/certify-report.md.j2
 ```
 
 ---
 
 ## Inventory
 
-verify_cert uses the deployer's existing inventory — no separate inventory file is required. The host groups `iag5_servers`, `iag5_runners`, and `iag5_clients` are already defined by the deployer and are used directly by the verify_cert roles.
+certify uses the deployer's existing inventory — no separate inventory file is required. The host groups `iag5_servers`, `iag5_runners`, and `iag5_clients` are already defined by the deployer and are used directly by the certify roles.
 
 ### Host IP resolution
 
-verify_cert derives each node's IP from `ansible_default_ipv4.address`, which Ansible gathers directly from the host's default route interface. This means `private_ip` does **not** need to be set in the inventory.
+certify derives each node's IP from `ansible_default_ipv4.address`, which Ansible gathers directly from the host's default route interface. This means `private_ip` does **not** need to be set in the inventory.
 
 The resolved IP is used for:
 
@@ -162,32 +162,32 @@ iag5_servers:
 ### Run all checks
 
 ```bash
-ansible-playbook itential.iag5.verify_cert -i inventories/dev/hosts
+ansible-playbook itential.iag5.certify -i inventories/dev/hosts
 ```
 
 ### Run a specific connection path only
 
 ```bash
 # Server ↔ Runner mTLS checks
-ansible-playbook itential.iag5.verify_cert -i inventories/dev/hosts --tags cluster_server_to_runner
+ansible-playbook itential.iag5.certify -i inventories/dev/hosts --tags cluster_server_to_runner
 
 # Client ↔ Server mTLS checks
-ansible-playbook itential.iag5.verify_cert -i inventories/dev/hosts --tags cluster_client_to_server
+ansible-playbook itential.iag5.certify -i inventories/dev/hosts --tags cluster_client_to_server
 
 # Server → Gateway Manager WebSocket TLS checks
-ansible-playbook itential.iag5.verify_cert -i inventories/dev/hosts --tags connect_server_to_gwm
+ansible-playbook itential.iag5.certify -i inventories/dev/hosts --tags connect_server_to_gwm
 ```
 
 ### Run on a single node
 
 ```bash
-ansible-playbook itential.iag5.verify_cert -i inventories/dev/hosts --limit gateway_runner
+ansible-playbook itential.iag5.certify -i inventories/dev/hosts --limit gateway_runner
 ```
 
 ### Increase verbosity to see raw openssl output
 
 ```bash
-ansible-playbook itential.iag5.verify_cert -i inventories/dev/hosts -v
+ansible-playbook itential.iag5.certify -i inventories/dev/hosts -v
 ```
 
 ---
@@ -395,28 +395,28 @@ All plays use `ignore_errors: true` so a failure in one check does not abort the
 
 ## Integration with itential.iag5 Deployer
 
-verify_cert can run integrated into the `itential.iag5` deployer so that TLS verification happens automatically after every deployment.
+certify can run integrated into the `itential.iag5` deployer so that TLS verification happens automatically after every deployment.
 
 ### What changes in the deployer
 
 ```
 itential.iag5/
 ├── playbooks/
-│   ├── site.yml                                    ← Add verify_cert import at end
-│   └── verify_cert.yml                               ← 2-play playbook
+│   ├── site.yml                                    ← Add certify import at end
+│   └── certify.yml                               ← 2-play playbook
 └── roles/
     ├── gateway_server/
-    │   └── tasks/verify_cert.yml                     ← Orchestrator (INIT + 3 suites)
+    │   └── tasks/certify.yml                     ← Orchestrator (INIT + 3 suites)
     ├── gateway_client/
-    │   └── tasks/verify_cert.yml                     ← Orchestrator (INIT + 1 suite)
-    └── verify_cert_common/
+    │   └── tasks/certify.yml                     ← Orchestrator (INIT + 1 suite)
+    └── certify_common/
         ├── defaults/main.yml
         ├── tasks/
         │   ├── summary.yml
-        │   ├── verify_cert_cluster_server_to_runner.yml
-        │   ├── verify_cert_cluster_client_to_server.yml
-        │   └── verify_cert_connect_server_to_gwm.yml
-        └── templates/verify-cert-report.md.j2
+        │   ├── certify_cluster_server_to_runner.yml
+        │   ├── certify_cluster_client_to_server.yml
+        │   └── certify_connect_server_to_gwm.yml
+        └── templates/certify-report.md.j2
 ```
 
 ### Run conditions
@@ -431,16 +431,16 @@ Suites are selected automatically from inventory topology — no variables requi
 
 If TLS is explicitly disabled in your inventory, the individual cert checks record themselves as `⏭ SKIPPED — TLS disabled` in the summary.
 
-To skip verify_cert entirely:
+To skip certify entirely:
 
 ```bash
-# Skip all verify_cert
-ansible-playbook itential.iag5.site -i inventories/dev/hosts --skip-tags verify_cert
+# Skip all certify
+ansible-playbook itential.iag5.site -i inventories/dev/hosts --skip-tags certify
 ```
 
-### How deployer variables map to verify_cert variables
+### How deployer variables map to certify variables
 
-| verify_cert variable | Derived from deployer variable |
+| certify variable | Derived from deployer variable |
 |--------------------|-------------------------------|
 | `gateway_conf` (server/runner) | `{{ gateway_server_config_dir }}/gateway.conf` |
 | `gateway_conf` (client) | `{{ gateway_client_working_dir }}/gateway.conf` |
@@ -449,15 +449,15 @@ ansible-playbook itential.iag5.site -i inventories/dev/hosts --skip-tags verify_
 | `service_name` | `iagctl` (hardcoded — matches deployer systemd unit) |
 | `private_ip` | `{{ ansible_default_ipv4.address \| default(ansible_host) }}` — gathered from the host; no inventory entry needed |
 
-### Running verify_cert standalone against the deployer inventory
+### Running certify standalone against the deployer inventory
 
 ```bash
-ansible-playbook itential.iag5.verify_cert -i inventories/dev/hosts
+ansible-playbook itential.iag5.certify -i inventories/dev/hosts
 ```
 
-### Running the full deployer with verify_cert
+### Running the full deployer with certify
 
-When `verify_cert.yml` is imported at the end of `site.yml`, verify_cert runs automatically after every full deployment:
+When `certify.yml` is imported at the end of `site.yml`, certify runs automatically after every full deployment:
 
 ```bash
 ansible-playbook itential.iag5.site -i inventories/dev/hosts

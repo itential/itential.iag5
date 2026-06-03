@@ -1,49 +1,49 @@
 # Copyright (c) 2025, Itential, Inc
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 ---
-# IAG5 TLS Certificate Verification
+# IAG5 TLS Certificate Certification
 #
-# Runs after deployment to verify that all TLS certificates are correctly
+# Runs after deployment to certify that all TLS certificates are correctly
 # configured across all IAG5 node types. All variables are derived from the
-# deployer's existing inventory — no separate verify_cert inventory required.
+# deployer's existing inventory — no separate certify inventory required.
 #
 # Runs automatically as the final step of site.yml.
 # Can also be run standalone:
 #
-#   ansible-playbook itential.iag5.verify_cert -i <inventory>
+#   ansible-playbook itential.iag5.certify -i <inventory>
 
 # -----------------------------------------------------------------------
 # PLAY 1 — Gateway server and runner nodes
 # -----------------------------------------------------------------------
-- name: "Gateway server and runner TLS certificate verification"
+- name: "Gateway server and runner TLS certificate certification"
   hosts: iag5_servers:iag5_runners
   become: true
-  tags: [verify_cert]
+  tags: [certify]
   tasks:
     - name: "Load gateway shared variables"
       ansible.builtin.import_role:
         name: itential.iag5.gateway
       when: false
 
-    - name: "Run gateway server/runner cert verification"
+    - name: "Run gateway server/runner certify"
       ansible.builtin.include_role:
         name: itential.iag5.gateway_server
-        tasks_from: verify_cert.yml
+        tasks_from: certify.yml
 
 # -----------------------------------------------------------------------
 # PLAY 2 — Gateway client nodes (only runs when iag5_clients hosts exist)
 # -----------------------------------------------------------------------
-- name: "Gateway client TLS certificate verification"
+- name: "Gateway client TLS certificate certification"
   hosts: iag5_clients
   become: true
-  tags: [verify_cert]
+  tags: [certify]
   tasks:
     - name: "Load gateway shared variables"
       ansible.builtin.import_role:
         name: itential.iag5.gateway
       when: false
 
-    - name: "Run gateway client cert verification"
+    - name: "Run gateway client certify"
       ansible.builtin.include_role:
         name: itential.iag5.gateway_client
-        tasks_from: verify_cert.yml
+        tasks_from: certify.yml

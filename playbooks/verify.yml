@@ -1,0 +1,71 @@
+# Copyright (c) 2026, Itential, Inc
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+---
+# IAG5 Environment Verification
+#
+# Verifies that target hosts meet all requirements before installation or upgrade:
+#   - OS is a supported distribution and version (RHEL/Rocky 8/9, x86_64)
+#   - Hardware specs meet minimums (servers and runners only)
+#   - TLS source files are valid, unexpired, and correctly configured
+#
+# Run standalone before install or upgrade:
+#
+#   ansible-playbook itential.iag5.verify -i <inventory>
+
+# -----------------------------------------------------------------------
+# PLAY 1 — Gateway server nodes
+# -----------------------------------------------------------------------
+- name: Verify IAG5 server environment
+  hosts: iag5_servers
+  become: true
+  gather_facts: true
+  tasks:
+    - name: Load gateway shared variables
+      ansible.builtin.import_role:
+        name: itential.iag5.gateway
+      when: false
+
+    - name: Verify server environment
+      ansible.builtin.include_role:
+        name: itential.iag5.gateway_server
+        tasks_from: verify.yml
+      vars:
+        gateway_application_mode: server
+
+# -----------------------------------------------------------------------
+# PLAY 2 — Gateway runner nodes
+# -----------------------------------------------------------------------
+- name: Verify IAG5 runner environment
+  hosts: iag5_runners
+  become: true
+  gather_facts: true
+  tasks:
+    - name: Load gateway shared variables
+      ansible.builtin.import_role:
+        name: itential.iag5.gateway
+      when: false
+
+    - name: Verify runner environment
+      ansible.builtin.include_role:
+        name: itential.iag5.gateway_server
+        tasks_from: verify.yml
+      vars:
+        gateway_application_mode: runner
+
+# -----------------------------------------------------------------------
+# PLAY 3 — Gateway client nodes (only runs when iag5_clients hosts exist)
+# -----------------------------------------------------------------------
+- name: Verify IAG5 client environment
+  hosts: iag5_clients
+  become: true
+  gather_facts: true
+  tasks:
+    - name: Load gateway shared variables
+      ansible.builtin.import_role:
+        name: itential.iag5.gateway
+      when: false
+
+    - name: Verify client environment
+      ansible.builtin.include_role:
+        name: itential.iag5.gateway_client
+        tasks_from: verify.yml
