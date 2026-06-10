@@ -31,6 +31,21 @@
     group: root
     mode: "0644"
 
+- name: Create the gateway systemd environment file
+  ansible.builtin.template:
+    src: iagctl.env.j2
+    dest: "{{ gateway_server_service_env_file }}"
+    mode: "0600"
+    owner: "{{ gateway_server_user }}"
+    group: "{{ gateway_server_group }}"
+    lstrip_blocks: true
+    backup: true
+  when: >-
+    gateway_server_store_backend == 'dynamodb' or
+    gateway_server_environment | length > 0 or
+    (gateway_server_connect_proxy_enabled | bool and
+      gateway_server_connect_proxy_config_method == 'env_file')
+
 - name: Create the gateway encryption key file
   ansible.builtin.copy:
     content: "{{ gateway_secrets_encrypt_key }}"

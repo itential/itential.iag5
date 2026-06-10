@@ -1,0 +1,17 @@
+# Copyright (c) 2025, Itential, Inc
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+---
+###############################
+# Gateway environment variables
+###############################
+
+# Free-form key/value pairs written directly to the systemd environment file (iagctl.env).
+# Use this to set system-level environment variables such as HTTP_PROXY, HTTPS_PROXY, and
+# NO_PROXY for controlling outbound traffic from the gateway process.
+#
+# Example:
+#   gateway_server_environment:
+#     HTTP_PROXY: "http://proxy.example.com:3128"
+#     HTTPS_PROXY: "http://proxy.example.com:3128"
+#     NO_PROXY: "noproxy.example.com"
+gateway_server_environment: {}
