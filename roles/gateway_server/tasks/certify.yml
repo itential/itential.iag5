@@ -16,7 +16,7 @@
     iag5_client_group: iag5_clients
     os_ca_bundle: /etc/pki/tls/certs/ca-bundle.crt
     private_ip: "{{ ansible_default_ipv4.address | default(ansible_host) }}"
-    certify_report_file: "/tmp/certify_{{ inventory_hostname }}.md"
+    certify_report_file: "/tmp/certify-tls-{{ inventory_hostname }}.md"
     certify_report_dir_local: "./certify_reports"
     certify_report_template: "{{ role_path }}/../certify_common/templates/certify-report.md.j2"
     report_file_owner: "{{ gateway_server_user }}"
