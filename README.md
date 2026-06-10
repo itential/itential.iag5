@@ -28,6 +28,8 @@
         2. [Servers Playbook](#servers-playbook)
         3. [Runners Playbook](#runners-playbook)
         4. [Verify Environment Playbook](#verify-playbook)
+        5. [Certify IAG5 Playbook](#certify-iag5-playbook)
+        6. [TLS Certification Playbook](#tls-certification-playbook)
 6. [Sample Inventories](#sample-inventories)
     1. [All-in-one Single Node Inventory](#all-in-one-single-node-inventory)
     2. [All-in-one Active/Standby High Availability Inventory](#all-in-one-activestandby-high-availability-inventory)
@@ -494,6 +496,72 @@ ansible-playbook itential.iag5.verify -i inventories/dev
 ```
 
 See the [verify guide](docs/verify.md) for full details.
+
+#### Certify IAG5 Playbook
+
+Runs a full post-deployment certification of the IAG5 installation. This playbook is automatically
+executed as the final step of `itential.iag5.site`. It performs two certifications in sequence per
+node:
+
+1. **Installation certification** — forensic, read-only checks covering service state, config file
+   properties, TLS file existence and certificate metadata, runtime versions, host information, and
+   network connectivity (server→runner TCP, server→GWM TCP).
+2. **TLS certification** — deep validation covering certificate chain, cert/key matching, SAN
+   validation, mTLS enforcement, proxy exclusion checks, and live TLS handshake tests.
+
+A markdown report is generated per node and fetched to `./certify_reports/` on the control node.
+
+```bash
+cd <WORKING-DIR>
+ansible-playbook itential.iag5.certify-iag5 -i inventories/dev
+```
+
+##### Tag Reference
+
+Each certification can be run independently using tags:
+
+| Tag | What runs |
+|-----|-----------|
+| `certify-iag5` | Both installation + TLS certification (default) |
+| `certify-install` | Installation certification only |
+| `certify` | TLS certification only |
+
+```bash
+# Installation certification only
+ansible-playbook itential.iag5.certify-iag5 -i inventories/dev --tags certify-install
+
+# TLS certification only
+ansible-playbook itential.iag5.certify-iag5 -i inventories/dev --tags certify
+
+# Run only the certification step from a full site deployment
+ansible-playbook itential.iag5.site -i inventories/dev --tags certify-iag5
+```
+
+##### Report Output
+
+Reports are fetched to `./certify_reports/` relative to the directory where `ansible-playbook` is
+run. Two report files are produced per node:
+
+| Report | Remote path | Control node filename |
+|--------|-------------|----------------------|
+| Installation | `/tmp/certify-iag5-<node_type>-report-<hostname>.md` | `certify-iag5-<node_type>-report-<hostname>.md` |
+| TLS | `/tmp/certify-tls-<hostname>.md` | `certify-tls-<hostname>.md` |
+
+See the [certify guide](docs/certify.md) for a full description of all checks and how to interpret
+results.
+
+#### TLS Certification Playbook
+
+Runs deep TLS certificate validation across all node types without the installation forensics.
+Validates certificate chains, cert/key matching, SANs, mTLS enforcement, and live handshake tests.
+Can be run standalone at any time after deployment.
+
+```bash
+cd <WORKING-DIR>
+ansible-playbook itential.iag5.certify -i inventories/dev
+```
+
+See the [certify guide](docs/certify.md) for full details.
 
 ## Sample Inventories
 
