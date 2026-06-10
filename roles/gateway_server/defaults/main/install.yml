@@ -19,6 +19,8 @@ gateway_server_data_dir: /var/lib/gateway
 
 # Gateway python installation
 gateway_server_python_packages:
+  - python3.11
+  - python3.11-pip
   - python3.12
   - python3.12-pip
 gateway_server_python_executable: /usr/bin/python3.12
