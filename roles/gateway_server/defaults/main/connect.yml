@@ -19,10 +19,6 @@ gateway_server_connect_certificate_file: "{{ gateway_server_pki_cert_dest }}"
 gateway_server_connect_private_key_file: "{{ gateway_server_pki_key_dest }}"
 
 gateway_server_connect_proxy_enabled: false
-# Valid options for the config method are:
-#  1) env_file (default)- configure the proxy settings in the service environment file
-#  2) config_file - configure the proxy settings in the Gateway configuration file
-gateway_server_connect_proxy_config_method: env_file
 gateway_server_connect_proxy_url:
 gateway_server_connect_proxy_username:
 gateway_server_connect_proxy_password:

@@ -244,8 +244,7 @@ The full variable reference (100+ variables with types, defaults, and descriptio
 - `gateway_server_features_python` — install Python (default: `false`)
 - `gateway_server_features_opentofu` — install OpenTofu (default: `false`)
 - `gateway_application_mode` — set by playbook: `server` or `runner`
-- `gateway_server_connect_proxy_enabled` — enable outbound proxy for Gateway Manager connection (default: `false`)
-- `gateway_server_connect_proxy_config_method` — `env_file` (default, writes to `iagctl.env`) or `config_file` (writes to `gateway.conf`)
+- `gateway_server_connect_proxy_enabled` — enable outbound proxy for Gateway Manager connection (default: `false`); always writes `GATEWAY_CONNECT_PROXY_*` vars to `iagctl.env`
 - `gateway_server_connect_proxy_url` — proxy URL; required when proxy is enabled
 - `gateway_server_connect_proxy_username` / `gateway_server_connect_proxy_password` — optional proxy credentials
 - `gateway_server_service_env_file` — path to the systemd environment file (default: `/etc/gateway/iagctl.env`)

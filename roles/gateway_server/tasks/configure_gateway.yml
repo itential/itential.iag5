@@ -43,8 +43,7 @@
   when: >-
     gateway_server_store_backend == 'dynamodb' or
     gateway_server_environment | length > 0 or
-    (gateway_server_connect_proxy_enabled | bool and
-      gateway_server_connect_proxy_config_method == 'env_file')
+    gateway_server_connect_proxy_enabled | bool
 
 - name: Create the gateway encryption key file
   ansible.builtin.copy:
