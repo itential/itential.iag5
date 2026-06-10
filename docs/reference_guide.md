@@ -68,6 +68,7 @@ the `iag5_servers` or `iag_runners` group vars.
 | `gateway_server_pip_executable` | String | The path to the Pip executable. | /usr/bin/pip3.12 |
 | `gateway_server_local_bin_dir` | String | The server local binnary directory. | "/home/{{ gateway_server_user }}/.local/bin" |
 | `gateway_server_opentofu_packages` | List of String | The list of OpenTofu packages to install. | - tofu |
+| `gateway_server_service_env_file` | String | Path to the systemd service environment file. Sensitive credentials (DynamoDB, proxy) are written here instead of the unit file to keep them out of `systemctl show` output. | "{{ gateway_server_config_dir }}/iagctl.env" |
 | `gateway_server_log_console_json` | Boolean | Flag for enabling/disabling logging to the console in JSON format. | false |
 | `gateway_server_log_file_enabled` | Boolean | Flag for enabling/disabling logging. | true |
 | `gateway_server_log_file_json` | Boolean | Flag for enabling/disabling logging in JSON format. | false |
@@ -114,6 +115,11 @@ The variables in this section may be overridden in the inventory in the `iag5_se
 | `gateway_server_connect_insecure_tls` | Boolean | Determines whether the gateway verifies TLS certificates when it connects to Itential Platform. When set to true, the gateway skips TLS certificate verification. We strongly recommend enabling TLS certificate verification in production environments. | false |
 | `gateway_server_connect_certificate_file` | String | Specifies the full path to the certificate file used to establish a secure connection to Gateway Manager. | "{{ gateway_server_pki_cert_dest }}" |
 | `gateway_server_connect_private_key_file` | String | Specifies the full path to the private key file that the gateway uses to connect to Gateway Manager. | "{{ gateway_server_pki_key_dest }}" |
+| `gateway_server_connect_proxy_enabled` | Boolean | Flag for enabling/disabling outbound proxy configuration for the Gateway Manager connection. | false |
+| `gateway_server_connect_proxy_config_method` | String | The method used to configure proxy settings. `env_file` writes `GATEWAY_CONNECT_PROXY_*` variables to the systemd environment file (`iagctl.env`). `config_file` writes proxy settings directly to `gateway.conf`. | env_file |
+| `gateway_server_connect_proxy_url` | String | The proxy URL (e.g. `http://proxy.example.com:8080`). Required when `gateway_server_connect_proxy_enabled` is `true`. | N/A |
+| `gateway_server_connect_proxy_username` | String | The proxy username. Optional. | N/A |
+| `gateway_server_connect_proxy_password` | String | The proxy password. Optional. | N/A |
 | `gateway_server_features_ansible_enabled` | Boolean | Enables or disables all Ansible features. When you set this variable to false, the gateway disables the management of Ansible playbooks and the execution of Ansible services. | true |
 | `gateway_server_features_hostkeys_enabled` | Boolean | Enables or disables the hostkeys feature. When you set this variable to false, the gateway disables the hostkeys managment commands. | true |
 | `gateway_server_features_opentofu_enabled` | Boolean | Enables or disables all OpenTofu features. When you set this variable to false, the gateway disables the management of OpenTofu plans and the execution of OpenTofu services. | true |

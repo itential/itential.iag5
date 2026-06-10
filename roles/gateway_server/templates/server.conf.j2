@@ -13,6 +13,15 @@ private_key_file     = '{{ gateway_server_connect_private_key_file }}'
 insecure_tls         = {{ gateway_server_connect_insecure_tls | to_json }}
 server_ha_enabled    = {{ gateway_server_connect_server_ha_enabled | to_json }}
 server_ha_is_primary = {{ gateway_server_connect_server_ha_is_primary | to_json }}
+{% if gateway_server_connect_proxy_enabled | bool and gateway_server_connect_proxy_config_method == 'config_file' %}
+proxy_url            = '{{ gateway_server_connect_proxy_url }}'
+{% if gateway_server_connect_proxy_username %}
+proxy_username       = '{{ gateway_server_connect_proxy_username }}'
+{% endif %}
+{% if gateway_server_connect_proxy_password %}
+proxy_password       = '{{ gateway_server_connect_proxy_password }}'
+{% endif %}
+{% endif %}
 {% endif %}
 
 [log]
