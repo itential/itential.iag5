@@ -123,8 +123,7 @@ The variables in this section may be overridden in the inventory in the `iag5_se
 | `gateway_server_connect_insecure_tls` | Boolean | Determines whether the gateway verifies TLS certificates when it connects to Itential Platform. When set to true, the gateway skips TLS certificate verification. We strongly recommend enabling TLS certificate verification in production environments. | false |
 | `gateway_server_connect_certificate_file` | String | Specifies the full path to the certificate file used to establish a secure connection to Gateway Manager. | "{{ gateway_server_pki_cert_dest }}" |
 | `gateway_server_connect_private_key_file` | String | Specifies the full path to the private key file that the gateway uses to connect to Gateway Manager. | "{{ gateway_server_pki_key_dest }}" |
-| `gateway_server_connect_proxy_enabled` | Boolean | Flag for enabling/disabling outbound proxy configuration for the Gateway Manager connection. | false |
-| `gateway_server_connect_proxy_config_method` | String | The method used to configure proxy settings. `env_file` writes `GATEWAY_CONNECT_PROXY_*` variables to the systemd environment file (`iagctl.env`). `config_file` writes proxy settings directly to `gateway.conf`. | env_file |
+| `gateway_server_connect_proxy_enabled` | Boolean | Flag for enabling/disabling outbound proxy configuration for the Gateway Manager connection. When enabled, `GATEWAY_CONNECT_PROXY_*` variables are written to the systemd environment file (`iagctl.env`). | false |
 | `gateway_server_connect_proxy_url` | String | The proxy URL (e.g. `http://proxy.example.com:8080`). Required when `gateway_server_connect_proxy_enabled` is `true`. | N/A |
 | `gateway_server_connect_proxy_username` | String | The proxy username. Optional. | N/A |
 | `gateway_server_connect_proxy_password` | String | The proxy password. Optional. | N/A |
