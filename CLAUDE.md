@@ -79,7 +79,7 @@ Deploys server **or** runner depending on `gateway_application_mode`. Task execu
 3. `install_python.yml` — optional Python 3.12 install (controlled by `gateway_server_features_python`)
 4. `install_tofu.yml` — optional OpenTofu install (controlled by `gateway_server_features_opentofu`)
 5. `upload_certs.yml` — uploads TLS cert/key and CA cert
-6. `configure_gateway.yml` — renders `server.conf.j2` or `runner.conf.j2` to `/etc/gateway/gateway.conf`
+6. `configure_gateway.yml` — renders `server.conf.j2` or `runner.conf.j2` to `/etc/gateway/gateway.conf`; also renders `iagctl.service.j2` to `/usr/lib/systemd/system/iagctl.service` and `iagctl.env.j2` to `/etc/gateway/iagctl.env` (mode 0600) when `gateway_server_store_backend == 'dynamodb'` or proxy is enabled
 7. `configure_firewalld.yml` — opens ports in firewalld (optional)
 8. `certify.yml` — live TLS handshake tests post-deployment
 
@@ -259,6 +259,10 @@ The full variable reference (100+ variables with types, defaults, and descriptio
 - `gateway_server_features_python` — install Python (default: `false`)
 - `gateway_server_features_opentofu` — install OpenTofu (default: `false`)
 - `gateway_application_mode` — set by playbook: `server` or `runner`
+- `gateway_server_connect_proxy_enabled` — enable outbound proxy for Gateway Manager connection (default: `false`); always writes `GATEWAY_CONNECT_PROXY_*` vars to `iagctl.env`
+- `gateway_server_connect_proxy_url` — proxy URL; required when proxy is enabled
+- `gateway_server_connect_proxy_username` / `gateway_server_connect_proxy_password` — optional proxy credentials
+- `gateway_server_service_env_file` — path to the systemd environment file (default: `/etc/gateway/iagctl.env`)
 
 ## Key Conventions
 
@@ -271,3 +275,6 @@ The full variable reference (100+ variables with types, defaults, and descriptio
 - **Backup on configure:** All `ansible.builtin.template` tasks set `backup: true`.
 - **Idempotent restarts:** The handler validates `ActiveState == "active"` before declaring
   success; it retries up to 4 times with a 5-second delay.
+- **Sensitive env vars in env file:** DynamoDB credentials and proxy credentials are written to
+  `/etc/gateway/iagctl.env` (mode 0600) and loaded via `EnvironmentFile=` in the systemd unit,
+  keeping secrets out of the unit file and `systemctl show` output.

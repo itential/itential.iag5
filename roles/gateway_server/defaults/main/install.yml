@@ -17,6 +17,9 @@ gateway_server_group: itential
 gateway_server_config_dir: /etc/gateway
 gateway_server_data_dir: /var/lib/gateway
 
+# Gateway service environment file
+gateway_server_service_env_file: "{{ gateway_server_config_dir }}/iagctl.env"
+
 # Gateway python installation
 gateway_server_python_packages:
   - python3.11

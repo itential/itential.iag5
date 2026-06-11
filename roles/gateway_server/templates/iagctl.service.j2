@@ -7,11 +7,8 @@ User={{ gateway_server_user }}
 Group={{ gateway_server_group }}
 ExecStart=/opt/gateway/iagctl {{ gateway_application_mode }} --config {{ gateway_server_config_dir }}/gateway.conf
 Restart=on-failure
-{% if gateway_server_store_backend == 'dynamodb' %}
-Environment=AWS_ACCESS_KEY_ID={{ gateway_server_store_dynamodb_aws_access_key_id }}
-Environment=AWS_SECRET_ACCESS_KEY={{ gateway_server_store_dynamodb_aws_secret_access_key }}
-Environment=AWS_SESSION_TOKEN={{ gateway_server_store_dynamodb_aws_session_token }}
-Environment=AWS_REGION={{ gateway_server_store_dynamodb_aws_region }}
+{% if gateway_server_store_backend == 'dynamodb' or gateway_server_environment or gateway_server_connect_proxy_enabled | bool %}
+EnvironmentFile={{ gateway_server_service_env_file }}
 {% endif %}
 
 [Install]
