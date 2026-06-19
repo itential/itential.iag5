@@ -1,88 +1,591 @@
+# Copyright (c) 2026, Itential, Inc
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 ---
-# TLS certificate verification for gateway server and runner nodes.
+# Forensic installation certification for IAG5 gateway server and runner nodes.
+# Read-only — nothing is modified on the host.
 # Called via: include_role: name: itential.iag5.gateway_server tasks_from: certify.yml
-# Requires: itential.iag5.gateway role to have been loaded (provides gateway_* vars).
 
-- name: "Set verification context"
+# ============================================================================
+# SETUP
+# ============================================================================
+
+- name: Set certify context
   ansible.builtin.set_fact:
-    node_section: "{{ gateway_application_mode | default('server') }}"
-    is_server_node: "{{ (gateway_application_mode | default('server')) == 'server' }}"
-    gateway_conf: "{{ gateway_server_config_dir }}/gateway.conf"
-    runner_port: "{{ gateway_server_port }}"
-    server_port: "{{ gateway_server_port }}"
-    service_name: iagctl
-    iag5_server_group: iag5_servers
-    iag5_runner_group: iag5_runners
-    iag5_client_group: iag5_clients
-    os_ca_bundle: /etc/pki/tls/certs/ca-bundle.crt
-    private_ip: "{{ ansible_default_ipv4.address | default(ansible_host) }}"
-    certify_report_file: "/tmp/certify-tls-{{ inventory_hostname }}.md"
-    certify_report_dir_local: "./certify_reports"
-    certify_report_template: "{{ role_path }}/../certify_common/templates/certify-report.md.j2"
-    report_file_owner: "{{ gateway_server_user }}"
-    report_file_group: "{{ gateway_server_group }}"
-    check_results: []
+    iag5_node_type: "{{ gateway_application_mode | default('server') }}"
+    iag5_gateway_conf: "{{ gateway_server_config_dir }}/gateway.conf"
+    iag5_certify_report_dir_remote: /tmp
+    iag5_certify_report_dir_local: ./certify_reports
 
-# -----------------------------------------------------------------------
-# SUITE 1 — Cluster TLS: SERVER ↔ RUNNER (gRPC mTLS)
-# Runners always run this suite.
-# Servers only run when runners exist in inventory (some checks reference
-# groups['iag5_runners'][0] which would error on an empty group).
-# -----------------------------------------------------------------------
-
-- name: "SUITE 1 | Run cluster server↔runner checks"
-  ansible.builtin.include_tasks: ../../certify_common/tasks/certify_cluster_server_to_runner.yml
-  when: >
-    node_section == 'runner' or
-    ('iag5_runners' in groups and groups['iag5_runners'] | length > 0)
-
-- name: "SUITE 1 | Print summary"
-  ansible.builtin.include_tasks: ../../certify_common/tasks/summary.yml
-  vars:
-    role_title: "CLUSTER TLS — SERVER ↔ RUNNER (gRPC mTLS) — {{ node_section | upper }} NODE"
-  when: >
-    node_section == 'runner' or
-    ('iag5_runners' in groups and groups['iag5_runners'] | length > 0)
-
-# -----------------------------------------------------------------------
-# SUITE 2 — Cluster TLS: CLIENT ↔ SERVER (gRPC mTLS) — server side
-# Only runs on server nodes when clients exist in inventory.
-# -----------------------------------------------------------------------
-
-- name: "SUITE 2 | Reset check_results"
+- name: Set report filename
   ansible.builtin.set_fact:
-    check_results: []
-  when: is_server_node | bool and 'iag5_clients' in groups and groups['iag5_clients'] | length > 0
+    iag5_certify_report_file: "{{ iag5_certify_report_dir_remote }}/certify-iag5-{{ iag5_node_type }}-report-{{ inventory_hostname }}.md"
 
-- name: "SUITE 2 | Run cluster client↔server checks (server side)"
-  ansible.builtin.include_tasks: ../../certify_common/tasks/certify_cluster_client_to_server.yml
-  when: is_server_node | bool and 'iag5_clients' in groups and groups['iag5_clients'] | length > 0
+# ============================================================================
+# SERVICE & PROCESS STATUS
+# ============================================================================
 
-- name: "SUITE 2 | Print summary"
-  ansible.builtin.include_tasks: ../../certify_common/tasks/summary.yml
-  vars:
-    role_title: "CLUSTER TLS — CLIENT ↔ SERVER (gRPC mTLS) — SERVER NODE"
-  when: is_server_node | bool and 'iag5_clients' in groups and groups['iag5_clients'] | length > 0
+- name: Check iagctl systemd service status
+  ansible.builtin.systemd:
+    name: iagctl
+  register: iag5_service_status
+  ignore_errors: true
 
-# -----------------------------------------------------------------------
-# SUITE 3 — Connect TLS: SERVER → Gateway Manager (one-way TLS + app-layer auth)
-# Always runs on server nodes — GWM is always present in every deployment.
-# node_section is set to 'connect' so the check file reads [connect] in gateway.conf.
-# is_server_node (set in INIT, never modified) guards the when conditions.
-# -----------------------------------------------------------------------
+- name: Check iagctl process is running
+  ansible.builtin.shell: ps aux | grep -v grep | grep iagctl
+  register: iag5_process
+  ignore_errors: true
+  changed_when: false
 
-- name: "SUITE 3 | Reset check_results and set connect section"
-  ansible.builtin.set_fact:
-    check_results: []
-    node_section: connect   # connect check file reads [connect] in gateway.conf
-  when: is_server_node | bool
+- name: Check iagctl listening ports
+  ansible.builtin.shell: ss -tulpn | grep iagctl
+  register: iag5_ports
+  ignore_errors: true
+  changed_when: false
 
-- name: "SUITE 3 | Run connect server→GWM checks"
-  ansible.builtin.include_tasks: ../../certify_common/tasks/certify_connect_server_to_gwm.yml
-  when: is_server_node | bool
+- name: Check iagctl systemd unit file exists
+  ansible.builtin.stat:
+    path: /usr/lib/systemd/system/iagctl.service
+  register: iag5_systemd_file
 
-- name: "SUITE 3 | Print summary"
-  ansible.builtin.include_tasks: ../../certify_common/tasks/summary.yml
-  vars:
-    role_title: "CONNECT TLS — SERVER → GATEWAY MANAGER (one-way TLS + app-layer auth) — CONNECT NODE"
-  when: is_server_node | bool
+# ============================================================================
+# CONFIG FILE
+# ============================================================================
+
+- name: Check gateway config file exists
+  ansible.builtin.stat:
+    path: "{{ iag5_gateway_conf }}"
+  register: iag5_conf_file
+
+- name: Get gateway config file permissions
+  ansible.builtin.command: "ls -la {{ iag5_gateway_conf }}"
+  register: iag5_conf_permissions
+  ignore_errors: true
+  changed_when: false
+  when: iag5_conf_file.stat.exists
+
+# ============================================================================
+# PARSE CONFIG — [application]
+# ============================================================================
+
+- name: Parse config — application.mode
+  ansible.builtin.shell:
+    cmd: >-
+      python3 -c "import configparser; c=configparser.RawConfigParser();
+      c.read('{{ iag5_gateway_conf }}');
+      print(c.get('application','mode',fallback='').strip(chr(39)))"
+  register: iag5_conf_mode
+  ignore_errors: true
+  changed_when: false
+  when: iag5_conf_file.stat.exists
+
+- name: Parse config — application.cluster_id
+  ansible.builtin.shell:
+    cmd: >-
+      python3 -c "import configparser; c=configparser.RawConfigParser();
+      c.read('{{ iag5_gateway_conf }}');
+      print(c.get('application','cluster_id',fallback='').strip(chr(39)))"
+  register: iag5_conf_cluster_id
+  ignore_errors: true
+  changed_when: false
+  when: iag5_conf_file.stat.exists
+
+- name: Parse config — application.working_dir
+  ansible.builtin.shell:
+    cmd: >-
+      python3 -c "import configparser; c=configparser.RawConfigParser();
+      c.read('{{ iag5_gateway_conf }}');
+      print(c.get('application','working_dir',fallback='').strip(chr(39)))"
+  register: iag5_conf_working_dir
+  ignore_errors: true
+  changed_when: false
+  when: iag5_conf_file.stat.exists
+
+- name: Parse config — application.ca_certificate_file
+  ansible.builtin.shell:
+    cmd: >-
+      python3 -c "import configparser; c=configparser.RawConfigParser();
+      c.read('{{ iag5_gateway_conf }}');
+      print(c.get('application','ca_certificate_file',fallback='').strip(chr(39)))"
+  register: iag5_conf_ca_cert_file
+  ignore_errors: true
+  changed_when: false
+  when: iag5_conf_file.stat.exists
+
+# ============================================================================
+# PARSE CONFIG — [server] or [runner]
+# ============================================================================
+
+- name: Parse config — node listen_address
+  ansible.builtin.shell:
+    cmd: >-
+      python3 -c "import configparser; c=configparser.RawConfigParser();
+      c.read('{{ iag5_gateway_conf }}');
+      print(c.get('{{ iag5_node_type }}','listen_address',fallback='').strip(chr(39)))"
+  register: iag5_conf_listen_address
+  ignore_errors: true
+  changed_when: false
+  when: iag5_conf_file.stat.exists
+
+- name: Parse config — node port
+  ansible.builtin.shell:
+    cmd: >-
+      python3 -c "import configparser; c=configparser.RawConfigParser();
+      c.read('{{ iag5_gateway_conf }}');
+      print(c.get('{{ iag5_node_type }}','port',fallback='').strip(chr(39)))"
+  register: iag5_conf_port
+  ignore_errors: true
+  changed_when: false
+  when: iag5_conf_file.stat.exists
+
+- name: Parse config — node use_tls
+  ansible.builtin.shell:
+    cmd: >-
+      python3 -c "import configparser; c=configparser.RawConfigParser();
+      c.read('{{ iag5_gateway_conf }}');
+      print(c.get('{{ iag5_node_type }}','use_tls',fallback='').strip(chr(39)))"
+  register: iag5_conf_use_tls
+  ignore_errors: true
+  changed_when: false
+  when: iag5_conf_file.stat.exists
+
+- name: Parse config — node certificate_file
+  ansible.builtin.shell:
+    cmd: >-
+      python3 -c "import configparser; c=configparser.RawConfigParser();
+      c.read('{{ iag5_gateway_conf }}');
+      print(c.get('{{ iag5_node_type }}','certificate_file',fallback='').strip(chr(39)))"
+  register: iag5_conf_certificate_file
+  ignore_errors: true
+  changed_when: false
+  when: iag5_conf_file.stat.exists
+
+- name: Parse config — node private_key_file
+  ansible.builtin.shell:
+    cmd: >-
+      python3 -c "import configparser; c=configparser.RawConfigParser();
+      c.read('{{ iag5_gateway_conf }}');
+      print(c.get('{{ iag5_node_type }}','private_key_file',fallback='').strip(chr(39)))"
+  register: iag5_conf_private_key_file
+  ignore_errors: true
+  changed_when: false
+  when: iag5_conf_file.stat.exists
+
+- name: Parse config — server.distributed_execution
+  ansible.builtin.shell:
+    cmd: >-
+      python3 -c "import configparser; c=configparser.RawConfigParser();
+      c.read('{{ iag5_gateway_conf }}');
+      print(c.get('server','distributed_execution',fallback='').strip(chr(39)))"
+  register: iag5_conf_distributed_execution
+  ignore_errors: true
+  changed_when: false
+  when:
+    - iag5_conf_file.stat.exists
+    - iag5_node_type == 'server'
+
+- name: Parse config — server.api_key_expiration
+  ansible.builtin.shell:
+    cmd: >-
+      python3 -c "import configparser; c=configparser.RawConfigParser();
+      c.read('{{ iag5_gateway_conf }}');
+      print(c.get('server','api_key_expiration',fallback='').strip(chr(39)))"
+  register: iag5_conf_api_key_expiration
+  ignore_errors: true
+  changed_when: false
+  when:
+    - iag5_conf_file.stat.exists
+    - iag5_node_type == 'server'
+
+- name: Parse config — runner.announcement_address
+  ansible.builtin.shell:
+    cmd: >-
+      python3 -c "import configparser; c=configparser.RawConfigParser();
+      c.read('{{ iag5_gateway_conf }}');
+      print(c.get('runner','announcement_address',fallback='').strip(chr(39)))"
+  register: iag5_conf_announcement_address
+  ignore_errors: true
+  changed_when: false
+  when:
+    - iag5_conf_file.stat.exists
+    - iag5_node_type == 'runner'
+
+# ============================================================================
+# PARSE CONFIG — [connect] (server only)
+# ============================================================================
+
+- name: Parse config — connect.enabled
+  ansible.builtin.shell:
+    cmd: >-
+      python3 -c "import configparser; c=configparser.RawConfigParser();
+      c.read('{{ iag5_gateway_conf }}');
+      print(c.get('connect','enabled',fallback='false').strip(chr(39)))"
+  register: iag5_conf_connect_enabled
+  ignore_errors: true
+  changed_when: false
+  when:
+    - iag5_conf_file.stat.exists
+    - iag5_node_type == 'server'
+
+- name: Parse config — connect.hosts
+  ansible.builtin.shell:
+    cmd: >-
+      python3 -c "import configparser; c=configparser.RawConfigParser();
+      c.read('{{ iag5_gateway_conf }}');
+      print(c.get('connect','hosts',fallback='').strip(chr(39)))"
+  register: iag5_conf_connect_hosts
+  ignore_errors: true
+  changed_when: false
+  when:
+    - iag5_conf_file.stat.exists
+    - iag5_node_type == 'server'
+
+- name: Parse config — connect.certificate_file
+  ansible.builtin.shell:
+    cmd: >-
+      python3 -c "import configparser; c=configparser.RawConfigParser();
+      c.read('{{ iag5_gateway_conf }}');
+      print(c.get('connect','certificate_file',fallback='').strip(chr(39)))"
+  register: iag5_conf_connect_cert_file
+  ignore_errors: true
+  changed_when: false
+  when:
+    - iag5_conf_file.stat.exists
+    - iag5_node_type == 'server'
+
+- name: Parse config — connect.private_key_file
+  ansible.builtin.shell:
+    cmd: >-
+      python3 -c "import configparser; c=configparser.RawConfigParser();
+      c.read('{{ iag5_gateway_conf }}');
+      print(c.get('connect','private_key_file',fallback='').strip(chr(39)))"
+  register: iag5_conf_connect_key_file
+  ignore_errors: true
+  changed_when: false
+  when:
+    - iag5_conf_file.stat.exists
+    - iag5_node_type == 'server'
+
+- name: Parse config — connect.insecure_tls
+  ansible.builtin.shell:
+    cmd: >-
+      python3 -c "import configparser; c=configparser.RawConfigParser();
+      c.read('{{ iag5_gateway_conf }}');
+      print(c.get('connect','insecure_tls',fallback='').strip(chr(39)))"
+  register: iag5_conf_connect_insecure_tls
+  ignore_errors: true
+  changed_when: false
+  when:
+    - iag5_conf_file.stat.exists
+    - iag5_node_type == 'server'
+
+# ============================================================================
+# PARSE CONFIG — [log], [store], [secrets]
+# ============================================================================
+
+- name: Parse config — log.level
+  ansible.builtin.shell:
+    cmd: >-
+      python3 -c "import configparser; c=configparser.RawConfigParser();
+      c.read('{{ iag5_gateway_conf }}');
+      print(c.get('log','level',fallback='').strip(chr(39)))"
+  register: iag5_conf_log_level
+  ignore_errors: true
+  changed_when: false
+  when: iag5_conf_file.stat.exists
+
+- name: Parse config — log.file_enabled
+  ansible.builtin.shell:
+    cmd: >-
+      python3 -c "import configparser; c=configparser.RawConfigParser();
+      c.read('{{ iag5_gateway_conf }}');
+      print(c.get('log','file_enabled',fallback='').strip(chr(39)))"
+  register: iag5_conf_log_file_enabled
+  ignore_errors: true
+  changed_when: false
+  when: iag5_conf_file.stat.exists
+
+- name: Parse config — log.server_dir
+  ansible.builtin.shell:
+    cmd: >-
+      python3 -c "import configparser; c=configparser.RawConfigParser();
+      c.read('{{ iag5_gateway_conf }}');
+      print(c.get('log','server_dir',fallback='').strip(chr(39)))"
+  register: iag5_conf_log_dir
+  ignore_errors: true
+  changed_when: false
+  when: iag5_conf_file.stat.exists
+
+- name: Parse config — store.backend
+  ansible.builtin.shell:
+    cmd: >-
+      python3 -c "import configparser; c=configparser.RawConfigParser();
+      c.read('{{ iag5_gateway_conf }}');
+      print(c.get('store','backend',fallback='').strip(chr(39)))"
+  register: iag5_conf_store_backend
+  ignore_errors: true
+  changed_when: false
+  when: iag5_conf_file.stat.exists
+
+- name: Parse config — secrets.encrypt_key_file
+  ansible.builtin.shell:
+    cmd: >-
+      python3 -c "import configparser; c=configparser.RawConfigParser();
+      c.read('{{ iag5_gateway_conf }}');
+      print(c.get('secrets','encrypt_key_file',fallback='').strip(chr(39)))"
+  register: iag5_conf_encrypt_key_file
+  ignore_errors: true
+  changed_when: false
+  when: iag5_conf_file.stat.exists
+
+# ============================================================================
+# TLS FILE CHECKS
+# ============================================================================
+
+- name: Check CA certificate file exists
+  ansible.builtin.stat:
+    path: "{{ iag5_conf_ca_cert_file.stdout }}"
+  register: iag5_ca_cert_stat
+  when: iag5_conf_ca_cert_file.stdout | default('') != ''
+
+- name: Check node certificate file exists
+  ansible.builtin.stat:
+    path: "{{ iag5_conf_certificate_file.stdout }}"
+  register: iag5_cert_stat
+  when: iag5_conf_certificate_file.stdout | default('') != ''
+
+- name: Check node private key file exists
+  ansible.builtin.stat:
+    path: "{{ iag5_conf_private_key_file.stdout }}"
+  register: iag5_key_stat
+  when: iag5_conf_private_key_file.stdout | default('') != ''
+
+- name: Check connect certificate file exists
+  ansible.builtin.stat:
+    path: "{{ iag5_conf_connect_cert_file.stdout }}"
+  register: iag5_connect_cert_stat
+  when:
+    - iag5_node_type == 'server'
+    - iag5_conf_connect_cert_file.stdout | default('') != ''
+
+- name: Check connect private key file exists
+  ansible.builtin.stat:
+    path: "{{ iag5_conf_connect_key_file.stdout }}"
+  register: iag5_connect_key_stat
+  when:
+    - iag5_node_type == 'server'
+    - iag5_conf_connect_key_file.stdout | default('') != ''
+
+- name: Check encryption key file exists
+  ansible.builtin.stat:
+    path: "{{ iag5_conf_encrypt_key_file.stdout }}"
+  register: iag5_encrypt_key_stat
+  when: iag5_conf_encrypt_key_file.stdout | default('') != ''
+
+# ============================================================================
+# TLS CERTIFICATE DETAILS
+# ============================================================================
+
+- name: Get CA certificate details
+  ansible.builtin.command: >
+    openssl x509 -noout -subject -issuer -enddate
+    -in {{ iag5_conf_ca_cert_file.stdout }}
+  register: iag5_ca_cert_details
+  ignore_errors: true
+  changed_when: false
+  when:
+    - iag5_conf_ca_cert_file.stdout | default('') != ''
+    - iag5_ca_cert_stat.stat.exists | default(false)
+
+- name: Get node certificate details (subject, issuer, expiry, SANs)
+  ansible.builtin.command: >
+    openssl x509 -noout -subject -issuer -enddate -ext subjectAltName
+    -in {{ iag5_conf_certificate_file.stdout }}
+  register: iag5_cert_details
+  ignore_errors: true
+  changed_when: false
+  when:
+    - iag5_conf_certificate_file.stdout | default('') != ''
+    - iag5_cert_stat.stat.exists | default(false)
+
+- name: Check node certificate is not expired
+  ansible.builtin.command: >
+    openssl x509 -checkend 0
+    -in {{ iag5_conf_certificate_file.stdout }}
+  register: iag5_cert_not_expired
+  ignore_errors: true
+  changed_when: false
+  failed_when: false
+  when:
+    - iag5_conf_certificate_file.stdout | default('') != ''
+    - iag5_cert_stat.stat.exists | default(false)
+
+- name: Check node certificate expires within 30 days
+  ansible.builtin.command: >
+    openssl x509 -checkend 2592000
+    -in {{ iag5_conf_certificate_file.stdout }}
+  register: iag5_cert_expires_soon
+  ignore_errors: true
+  changed_when: false
+  failed_when: false
+  when:
+    - iag5_conf_certificate_file.stdout | default('') != ''
+    - iag5_cert_stat.stat.exists | default(false)
+
+- name: Get connect certificate details (subject, issuer, expiry, SANs)
+  ansible.builtin.command: >
+    openssl x509 -noout -subject -issuer -enddate -ext subjectAltName
+    -in {{ iag5_conf_connect_cert_file.stdout }}
+  register: iag5_connect_cert_details
+  ignore_errors: true
+  changed_when: false
+  when:
+    - iag5_node_type == 'server'
+    - iag5_conf_connect_cert_file.stdout | default('') != ''
+    - iag5_connect_cert_stat.stat.exists | default(false)
+
+- name: Check connect certificate is not expired
+  ansible.builtin.command: >
+    openssl x509 -checkend 0
+    -in {{ iag5_conf_connect_cert_file.stdout }}
+  register: iag5_connect_cert_not_expired
+  ignore_errors: true
+  changed_when: false
+  failed_when: false
+  when:
+    - iag5_node_type == 'server'
+    - iag5_conf_connect_cert_file.stdout | default('') != ''
+    - iag5_connect_cert_stat.stat.exists | default(false)
+
+- name: Check connect certificate expires within 30 days
+  ansible.builtin.command: >
+    openssl x509 -checkend 2592000
+    -in {{ iag5_conf_connect_cert_file.stdout }}
+  register: iag5_connect_cert_expires_soon
+  ignore_errors: true
+  changed_when: false
+  failed_when: false
+  when:
+    - iag5_node_type == 'server'
+    - iag5_conf_connect_cert_file.stdout | default('') != ''
+    - iag5_connect_cert_stat.stat.exists | default(false)
+
+# ============================================================================
+# RUNTIME
+# ============================================================================
+
+- name: Get iagctl version
+  ansible.builtin.shell: >-
+    (/opt/gateway/iagctl version 2>/dev/null ||
+    iagctl version 2>/dev/null ||
+    echo "version: not found") | awk '/^version/{print $2}'
+  register: iag5_iagctl_version
+  ignore_errors: true
+  changed_when: false
+  failed_when: false
+
+- name: Get iagctl binary path
+  ansible.builtin.shell: >
+    ls -la /opt/gateway/iagctl 2>/dev/null ||
+    which iagctl 2>/dev/null ||
+    echo "not found"
+  register: iag5_iagctl_path
+  ignore_errors: true
+  changed_when: false
+  failed_when: false
+
+- name: Get Python version (as itential user)
+  ansible.builtin.command: python3 --version
+  register: iag5_python_version
+  ignore_errors: true
+  changed_when: false
+  failed_when: false
+  become: true
+  become_user: "{{ gateway_server_user }}"
+  become_flags: '-i'
+
+- name: Get pip version (as itential user)
+  ansible.builtin.command: python3 -m pip --version
+  register: iag5_pip_version
+  ignore_errors: true
+  changed_when: false
+  failed_when: false
+  become: true
+  become_user: "{{ gateway_server_user }}"
+  become_flags: '-i'
+
+- name: Get installed Python packages (as itential user)
+  ansible.builtin.command: python3 -m pip list
+  register: iag5_python_packages
+  ignore_errors: true
+  changed_when: false
+  failed_when: false
+  become: true
+  become_user: "{{ gateway_server_user }}"
+  become_flags: '-i'
+
+# ============================================================================
+# LOG FILES
+# ============================================================================
+
+- name: Check log directory exists
+  ansible.builtin.stat:
+    path: "{{ iag5_conf_log_dir.stdout }}"
+  register: iag5_log_dir_stat
+  when: iag5_conf_log_dir.stdout | default('') != ''
+
+# ============================================================================
+# CONNECTIVITY
+# ============================================================================
+
+- name: Check TCP reachability to each runner (server only)
+  ansible.builtin.wait_for:
+    host: "{{ hostvars[item]['ansible_host'] | default(item) }}"
+    port: "{{ gateway_server_port | int }}"
+    timeout: 5
+    state: started
+  register: iag5_runner_tcp_checks
+  ignore_errors: true
+  changed_when: false
+  loop: "{{ groups['iag5_runners'] | default([]) }}"
+  when:
+    - iag5_node_type == 'server'
+    - groups['iag5_runners'] | default([]) | length > 0
+
+- name: Check TCP reachability to each GWM host (server only)
+  ansible.builtin.wait_for:
+    host: "{{ item.split(':')[0] }}"
+    port: "{{ item.split(':')[1] | int }}"
+    timeout: 5
+    state: started
+  register: iag5_gwm_tcp_checks
+  ignore_errors: true
+  changed_when: false
+  loop: "{{ iag5_conf_connect_hosts.stdout.split() }}"
+  when:
+    - iag5_node_type == 'server'
+    - iag5_conf_connect_hosts.stdout | default('') != ''
+    - iag5_conf_connect_enabled.stdout | default('false') | bool
+
+# ============================================================================
+# GENERATE REPORT
+# ============================================================================
+
+- name: Generate IAG5 installation certification report
+  ansible.builtin.template:
+    src: certify-iag5-server-report.md.j2
+    dest: "{{ iag5_certify_report_file }}"
+    mode: '0644'
+
+- name: Copy certification report to control node
+  ansible.builtin.fetch:
+    src: "{{ iag5_certify_report_file }}"
+    dest: "{{ iag5_certify_report_dir_local }}/"
+    flat: true
+    fail_on_missing: false
+
+- name: Display certification summary
+  ansible.builtin.debug:
+    msg:
+      - "IAG5 certification complete for {{ inventory_hostname }} ({{ iag5_node_type }})"
+      - "Overall Status: {{ 'PASSED ✓' if (iag5_process is defined and iag5_process.rc == 0) else 'FAILED ✗' }}"
+      - "Report: {{ iag5_certify_report_file }} (remote) → {{ iag5_certify_report_dir_local }}/ (control node)"

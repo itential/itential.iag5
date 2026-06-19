@@ -513,7 +513,7 @@ A markdown report is generated per node and fetched to `./certify_reports/` on t
 
 ```bash
 cd <WORKING-DIR>
-ansible-playbook itential.iag5.certify-iag5 -i inventories/dev
+ansible-playbook itential.iag5.certify -i inventories/dev
 ```
 
 ##### Tag Reference
@@ -528,10 +528,10 @@ Each certification can be run independently using tags:
 
 ```bash
 # Installation certification only
-ansible-playbook itential.iag5.certify-iag5 -i inventories/dev --tags certify-install
+ansible-playbook itential.iag5.certify -i inventories/dev --tags certify-install
 
 # TLS certification only
-ansible-playbook itential.iag5.certify-iag5 -i inventories/dev --tags certify
+ansible-playbook itential.iag5.certify -i inventories/dev --tags certify
 
 # Run only the certification step from a full site deployment
 ansible-playbook itential.iag5.site -i inventories/dev --tags certify-iag5
@@ -547,7 +547,7 @@ run. Two report files are produced per node:
 | Installation | `/tmp/certify-iag5-<node_type>-report-<hostname>.md` | `certify-iag5-<node_type>-report-<hostname>.md` |
 | TLS | `/tmp/certify-tls-<hostname>.md` | `certify-tls-<hostname>.md` |
 
-See the [certify guide](docs/certify.md) for a full description of all checks and how to interpret
+See the [certify guide](docs/certify-tls.md) for a full description of all checks and how to interpret
 results.
 
 #### TLS Certification Playbook
@@ -558,10 +558,10 @@ Can be run standalone at any time after deployment.
 
 ```bash
 cd <WORKING-DIR>
-ansible-playbook itential.iag5.certify -i inventories/dev
+ansible-playbook itential.iag5.certify-tls -i inventories/dev
 ```
 
-See the [certify guide](docs/certify.md) for full details.
+See the [certify guide](docs/certify-tls.md) for full details.
 
 ## Sample Inventories
 

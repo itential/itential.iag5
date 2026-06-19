@@ -11,4 +11,4 @@
   import_playbook: itential.iag5.clients
 
 - name: Certify IAG5 installation and TLS certificates post-deployment
-  import_playbook: itential.iag5.certify-iag5
+  import_playbook: itential.iag5.certify
