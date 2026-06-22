@@ -499,9 +499,8 @@ See the [verify guide](docs/verify.md) for full details.
 
 #### Certify IAG5 Playbook
 
-Runs a full post-deployment certification of the IAG5 installation. This playbook is automatically
-executed as the final step of `itential.iag5.site`. It performs two certifications in sequence per
-node:
+Runs a full post-deployment certification of the IAG5 installation. Run this playbook manually after
+a deployment completes. It performs two certifications in sequence per node:
 
 1. **Installation certification** — forensic, read-only checks covering service state, config file
    properties, TLS file existence and certificate metadata, runtime versions, host information, and
@@ -532,9 +531,6 @@ ansible-playbook itential.iag5.certify -i inventories/dev --tags certify-install
 
 # TLS certification only
 ansible-playbook itential.iag5.certify -i inventories/dev --tags certify
-
-# Run only the certification step from a full site deployment
-ansible-playbook itential.iag5.site -i inventories/dev --tags certify-iag5
 ```
 
 ##### Report Output
