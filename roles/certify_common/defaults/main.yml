@@ -6,7 +6,7 @@
 os_ca_bundle: /etc/pki/tls/certs/ca-bundle.crt
 
 # Path where the report is written on the remote host
-certify_report_file: "/tmp/certify_{{ inventory_hostname }}.md"
+certify_report_file: "/tmp/certify-tls-{{ inventory_hostname }}.md"
 
 # Directory on the control node where reports are fetched to
 certify_report_dir_local: "./certify_reports"

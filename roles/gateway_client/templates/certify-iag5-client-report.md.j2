@@ -1,0 +1,149 @@
+# IAG5 CLIENT Installation Certification Report
+
+| Field | Value |
+|---|---|
+| **Host** | {{ inventory_hostname }} |
+| **Node Type** | client |
+| **Generated** | {{ ansible_date_time.iso8601 | default('Unknown') }} |
+| **IP Address** | {{ ansible_default_ipv4.address | default('N/A') }} |
+| **OS** | {{ ansible_distribution | default('Unknown') }} {{ ansible_distribution_version | default('') }} |
+| **Overall Status** | {{ 'PASSED ✓' if not (iag5_server_tcp_reachable.failed | default(true)) else 'FAILED ✗' }} |
+
+---
+
+## Host Details
+
+### Operating System
+- **Distribution:** {{ ansible_distribution | default('Unknown') }} {{ ansible_distribution_version | default('') }}
+- **OS Family:** {{ ansible_os_family | default('Unknown') }}
+- **Kernel:** {{ ansible_kernel | default('Unknown') }}
+- **Architecture:** {{ ansible_architecture | default('Unknown') }}
+- **Hostname:** {{ ansible_hostname | default('Unknown') }}
+- **FQDN:** {{ ansible_fqdn | default('Unknown') }}
+
+### Hardware
+- **CPU Count:** {{ ansible_processor_count | default('Unknown') }}
+- **CPU Cores:** {{ ansible_processor_cores | default('Unknown') }}
+- **CPU vCPUs:** {{ ansible_processor_vcpus | default('Unknown') }}
+- **Total Memory:** {{ ansible_memtotal_mb | default('Unknown') }} MB
+- **Free Memory:** {{ ansible_memfree_mb | default('Unknown') }} MB
+- **Swap Total:** {{ ansible_swaptotal_mb | default('Unknown') }} MB
+
+### Disk Mounts
+{% if ansible_mounts is defined and ansible_mounts | length > 0 %}
+{% for mount in ansible_mounts %}
+- **{{ mount.mount }}:** {{ (mount.size_total / 1073741824) | round(1) }} GB total, {{ (mount.size_available / 1073741824) | round(1) }} GB free
+{% endfor %}
+{% else %}
+- No disk information available
+{% endif %}
+
+### Networking
+- **Primary IP:** {{ ansible_default_ipv4.address | default('N/A') }}
+- **Gateway:** {{ ansible_default_ipv4.gateway | default('N/A') }}
+- **Interface:** {{ ansible_default_ipv4.interface | default('N/A') }}
+- **MAC Address:** {{ ansible_default_ipv4.macaddress | default('N/A') }}
+
+### Security
+{% if ansible_selinux is defined %}
+- **SELinux Status:** {{ ansible_selinux.status | default('Unknown') }}
+- **SELinux Mode:** {{ ansible_selinux.mode | default('Unknown') }}
+{% else %}
+- **SELinux:** Not available
+{% endif %}
+
+---
+
+## Process Status
+
+- **iagctl Process Running:** {{ 'YES ✓' if (iag5_process is defined and iag5_process.rc == 0) else 'NO (expected for idle client)' }}
+
+---
+
+## Binary
+
+- **iagctl Path:** {{ iag5_iagctl_path.stdout | default('Unknown') }}
+- **iagctl Version:** {{ iag5_iagctl_version.stdout | default('Unknown') }}
+
+---
+
+## Configuration File
+
+- **Config File Exists:** {{ 'YES ✓' if (iag5_conf_file.stat.exists | default(false)) else 'NO ✗' }}
+- **Config File Path:** `{{ iag5_gateway_conf }}`
+{% if iag5_conf_file.stat.exists | default(false) %}
+- **Permissions:** `{{ iag5_conf_permissions.stdout | default('Unknown') }}`
+{% endif %}
+
+---
+
+## Configuration Properties
+
+### [application]
+- **mode:** {{ iag5_conf_mode.stdout | default('Unknown') }}
+- **cluster_id:** {{ iag5_conf_cluster_id.stdout | default('Unknown') }}
+- **working_dir:** {{ iag5_conf_working_dir.stdout | default('Unknown') }}
+- **ca_certificate_file:** {{ iag5_conf_ca_cert_file.stdout | default('Unknown') }}
+
+### [client]
+- **host:** {{ iag5_conf_client_host.stdout | default('Unknown') }}
+- **port:** {{ iag5_conf_client_port.stdout | default('Unknown') }}
+- **use_tls:** {{ iag5_conf_use_tls.stdout | default('Unknown') }}
+- **certificate_file:** {{ iag5_conf_certificate_file.stdout | default('Unknown') }}
+- **private_key_file:** {{ iag5_conf_private_key_file.stdout | default('Unknown') }}
+
+### [log]
+- **level:** {{ iag5_conf_log_level.stdout | default('Unknown') }}
+
+### [secrets]
+- **encrypt_key_file:** {{ iag5_conf_encrypt_key_file.stdout | default('Unknown') }}
+
+---
+
+## TLS Files
+
+### Application CA Certificate (`application.ca_certificate_file`)
+- **Path:** `{{ iag5_conf_ca_cert_file.stdout | default('Not configured') }}`
+- **Exists:** {{ 'YES ✓' if (iag5_ca_cert_stat.stat.exists | default(false)) else 'NO ✗' }}
+{% if iag5_ca_cert_stat.stat.exists | default(false) %}
+- **Mode:** `{{ iag5_ca_cert_stat.stat.mode | default('Unknown') }}`
+- **Details:**
+```
+{{ iag5_ca_cert_details.stdout | default('N/A') }}
+```
+{% endif %}
+
+### Client Certificate (`client.certificate_file`)
+- **Path:** `{{ iag5_conf_certificate_file.stdout | default('Not configured') }}`
+- **Exists:** {{ 'YES ✓' if (iag5_cert_stat.stat.exists | default(false)) else 'NO ✗' }}
+{% if iag5_cert_stat.stat.exists | default(false) %}
+- **Mode:** `{{ iag5_cert_stat.stat.mode | default('Unknown') }}`
+- **Expired:** {{ 'NO ✓' if (iag5_cert_not_expired.rc | default(1) == 0) else 'YES ✗' }}
+- **Expires within 30 days:** {{ 'NO ✓' if (iag5_cert_expires_soon.rc | default(1) == 0) else 'YES — renew soon ⚠' }}
+- **Details:**
+```
+{{ iag5_cert_details.stdout | default('N/A') }}
+```
+{% endif %}
+
+### Client Private Key (`client.private_key_file`)
+- **Path:** `{{ iag5_conf_private_key_file.stdout | default('Not configured') }}`
+- **Exists:** {{ 'YES ✓' if (iag5_key_stat.stat.exists | default(false)) else 'NO ✗' }}
+{% if iag5_key_stat.stat.exists | default(false) %}
+- **Mode:** `{{ iag5_key_stat.stat.mode | default('Unknown') }}` *(expected: 0400)*
+{% endif %}
+
+### Encryption Key File (`secrets.encrypt_key_file`)
+- **Path:** `{{ iag5_conf_encrypt_key_file.stdout | default('Not configured') }}`
+- **Exists:** {{ 'YES ✓' if (iag5_encrypt_key_stat.stat.exists | default(false)) else 'NO ✗' }}
+{% if iag5_encrypt_key_stat.stat.exists | default(false) %}
+- **Mode:** `{{ iag5_encrypt_key_stat.stat.mode | default('Unknown') }}` *(expected: 0600)*
+{% endif %}
+
+---
+
+## Connectivity
+
+### Server (`client.host`)
+- **Configured Server:** {{ iag5_conf_client_host.stdout | default('Not configured') }}:{{ iag5_conf_client_port.stdout | default('Unknown') }}
+- **TCP Reachable:** {{ 'YES ✓' if not (iag5_server_tcp_reachable.failed | default(true)) else 'NO ✗' }}

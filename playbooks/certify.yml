@@ -1,49 +1,89 @@
-# Copyright (c) 2025, Itential, Inc
+# Copyright (c) 2026, Itential, Inc
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 ---
-# IAG5 TLS Certificate Certification
+# IAG5 Installation Certification
 #
-# Runs after deployment to certify that all TLS certificates are correctly
-# configured across all IAG5 node types. All variables are derived from the
-# deployer's existing inventory — no separate certify inventory required.
+# Forensic read-only certification that IAG5 has been successfully installed
+# across all node types. Checks service state, config file properties, TLS
+# file existence and certificate details, runtime versions, log directories,
+# and network connectivity. A markdown report is generated per host and
+# fetched to the control node under ./certify_reports/.
 #
-# Runs automatically as the final step of site.yml.
-# Can also be run standalone:
+# Can be run standalone after deployment:
 #
 #   ansible-playbook itential.iag5.certify -i <inventory>
+#
+# Tag reference:
+#   certify-iag5    — run both forensic + TLS certification
+#   certify-install — run forensic installation certification only
+#   certify         — run TLS certification only
 
 # -----------------------------------------------------------------------
 # PLAY 1 — Gateway server and runner nodes
 # -----------------------------------------------------------------------
-- name: "Gateway server and runner TLS certificate certification"
+- name: "IAG5 server and runner installation certification"
   hosts: iag5_servers:iag5_runners
   become: true
-  tags: [certify]
+  gather_facts: false
+  tags: [certify-iag5]
   tasks:
-    - name: "Load gateway shared variables"
+    - name: Gather facts
+      ansible.builtin.gather_facts:
+      tags: [always]
+
+    - name: Load gateway shared variables
       ansible.builtin.import_role:
         name: itential.iag5.gateway
       when: false
+      tags: [always]
 
-    - name: "Run gateway server/runner certify"
+    - name: Run IAG5 server/runner installation certification
       ansible.builtin.include_role:
         name: itential.iag5.gateway_server
         tasks_from: certify.yml
+        apply:
+          tags: [certify-install]
+      tags: [certify-install]
+
+    - name: Run IAG5 server/runner TLS certification
+      ansible.builtin.include_role:
+        name: itential.iag5.gateway_server
+        tasks_from: certify-tls.yml
+        apply:
+          tags: [certify]
+      tags: [certify]
 
 # -----------------------------------------------------------------------
-# PLAY 2 — Gateway client nodes (only runs when iag5_clients hosts exist)
+# PLAY 2 — Gateway client nodes
 # -----------------------------------------------------------------------
-- name: "Gateway client TLS certificate certification"
+- name: "IAG5 client installation certification"
   hosts: iag5_clients
   become: true
-  tags: [certify]
+  gather_facts: false
+  tags: [certify-iag5]
   tasks:
-    - name: "Load gateway shared variables"
+    - name: Gather facts
+      ansible.builtin.gather_facts:
+      tags: [always]
+
+    - name: Load gateway shared variables
       ansible.builtin.import_role:
         name: itential.iag5.gateway
       when: false
+      tags: [always]
 
-    - name: "Run gateway client certify"
+    - name: Run IAG5 client installation certification
       ansible.builtin.include_role:
         name: itential.iag5.gateway_client
         tasks_from: certify.yml
+        apply:
+          tags: [certify-install]
+      tags: [certify-install]
+
+    - name: Run IAG5 client TLS certification
+      ansible.builtin.include_role:
+        name: itential.iag5.gateway_client
+        tasks_from: certify-tls.yml
+        apply:
+          tags: [certify]
+      tags: [certify]
