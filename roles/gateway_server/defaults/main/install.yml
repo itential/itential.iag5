@@ -16,6 +16,7 @@ gateway_server_group: itential
 # Gateway configuration and data directories
 gateway_server_config_dir: /etc/gateway
 gateway_server_data_dir: /var/lib/gateway
+gateway_server_cache_dir: /var/cache/gateway
 
 # Gateway service environment file
 gateway_server_service_env_file: "{{ gateway_server_config_dir }}/iagctl.env"
