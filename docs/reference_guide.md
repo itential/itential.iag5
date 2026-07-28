@@ -32,7 +32,7 @@ The variables in this section may be overridden in the inventory in the `iag5_cl
 | `gateway_client_host` | String | The hostname or IP of the IAG5 server the client will connect to. | N/A (must be defined in inventory) |
 | `gateway_client_port` | Integer | The port of the IAG5 server the client will connect to. | 50051 |
 | `gateway_client_log_level` | String | The client logging level. | INFO |
-| `gateway_client_use_tls` | Boolena | Flag for enabling/disabling TLS. | true |
+| `gateway_client_use_tls` | Boolean | Flag for enabling/disabling TLS. | true |
 | `gateway_client_pki_dir` | String | Path to the client TLS certificates and keys. | "{{ gateway_client_working_dir }}/ssl" |
 | `gateway_client_pki_key_file` | String | The name of the client TLS key file. | "{{ inventory_hostname }}{{ gateway_pki_key_suffix }}" |
 | `gateway_client_pki_key_src` | String | The path to the source client TLS key file on the control node. | "{{ gateway_pki_src_dir }}/{{ gateway_client_pki_key_file }}" |
@@ -72,7 +72,7 @@ the `iag5_servers` or `iag5_runners` group vars.
 | `gateway_server_config_dir` | String | The directory containing the server configuration files. | /etc/gateway |
 | `gateway_server_data_dir` | String | The directory containing the server data files. | /var/lib/gateway |
 | `gateway_server_cache_dir` | String | The directory used for the venv cache. | /var/cache/gateway |
-| `gateway_server_python_packages` | List of String | The list of Python packages to install. | - python3.12<br>- python3.12-pip |
+| `gateway_server_python_packages` | List of String | The list of Python packages to install. | - python3.11<br>- python3.11-pip<br>- python3.12<br>- python3.12-pip |
 | `gateway_server_python_executable` | String | The path to the Python executable. | /usr/bin/python3.12 |
 | `gateway_server_pip_executable` | String | The path to the Pip executable. | /usr/bin/pip3.12 |
 | `gateway_server_local_bin_dir` | String | The server local binnary directory. | "/home/{{ gateway_server_user }}/.local/bin" |
@@ -96,16 +96,20 @@ the `iag5_servers` or `iag5_runners` group vars.
 | `gateway_server_pki_ca_cert_src` | String | The path to the source server TLS CA certificate on the control node. | "{{ gateway_pki_src_dir }}/{{ gateway_server_pki_ca_file }}" |
 | `gateway_server_pki_ca_cert_dest` | String | The path to the server TLS CA certificate. | "{{ gateway_server_pki_dir }}/{{ gateway_server_pki_ca_file }}" |
 | `gateway_server_registry_default_overridable` | Boolean | Controls whether users can override the default PyPI or Ansible Galaxy registries when creating a Python or Ansible service. | true |
-| `gateway_server_store_backend` | String | Sets the backend type for persistent data storage.<br>Valid values are 'local', 'memory', 'etc' and 'dynamodb' | local |
+| `gateway_server_store_backend` | String | Sets the backend type for persistent data storage.<br>Valid values are 'local', 'memory', 'etcd' and 'dynamodb' | local |
 | `gateway_server_store_etcd_hosts` | String | Sets the etcd hosts that the gateway connects to for backend storage.<br>A host entry consists of an address and port: hostname:port.<br>If there are multiple etcd hosts, enter them as a space separated list: hostname1:port hostname2:port. | localhost:2379 |
 | `gateway_server_store_etcd_use_tls` | Boolean | Flag for enabling/disabling TLS connections to Etcd. | true |
 | `gateway_server_store_etcd_client_cert_auth` | Boolean | Flag for determining the TLS authentication method used when connecting to an Etcd store backend and gateway_server_store_etcd_use_tls is set to 'true'. | true |
+| `gateway_server_store_etcd_ca_certificate_filename` | String | The path to the CA certificate used to authenticate to the Etcd store backend. | "{{ gateway_server_pki_ca_cert_dest }}" |
+| `gateway_server_store_etcd_certificate_filename` | String | The path to the client certificate used to authenticate to the Etcd store backend. | "{{ gateway_server_pki_cert_dest }}" |
+| `gateway_server_store_etcd_private_key_filename` | String | The path to the client private key used to authenticate to the Etcd store backend. | "{{ gateway_server_pki_key_dest }}" |
 | `gateway_server_store_dynamodb_table_name` | String | Sets the Amazon DynamoDB table name that the gateway connects to for backend storage. | itential.gateway5.store |
 | `gateway_server_store_dynamodb_aws_access_key_id` | String | The AWS access key when using DynamoDB, written to `iagctl.env`. | N/A |
 | `gateway_server_store_dynamodb_aws_secret_access_key` | String | The AWS secret access key when using DynamoDB, written to `iagctl.env`. | N/A |
 | `gateway_server_store_dynamodb_aws_session_token` | String | The AWS session token when using DynamoDB, written to `iagctl.env`. | N/A |
 | `gateway_server_store_dynamodb_aws_region` | String | The AWS region when using DynamoDB, written to `iagctl.env`. | N/A |
 | `gateway_server_terminal_no_color` | Boolean | Determines whether the console outputs and logs display in color. | false |
+| `gateway_server_environment` | Dictionary | Free-form key/value pairs written directly to the systemd environment file (`iagctl.env`). Use to set system-level environment variables such as `HTTP_PROXY`, `HTTPS_PROXY`, and `NO_PROXY`. | {} |
 
 If `gateway_server_packages` contains links to artifacts in the Itential Nexus repository, the
 `repository_username`/`repository_password` must be defined.
@@ -119,6 +123,8 @@ The variables in this section may be overridden in the inventory in the `iag5_se
 | `gateway_server_distributed_execution` | Boolean | Flag for enabling/disabling distributed execution.<br>Set to 'true' when deploying an architecture utilizing runners. | false |
 | `gateway_server_api_key_expiration` | Integer | The amount of time (in minutes) before a user API key expires. | 1440 |
 | `gateway_server_connect_enabled` | Boolean | Flag for enabling/disabling the connection to Gateway Manager | true |
+| `gateway_server_connect_hosts` | String | The Gateway Manager host and port (host:port) the server connects to. Must be defined in the inventory when `gateway_server_connect_enabled` is `true`. | N/A (must be defined in inventory) |
+| `gateway_server_hw_specs` | Dictionary | Minimum hardware requirements (`cpu_min`, `ram_min_gb`, `disk_min_gb`) asserted by the `verify` pre-flight playbook for server nodes. | cpu_min: 1<br>ram_min_gb: 2<br>disk_min_gb: 10 |
 | `gateway_server_connect_server_ha_enabled` | Boolean | Enable this configuration variable when you have multiple all in one or core nodes for a particular GATEWAY_APPLICATION_CLUSTER_ID. When you enable High Availability (HA), the system runs in active/standby mode. One server connects to Gateway Manager while the others remain in standby mode. If the active node goes down, a standby node connects to Gateway Manager and begins serving requests. | false |
 | `gateway_server_connect_server_ha_is_primary` | Boolean | When you set GATEWAY_CONNECT_SERVER_HA_ENABLED to true, use this configuration variable to designate one node as the primary. When all nodes are online, this node takes the highest precedence and connects to Gateway Manager. Only one core HA node can connect to Gateway Manager at a time. If this node loses connection to Gateway Manager or the database, a standby node takes its place. | false |
 | `gateway_server_connect_insecure_tls` | Boolean | Determines whether the gateway verifies TLS certificates when it connects to Itential Platform. When set to true, the gateway skips TLS certificate verification. We strongly recommend enabling TLS certificate verification in production environments. | false |
@@ -140,3 +146,15 @@ The variables in this section may be overridden in the inventory in the `iag5_ru
 | Variable | Type | Description | Default Value |
 | :------- | :--- | :---------- | :------------ |
 | `gateway_server_runner_announcement_address` | IP Address | Sets the address that a gateway runner registers to its cluster when it comes online. When a gateway core server sends a service execution request to a gateway runner, it sends the request to this address. If you don't explicitly set this variable, the gateway runner identifies its own IP address and registers it to the cluster. | N/A (must be defined in inventory when runners are used.) |
+| `gateway_runner_hw_specs` | Dictionary | Minimum hardware requirements (`cpu_min`, `ram_min_gb`, `disk_min_gb`) asserted by the `verify` pre-flight playbook for runner nodes. | cpu_min: 4<br>ram_min_gb: 8<br>disk_min_gb: 20 |
+
+## Certify Variables
+
+The variables in this section are used by the `certify` playbook (post-deployment TLS
+verification) and may be overridden in any group vars.
+
+| Variable | Type | Description | Default Value |
+| :------- | :--- | :---------- | :------------ |
+| `os_ca_bundle` | String | The OS CA bundle used to verify the Gateway Manager server certificate during the connect certification checks. Override if your OS stores trusted CA certs in a different location. | /etc/pki/tls/certs/ca-bundle.crt |
+| `certify_report_file` | String | The path on the remote host where the certify report is written. | "/tmp/certify-tls-{{ inventory_hostname }}.md" |
+| `certify_report_dir_local` | String | The directory on the control node where certify reports are fetched to. | ./certify_reports |
