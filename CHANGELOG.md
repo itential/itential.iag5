@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.1.1 (July 31, 2026)
+
+* Add readme for galaxy
+* Update galaxy version and changelog for release 1.1.0 [skip ci]
+
+Full Changelog: https://github.com/itential/itential.iag5/compare/v1.1.0...v1.1.1 
+
+
 ## v1.1.0 (July 31, 2026)
 
 * Add CLAUDE.md file
@@ -20,6 +28,7 @@
 * Remove SUMMARY | prefix from summary task names
 * Set report file owner/group and enable backup in summary template task
 * Update example inventories  https://github.com/itential/itential.iag5/pull/9
+* Update galaxy version and changelog for release 1.1.0 [skip ci]
 * Update reference guide and correct lint issues  https://github.com/itential/itential.iag5/pull/25
 * Update reference guide with missing variables  https://github.com/itential/itential.iag5/pull/23
 * Update required public repos  https://github.com/itential/itential.iag5/pull/14
