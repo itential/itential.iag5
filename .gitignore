@@ -10,4 +10,3 @@
 **/*.log
 **/*.keep
 inventories
-roles/gateway_server/files/
