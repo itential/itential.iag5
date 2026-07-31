@@ -9,4 +9,3 @@
 
 - name: Install and configure Gateway5 clients
   import_playbook: itential.iag5.clients
-
