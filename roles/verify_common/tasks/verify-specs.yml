@@ -1,0 +1,66 @@
+# Copyright (c) 2026, Itential, Inc
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+---
+# Validates that the managed node meets minimum hardware requirements.
+# Variables required:
+#   component_name: display name used in messages (e.g. "Server", "Runner")
+#   hw_specs:       dict with keys cpu_min (int), ram_min_gb (int), disk_min_gb (int)
+
+- name: Initialize specs validation errors
+  ansible.builtin.set_fact:
+    specs_validation_errors: []
+
+- name: Get root partition disk size
+  ansible.builtin.set_fact:
+    root_disk_size_gb: >-
+      {{ (ansible_mounts | selectattr('mount', 'equalto', '/') | map(attribute='size_total') | first / 1024 / 1024 / 1024) | round(2) }}
+  when: ansible_mounts | selectattr('mount', 'equalto', '/') | list | length > 0
+
+- name: Validate CPU count
+  ansible.builtin.assert:
+    that: ansible_processor_vcpus >= hw_specs.cpu_min | int
+    fail_msg: "CPU: requires {{ hw_specs.cpu_min }} vCPU(s), found {{ ansible_processor_vcpus }}"
+    quiet: true
+  ignore_errors: true
+  register: specs_cpu_check
+
+- name: Record CPU failure
+  ansible.builtin.set_fact:
+    specs_validation_errors: >-
+      {{ specs_validation_errors + ['CPU: requires ' ~ hw_specs.cpu_min ~ ' vCPU(s), found ' ~ ansible_processor_vcpus] }}
+  when: specs_cpu_check is failed
+
+- name: Validate RAM
+  ansible.builtin.assert:
+    that: (ansible_memtotal_mb / 1024) >= hw_specs.ram_min_gb | float
+    fail_msg: "RAM: requires {{ hw_specs.ram_min_gb }} GB, found {{ (ansible_memtotal_mb / 1024) | round(2) }} GB"
+    quiet: true
+  ignore_errors: true
+  register: specs_ram_check
+
+- name: Record RAM failure
+  ansible.builtin.set_fact:
+    specs_validation_errors: >-
+      {{ specs_validation_errors + ['RAM: requires ' ~ hw_specs.ram_min_gb ~ ' GB, found ' ~ (ansible_memtotal_mb / 1024) | round(2) ~ ' GB'] }}
+  when: specs_ram_check is failed
+
+- name: Validate disk size
+  ansible.builtin.assert:
+    that: root_disk_size_gb | float >= hw_specs.disk_min_gb | float
+    fail_msg: "Disk: requires {{ hw_specs.disk_min_gb }} GB, found {{ root_disk_size_gb }} GB"
+    quiet: true
+  ignore_errors: true
+  register: specs_disk_check
+  when: root_disk_size_gb is defined
+
+- name: Record disk failure
+  ansible.builtin.set_fact:
+    specs_validation_errors: >-
+      {{ specs_validation_errors + ['Disk: requires ' ~ hw_specs.disk_min_gb ~ ' GB, found ' ~ root_disk_size_gb ~ ' GB'] }}
+  when: root_disk_size_gb is defined and specs_disk_check is failed
+
+- name: Assert all hardware spec checks passed
+  ansible.builtin.assert:
+    that: specs_validation_errors | length == 0
+    fail_msg: "{{ component_name }} hardware check failed: {{ specs_validation_errors | join('; ') }}"
+    success_msg: "{{ component_name }} hardware check passed"

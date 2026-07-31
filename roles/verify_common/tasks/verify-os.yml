@@ -1,0 +1,20 @@
+# Copyright (c) 2026, Itential, Inc
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+---
+- name: Assert supported OS
+  ansible.builtin.assert:
+    that:
+      - ansible_distribution in ['RedHat', 'Rocky']
+      - ansible_distribution_major_version in ['8', '9']
+    fail_msg: >-
+      {{ ansible_distribution }} {{ ansible_distribution_version }} is not supported.
+      Supported OS: RHEL 8/9, Rocky Linux 8/9.
+    success_msg: "OS check passed: {{ ansible_distribution }} {{ ansible_distribution_version }}"
+
+- name: Assert supported architecture
+  ansible.builtin.assert:
+    that: ansible_architecture == 'x86_64'
+    fail_msg: >-
+      {{ ansible_architecture }} is not a supported architecture.
+      Supported architecture: x86_64.
+    success_msg: "Architecture check passed: {{ ansible_architecture }}"

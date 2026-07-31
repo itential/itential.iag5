@@ -1,0 +1,18 @@
+# Copyright (c) 2026, Itential, Inc
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+---
+##################################
+# Gateway hardware specifications
+##################################
+
+# Minimum hardware requirements for IAG5 server nodes.
+gateway_server_hw_specs:
+  cpu_min: 1
+  ram_min_gb: 2
+  disk_min_gb: 10
+
+# Minimum hardware requirements for IAG5 runner nodes.
+gateway_runner_hw_specs:
+  cpu_min: 4
+  ram_min_gb: 8
+  disk_min_gb: 20

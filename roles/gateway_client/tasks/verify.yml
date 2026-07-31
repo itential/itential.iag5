@@ -1,0 +1,18 @@
+# Copyright (c) 2026, Itential, Inc
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+---
+- name: Verify OS compatibility
+  ansible.builtin.include_role:
+    name: itential.iag5.verify_common
+    tasks_from: verify-os.yml
+
+- name: Verify TLS source files
+  when: gateway_pki_upload | bool
+  ansible.builtin.include_role:
+    name: itential.iag5.verify_common
+    tasks_from: verify-tls-files.yml
+  vars:
+    pki_cert_src: "{{ gateway_client_pki_cert_src }}"
+    pki_key_src: "{{ gateway_client_pki_key_src }}"
+    pki_ca_cert_src: "{{ gateway_client_pki_ca_cert_src }}"
+    check_san: false

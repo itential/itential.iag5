@@ -272,8 +272,8 @@
 
 - name: "CHECK 16 | Set GWM host and port"
   ansible.builtin.set_fact:
-    gwm_host: "{{ gwm_endpoint.split(':')[0] }}"
-    gwm_port: "{{ gwm_endpoint.split(':')[1] }}"
+    gwm_host: "{{ gwm_endpoint.split()[0].split(':')[0] }}"
+    gwm_port: "{{ gwm_endpoint.split()[0].split(':')[1] }}"
   when: connect_is_enabled and gwm_endpoint is defined and gwm_endpoint != ''
 
 - name: "CHECK 16 | Resolve GWM host from server"
@@ -294,20 +294,25 @@
 
 - name: "CHECK 17 | Test TCP connectivity SERVER → GWM"
   ansible.builtin.wait_for:
-    host: "{{ gwm_host }}"
-    port: "{{ gwm_port }}"
+    host: "{{ item.split(':')[0] }}"
+    port: "{{ item.split(':')[1] | int }}"
     timeout: 5
-  register: tcp_check
+    state: started
+  register: gwm_tcp_checks
   ignore_errors: true
-  when: connect_is_enabled and gwm_host is defined and gwm_host != ''
+  loop: "{{ gwm_endpoint.split() }}"
+  when: connect_is_enabled and gwm_endpoint is defined and gwm_endpoint != ''
 
 - name: "CHECK 17 | Record result — TCP connectivity to GWM"
   ansible.builtin.set_fact:
-    check_results: "{{ check_results + [{'check': 'CHECK 17 — TCP connectivity SERVER → GWM (' + (gwm_host | default('N/A')) + ':' + (gwm_port | default('N/A') | string) + ')',
+    check_results: "{{ check_results + [{'check': 'CHECK 17 — TCP connectivity SERVER → GWM (' + item.item + ')',
         'expected': 'Port reachable within 5 seconds',
-        'actual': 'REACHABLE' if not tcp_check.failed else 'UNREACHABLE — check security groups',
-        'status': '✅ PASS' if not tcp_check.failed else ('⏭ SKIPPED — Connect disabled' if not connect_is_enabled else '❌ FAIL')}] }}"
-  when: connect_is_enabled
+        'actual': 'REACHABLE' if not item.failed else 'UNREACHABLE — check security groups',
+        'status': '✅ PASS' if not item.failed else '❌ FAIL'}] }}"
+  loop: "{{ gwm_tcp_checks.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+  when: connect_is_enabled and gwm_tcp_checks is defined
 
 - name: "CHECK 18 | Verify GWM server cert trusted by OS CA pool (Layer 1 one-way TLS)"
   ansible.builtin.shell: |
