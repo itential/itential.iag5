@@ -16,7 +16,11 @@ server_ha_is_primary = {{ gateway_server_connect_server_ha_is_primary | to_json 
 {% endif %}
 
 [features]
-mcp_enabled = {{ gateway_server_features_mcp_enabled | to_json }}
+ansible_enabled  = {{ gateway_server_features_ansible_enabled | to_json }}
+hostkeys_enabled = {{ gateway_server_features_hostkeys_enabled | to_json }}
+mcp_enabled      = {{ gateway_server_features_mcp_enabled | to_json }}
+opentofu_enabled = {{ gateway_server_features_opentofu_enabled | to_json }}
+python_enabled   = {{ gateway_server_features_python_enabled | to_json }}
 
 [log]
 console_json       = {{ gateway_server_log_console_json | to_json }}
