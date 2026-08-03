@@ -258,7 +258,7 @@ The full variable reference (100+ variables with types, defaults, and descriptio
 - `gateway_server_store_type` — storage backend: `local`, `etcd`, `dynamodb`, `memory`
 - `gateway_server_features_python_enabled` — enable Python script/service management (default: `true`)
 - `gateway_server_features_opentofu_enabled` — enable OpenTofu plan/service management (default: `true`)
-- `gateway_server_features_mcp_enabled` — enable MCP (Model Context Protocol) commands/endpoints, Gateway 5.5+ (default: `true`)
+- `gateway_server_features_mcp_enabled` — enable MCP (Model Context Protocol) commands/endpoints, Gateway 5.5+ (default: `false`)
 - `gateway_application_mode` — set by playbook: `server` or `runner`
 - `gateway_server_connect_proxy_enabled` — enable outbound proxy for Gateway Manager connection (default: `false`); always writes `GATEWAY_CONNECT_PROXY_*` vars to `iagctl.env`
 - `gateway_server_connect_proxy_url` — proxy URL; required when proxy is enabled

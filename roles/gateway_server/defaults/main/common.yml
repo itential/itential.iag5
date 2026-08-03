@@ -11,3 +11,7 @@ gateway_server_port: 50051
 
 # Gateway requirements file
 gateway_server_requirements_file: requirements.txt
+
+# Gateway virtual environment retention
+gateway_server_venv_retention_period: 30d
+gateway_server_venv_sweep_interval: 24h

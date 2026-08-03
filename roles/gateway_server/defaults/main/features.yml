@@ -7,6 +7,6 @@
 
 gateway_server_features_ansible_enabled: true
 gateway_server_features_hostkeys_enabled: true
-gateway_server_features_mcp_enabled: true
+gateway_server_features_mcp_enabled: false
 gateway_server_features_opentofu_enabled: true
 gateway_server_features_python_enabled: true

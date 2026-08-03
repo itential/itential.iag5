@@ -1,8 +1,10 @@
 [application]
-mode                = '{{ gateway_application_mode }}'
-cluster_id          = '{{ gateway_cluster_id }}'
-working_dir         = '{{ gateway_server_data_dir }}'
-ca_certificate_file = '{{ gateway_server_pki_ca_cert_dest }}'
+mode                  = '{{ gateway_application_mode }}'
+cluster_id            = '{{ gateway_cluster_id }}'
+working_dir           = '{{ gateway_server_data_dir }}'
+ca_certificate_file   = '{{ gateway_server_pki_ca_cert_dest }}'
+venv_retention_period = '{{ gateway_server_venv_retention_period }}'
+venv_sweep_interval   = '{{ gateway_server_venv_sweep_interval }}'
 
 [connect]
 enabled              = {{ gateway_server_connect_enabled | to_json }}
@@ -69,4 +71,5 @@ etcd_private_key_file    = '{{ gateway_server_store_etcd_private_key_filename }}
 {% endif %}
 
 [terminal]
-no_color = {{ gateway_server_terminal_no_color }}
+no_color           = {{ gateway_server_terminal_no_color | to_json }}
+timestamp_timezone = '{{ gateway_server_terminal_timestamp_timezone }}'

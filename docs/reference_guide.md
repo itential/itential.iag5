@@ -43,6 +43,7 @@ The variables in this section may be overridden in the inventory in the `iag5_cl
 | `gateway_client_pki_ca_file` | String | The name of the client TLS CA certificate file. | "ca{{ gateway_pki_cert_suffix }}" |
 | `gateway_client_pki_ca_cert_src` | String | The path to the source client TLS CA certificate on the control node. | "{{ gateway_pki_src_dir }}/{{ gateway_client_pki_ca_file }}" |
 | `gateway_client_pki_ca_cert_dest` | String | The path to the client TLS CA certificate. | "{{ gateway_client_pki_dir }}/{{ gateway_client_pki_ca_file }}" |
+| `gateway_client_terminal_no_color` | Boolean | Determines whether the client's console outputs display in color. | false |
 | `gateway_client_terminal_timestamp_timezone` | String | Timezones are shown in UTC by default. When you set this to 'local', the client uses your machine's timezone.<br>You can also set a timezone (tz) identifier such as 'America/New_York'. | utc |
 
 If `gateway_client_packages` contains links to artifacts in the Itential Nexus repository, the
@@ -67,6 +68,13 @@ the `iag5_servers` or `iag5_runners` group vars.
 | `gateway_server_listen_address` | String | The server listen address. | 0.0.0.0 |
 | `gateway_server_port` | Integer | The server listen port. | 50051 |
 | `gateway_server_requirements_file` | String |  | requirements.txt |
+| `gateway_server_venv_retention_period` | String | The amount of idle time before the gateway removes a virtual environment. Accepts a Go duration string or a number of days (e.g. `30d`). | 30d |
+| `gateway_server_venv_sweep_interval` | String | How often the background pruner scans for idle virtual environments to remove. Accepts a Go duration string. | 24h |
+| `gateway_server_features_ansible_enabled` | Boolean | Enables or disables all Ansible features. When you set this variable to false, the gateway disables the management of Ansible playbooks and the execution of Ansible services. | true |
+| `gateway_server_features_hostkeys_enabled` | Boolean | Enables or disables the hostkeys feature. When you set this variable to false, the gateway disables the hostkeys managment commands. | true |
+| `gateway_server_features_mcp_enabled` | Boolean | Enables or disables MCP (Model Context Protocol) features. When you set this variable to false, MCP commands and endpoints are not available. Available in Gateway 5.5 and later. | false |
+| `gateway_server_features_opentofu_enabled` | Boolean | Enables or disables all OpenTofu features. When you set this variable to false, the gateway disables the management of OpenTofu plans and the execution of OpenTofu services. | true |
+| `gateway_server_features_python_enabled` | Boolean | Enables or disables all Python features. When you set this variable to false, the gateway disables the management of Python scripts and the execution of Python services. | true |
 | `gateway_server_user` | String | The server user. All server files and the service will be owned by this user. | itential |
 | `gateway_server_group` | String | The server group. | itential |
 | `gateway_server_config_dir` | String | The directory containing the server configuration files. | /etc/gateway |
@@ -109,6 +117,7 @@ the `iag5_servers` or `iag5_runners` group vars.
 | `gateway_server_store_dynamodb_aws_session_token` | String | The AWS session token when using DynamoDB, written to `iagctl.env`. | N/A |
 | `gateway_server_store_dynamodb_aws_region` | String | The AWS region when using DynamoDB, written to `iagctl.env`. | N/A |
 | `gateway_server_terminal_no_color` | Boolean | Determines whether the console outputs and logs display in color. | false |
+| `gateway_server_terminal_timestamp_timezone` | String | Timezones are shown in UTC by default. When you set this to 'local', the gateway uses the machine's timezone.<br>You can also set a timezone (tz) identifier such as 'America/New_York'. | utc |
 | `gateway_server_environment` | Dictionary | Free-form key/value pairs written directly to the systemd environment file (`iagctl.env`). Use to set system-level environment variables such as `HTTP_PROXY`, `HTTPS_PROXY`, and `NO_PROXY`. | {} |
 
 If `gateway_server_packages` contains links to artifacts in the Itential Nexus repository, the
@@ -134,11 +143,6 @@ The variables in this section may be overridden in the inventory in the `iag5_se
 | `gateway_server_connect_proxy_url` | String | The proxy URL (e.g. `http://proxy.example.com:8080`), written to `iagctl.env`. Required when `gateway_server_connect_proxy_enabled` is `true`. | N/A |
 | `gateway_server_connect_proxy_username` | String | The proxy username, written to `iagctl.env`. Optional. | N/A |
 | `gateway_server_connect_proxy_password` | String | The proxy password, written to `iagctl.env`. Optional. | N/A |
-| `gateway_server_features_ansible_enabled` | Boolean | Enables or disables all Ansible features. When you set this variable to false, the gateway disables the management of Ansible playbooks and the execution of Ansible services. | true |
-| `gateway_server_features_hostkeys_enabled` | Boolean | Enables or disables the hostkeys feature. When you set this variable to false, the gateway disables the hostkeys managment commands. | true |
-| `gateway_server_features_mcp_enabled` | Boolean | Enables or disables MCP (Model Context Protocol) features. When you set this variable to false, MCP commands and endpoints are not available. Available in Gateway 5.5 and later. | true |
-| `gateway_server_features_opentofu_enabled` | Boolean | Enables or disables all OpenTofu features. When you set this variable to false, the gateway disables the management of OpenTofu plans and the execution of OpenTofu services. | true |
-| `gateway_server_features_python_enabled` | Boolean | Enables or disables all Python features. When you set this variable to false, the gateway disables the management of Python scripts and the execution of Python services. | true |
 
 # Runner Variables
 
