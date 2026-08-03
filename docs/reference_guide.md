@@ -136,6 +136,7 @@ The variables in this section may be overridden in the inventory in the `iag5_se
 | `gateway_server_connect_proxy_password` | String | The proxy password, written to `iagctl.env`. Optional. | N/A |
 | `gateway_server_features_ansible_enabled` | Boolean | Enables or disables all Ansible features. When you set this variable to false, the gateway disables the management of Ansible playbooks and the execution of Ansible services. | true |
 | `gateway_server_features_hostkeys_enabled` | Boolean | Enables or disables the hostkeys feature. When you set this variable to false, the gateway disables the hostkeys managment commands. | true |
+| `gateway_server_features_mcp_enabled` | Boolean | Enables or disables MCP (Model Context Protocol) features. When you set this variable to false, MCP commands and endpoints are not available. Available in Gateway 5.5 and later. | true |
 | `gateway_server_features_opentofu_enabled` | Boolean | Enables or disables all OpenTofu features. When you set this variable to false, the gateway disables the management of OpenTofu plans and the execution of OpenTofu services. | true |
 | `gateway_server_features_python_enabled` | Boolean | Enables or disables all Python features. When you set this variable to false, the gateway disables the management of Python scripts and the execution of Python services. | true |
 
