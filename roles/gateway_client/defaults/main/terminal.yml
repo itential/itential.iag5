@@ -5,4 +5,5 @@
 # Gateway client terminal variables
 ###################################
 
+gateway_client_terminal_no_color: false
 gateway_client_terminal_timestamp_timezone: utc

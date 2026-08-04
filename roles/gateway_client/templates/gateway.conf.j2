@@ -18,4 +18,5 @@ encrypt_key_file = '{{ gateway_secrets_encrypt_key_file }}'
 level = {{ gateway_client_log_level }}
 
 [terminal]
+no_color           = {{ gateway_client_terminal_no_color | to_json }}
 timestamp_timezone = '{{ gateway_client_terminal_timestamp_timezone }}'

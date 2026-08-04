@@ -76,8 +76,8 @@ Deploys server **or** runner depending on `gateway_application_mode`. Task execu
 
 1. `validate-vars.yml` — asserts required vars
 2. `install_gateway.yml` — creates user/dirs, downloads RPM, installs + enables systemd service
-3. `install_python.yml` — optional Python 3.12 install (controlled by `gateway_server_features_python`)
-4. `install_tofu.yml` — optional OpenTofu install (controlled by `gateway_server_features_opentofu`)
+3. `install_python.yml` — optional Python 3.12 install (controlled by `gateway_server_features_python_enabled`)
+4. `install_tofu.yml` — optional OpenTofu install (controlled by `gateway_server_features_opentofu_enabled`)
 5. `upload_certs.yml` — uploads TLS cert/key and CA cert
 6. `configure_gateway.yml` — renders `server.conf.j2` or `runner.conf.j2` to `/etc/gateway/gateway.conf`; also renders `iagctl.service.j2` to `/usr/lib/systemd/system/iagctl.service` and `iagctl.env.j2` to `/etc/gateway/iagctl.env` (mode 0600) when `gateway_server_store_backend == 'dynamodb'` or proxy is enabled
 7. `configure_firewalld.yml` — opens ports in firewalld (optional)
@@ -256,8 +256,9 @@ The full variable reference (100+ variables with types, defaults, and descriptio
 - `gateway_cluster_id` — cluster name (default: `cluster_1`)
 - `gateway_pki_upload` — upload TLS certs (default: `true`)
 - `gateway_server_store_type` — storage backend: `local`, `etcd`, `dynamodb`, `memory`
-- `gateway_server_features_python` — install Python (default: `false`)
-- `gateway_server_features_opentofu` — install OpenTofu (default: `false`)
+- `gateway_server_features_python_enabled` — enable Python script/service management (default: `true`)
+- `gateway_server_features_opentofu_enabled` — enable OpenTofu plan/service management (default: `true`)
+- `gateway_server_features_mcp_enabled` — enable MCP (Model Context Protocol) commands/endpoints, Gateway 5.5+ (default: `false`)
 - `gateway_application_mode` — set by playbook: `server` or `runner`
 - `gateway_server_connect_proxy_enabled` — enable outbound proxy for Gateway Manager connection (default: `false`); always writes `GATEWAY_CONNECT_PROXY_*` vars to `iagctl.env`
 - `gateway_server_connect_proxy_url` — proxy URL; required when proxy is enabled

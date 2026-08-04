@@ -9,4 +9,6 @@
 **/*.pem
 **/*.log
 **/*.keep
+**/*.rpm
+playbooks/verify_cert_reports/
 inventories

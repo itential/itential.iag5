@@ -1,8 +1,10 @@
 [application]
-mode                = '{{ gateway_application_mode }}'
-cluster_id          = '{{ gateway_cluster_id }}'
-working_dir         = '{{ gateway_server_data_dir }}'
-ca_certificate_file = '{{ gateway_server_pki_ca_cert_dest }}'
+mode                  = '{{ gateway_application_mode }}'
+cluster_id            = '{{ gateway_cluster_id }}'
+working_dir           = '{{ gateway_server_data_dir }}'
+ca_certificate_file   = '{{ gateway_server_pki_ca_cert_dest }}'
+venv_retention_period = '{{ gateway_server_venv_retention_period }}'
+venv_sweep_interval   = '{{ gateway_server_venv_sweep_interval }}'
 
 [connect]
 enabled              = {{ gateway_server_connect_enabled | to_json }}
@@ -14,6 +16,13 @@ insecure_tls         = {{ gateway_server_connect_insecure_tls | to_json }}
 server_ha_enabled    = {{ gateway_server_connect_server_ha_enabled | to_json }}
 server_ha_is_primary = {{ gateway_server_connect_server_ha_is_primary | to_json }}
 {% endif %}
+
+[features]
+ansible_enabled  = {{ gateway_server_features_ansible_enabled | to_json }}
+hostkeys_enabled = {{ gateway_server_features_hostkeys_enabled | to_json }}
+mcp_enabled      = {{ gateway_server_features_mcp_enabled | to_json }}
+opentofu_enabled = {{ gateway_server_features_opentofu_enabled | to_json }}
+python_enabled   = {{ gateway_server_features_python_enabled | to_json }}
 
 [log]
 console_json       = {{ gateway_server_log_console_json | to_json }}
@@ -62,4 +71,5 @@ etcd_private_key_file    = '{{ gateway_server_store_etcd_private_key_filename }}
 {% endif %}
 
 [terminal]
-no_color = {{ gateway_server_terminal_no_color }}
+no_color           = {{ gateway_server_terminal_no_color | to_json }}
+timestamp_timezone = '{{ gateway_server_terminal_timestamp_timezone }}'
