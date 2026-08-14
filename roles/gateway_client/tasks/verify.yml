@@ -6,6 +6,14 @@
     name: itential.iag5.verify_common
     tasks_from: verify-os.yml
 
+# No connectivity check here (unlike gateway_server): the client's only install-time
+# dependency is gateway_client_packages, a customer-supplied Nexus/JFrog/GitLab URL, not a
+# fixed public repository -- there's nothing generic to check reachability against.
+- name: Verify proxy configuration
+  ansible.builtin.include_role:
+    name: itential.iag5.verify_common
+    tasks_from: verify-proxy.yml
+
 - name: Verify TLS source files
   when: gateway_pki_upload | bool
   ansible.builtin.include_role:
@@ -16,3 +24,10 @@
     pki_key_src: "{{ gateway_client_pki_key_src }}"
     pki_ca_cert_src: "{{ gateway_client_pki_ca_cert_src }}"
     check_san: false
+
+- name: Report verification results
+  ansible.builtin.include_role:
+    name: itential.iag5.verify_common
+    tasks_from: verify-results.yml
+  vars:
+    component_name: "Client"

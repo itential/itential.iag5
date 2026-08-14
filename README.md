@@ -141,6 +141,15 @@ install the required repository or download the packages.
 > URLs will result in a redirect. If a customer is using a proxy or other such method to restrict
 > access this list may not represent the final URLs or IP addresses that are required.
 
+To verify connectivity to the "IAG5" rows above from the target hosts (excluding the Ansible
+Control Node rows, which are the control node's own responsibility), run the `verify` playbook:
+
+```bash
+ansible-playbook itential.iag5.verify -i <inventory>
+```
+
+See [docs/verify.md](docs/verify.md) for details.
+
 ### Ports and Networking
 
 In a clustered environment where components are installed on more than one host, the following

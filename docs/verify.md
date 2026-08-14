@@ -16,7 +16,10 @@ for this playbook to run.
 - [Check Reference](#check-reference)
   - [OS Checks](#os-checks)
   - [Hardware Spec Checks](#hardware-spec-checks)
+  - [Connectivity Checks](#connectivity-checks)
+  - [Proxy Checks](#proxy-checks)
   - [TLS File Checks](#tls-file-checks)
+- [Non-Fatal Design](#non-fatal-design)
 - [Variables Reference](#variables-reference)
 - [Relationship to verify\_cert](#relationship-to-certify)
 
@@ -30,10 +33,13 @@ for this playbook to run.
 |----------|----------------|---------------|
 | OS | Distribution, version, and architecture | Managed node |
 | Hardware | CPU, RAM, and disk against documented minimums | Managed node (servers and runners only) |
+| Connectivity | Outbound reachability of required public repositories | Managed node (servers and runners only) |
+| Proxy | Detects HTTP/HTTPS proxy configuration | Managed node |
 | TLS files | Cert existence, PEM validity, expiry, cert/key match, CA chain, EKU, SANs | Control node |
 
 The playbook targets three host groups: `iag5_servers`, `iag5_runners`, and `iag5_clients`. Any
-group absent from your inventory is silently skipped.
+group absent from your inventory is silently skipped. A fourth, final play aggregates and
+reports the overall result across every host — see [Non-Fatal Design](#non-fatal-design).
 
 ---
 
@@ -46,19 +52,24 @@ group absent from your inventory is silently skipped.
 ```
 itential.iag5/
 ├── playbooks/
-│   └── verify.yml                             3-play standalone playbook
+│   └── verify.yml                             4-play standalone playbook (server, runner,
+│                                               client, then a final aggregate report play)
 └── roles/
     ├── gateway_server/
     │   ├── defaults/main/specs.yml                        Hardware minimums for servers and runners
-    │   └── tasks/verify.yml                   Orchestrator — OS, specs, TLS
+    │   └── tasks/verify.yml                   Orchestrator — OS, specs, connectivity, proxy, TLS
     ├── gateway_client/
-    │   └── tasks/verify.yml                   Orchestrator — OS, TLS (no specs)
+    │   └── tasks/verify.yml                   Orchestrator — OS, proxy, TLS (no specs/connectivity)
     └── verify_common/
         ├── defaults/main.yml
         └── tasks/
             ├── verify-os.yml                              OS distribution, version, architecture
             ├── verify-specs.yml                           CPU, RAM, disk
-            └── verify-tls-files.yml                       14 TLS file checks (control node)
+            ├── verify-connectivity.yml                    Required public repository reachability
+            ├── verify-proxy.yml                           HTTP/HTTPS proxy detection
+            ├── verify-tls-files.yml                       14 TLS file checks (control node)
+            └── verify-results.yml                         Combines every check into one non-fatal
+                                                             per-host result + per-component report
 ```
 
 ### How node type is determined
@@ -126,7 +137,8 @@ Runs on: `iag5_servers` and `iag5_runners` only. Clients have no documented hard
 and are skipped.
 
 Hardware failures are collected across all three dimensions and reported together in a single
-final assertion, so all failures are visible in one run.
+final assertion, so all failures are visible in one run. That final assertion is non-fatal —
+see [Non-Fatal Design](#non-fatal-design).
 
 | Check | Server minimum | Runner minimum | Hard fail? |
 |-------|---------------|----------------|-----------|
@@ -148,6 +160,41 @@ iag5_runners:
 
 ---
 
+### Connectivity Checks
+
+Runs on: `iag5_servers` and `iag5_runners` only. Clients have no fixed public repository to
+check — their only install-time dependency is `gateway_client_packages`, a customer-supplied
+Nexus/JFrog/GitLab URL, not a generic reachability target.
+
+Checks outbound access to the "IAG5" rows of the README
+[Required Public Repositories](../README.md#required-public-repositories) table. The list is
+built dynamically in `roles/gateway_server/tasks/verify.yml` based on which optional features
+are enabled, so a host with, say, OpenTofu disabled isn't failed against a repository it
+doesn't need:
+
+| Repository | Included when |
+|------------|---------------|
+| `https://registry.aws.itential.com` | Always |
+| `https://galaxy.ansible.com` | `gateway_server_features_ansible_enabled: true` (default) |
+| `https://pypi.org`, `https://python.org`, `https://pythonhosted.org` | `gateway_server_features_python_enabled: true` (default) |
+| `https://packages.opentofu.org`, `https://get.opentofu.org` | `gateway_server_features_opentofu_enabled: true` (default) |
+
+Any real HTTP response counts as reachable; only a connection-level failure (DNS/TCP/TLS/timeout)
+counts as unreachable.
+
+---
+
+### Proxy Checks
+
+Runs on: all node types (`iag5_servers`, `iag5_runners`, `iag5_clients`).
+
+Checks the environment variables, `/etc/environment`, and `/etc/profile.d/` for proxy-related
+settings. Detection is a warning, not a hard requirement failure — a proxy may be intentional —
+but it's surfaced because it can explain otherwise-confusing connectivity or package-download
+failures elsewhere in the install.
+
+---
+
 ### TLS File Checks
 
 Runs on: all node types when `gateway_pki_upload: true` (default).
@@ -155,6 +202,11 @@ Runs on: all node types when `gateway_pki_upload: true` (default).
 All tasks delegate to the control node (`delegate_to: localhost`). Variables required:
 `gateway_pki_src_dir`, and the PKI path defaults from the role (`gateway_server_pki_cert_src`,
 `gateway_server_pki_key_src`, `gateway_server_pki_ca_cert_src`).
+
+The whole sequence runs inside a `block`/`rescue`: the first "Hard fail? Yes" check that fails
+stops the remaining TLS checks for this host (many are sequential — e.g. checking the cert/key
+match is pointless if the cert file doesn't exist) and is recorded as this host's TLS failure.
+It does not abort the playbook run — see [Non-Fatal Design](#non-fatal-design).
 
 | Check | Description | Hard fail? |
 |-------|-------------|-----------|
@@ -183,6 +235,35 @@ All tasks delegate to the control node (`delegate_to: localhost`). Variables req
 
 ---
 
+## Non-Fatal Design
+
+Ansible aborts the *entire* `ansible-playbook` run — not just the current play — the moment a
+play ends with 100% of its hosts failed, even for later, unrelated plays. Since `verify.yml` runs
+servers, runners, and clients as three separate plays in sequence, a single bad server host could
+otherwise prevent the runner and client plays from ever running.
+
+To avoid that, every check in `verify_common` is non-fatal:
+
+- `verify-os.yml` and `verify-specs.yml`'s final assertions use `ignore_errors: true` +
+  `register:`, following the same collect-then-assert pattern already used for hardware specs.
+- `verify-connectivity.yml` and `verify-proxy.yml` follow the identical pattern.
+- `verify-tls-files.yml` wraps its whole sequence in a `block`/`rescue` instead — there are 14+
+  individually hard-failing assertions, many of them intentionally sequential, so one `rescue`
+  is simpler than converting every assertion individually. A failure anywhere in the block jumps
+  to `rescue`, which records it via `ansible_failed_result.msg` and does not propagate as a host
+  failure.
+
+Each check's result is combined by `verify-results.yml` into a per-host `verification_passed`
+fact (ANDed with any prior value, not overwritten — a host can be checked by more than one
+component) and a `component_validation_errors` dict keyed by `component_name` (merged via
+`combine()`, same reasoning). `playbooks/verify.yml` ends with a fourth play,
+`hosts: all`, that prints `component_validation_errors` and then does the one real (non-ignored)
+assert on `verification_passed`. Since nothing runs after that play, failing there is safe, and
+it's what gives the whole run a genuine non-zero exit code while still letting every component's
+checks run against every host regardless of earlier failures.
+
+---
+
 ## Variables Reference
 
 ### Hardware spec variables (gateway\_server role)
@@ -195,6 +276,15 @@ All tasks delegate to the control node (`delegate_to: localhost`). Variables req
 | `gateway_runner_hw_specs.cpu_min` | `4` | Minimum vCPUs for runner nodes |
 | `gateway_runner_hw_specs.ram_min_gb` | `8` | Minimum RAM (GB) for runner nodes |
 | `gateway_runner_hw_specs.disk_min_gb` | `20` | Minimum root disk (GB) for runner nodes |
+
+### Connectivity variables (gateway\_server role)
+
+| Variable | Description |
+|----------|-------------|
+| `gateway_server_required_repositories` | Computed in `roles/gateway_server/tasks/verify.yml` (not a static default) — starts with `https://registry.aws.itential.com`, then appends the Ansible/Python/OpenTofu repositories only when the matching `gateway_server_features_*_enabled` flag is `true`. |
+| `gateway_server_features_ansible_enabled` | Default `true`. Gates `https://galaxy.ansible.com`. |
+| `gateway_server_features_python_enabled` | Default `true`. Gates `https://pypi.org`, `https://python.org`, `https://pythonhosted.org`. |
+| `gateway_server_features_opentofu_enabled` | Default `true`. Gates `https://packages.opentofu.org`, `https://get.opentofu.org`. |
 
 ### Inventory variables
 

@@ -119,11 +119,22 @@ Provides shared task files (not called directly) for post-deployment TLS certifi
 
 Provides shared task files (not called directly) for pre-flight environment verification.
 All TLS tasks run `delegate_to: localhost` since cert files reside on the control node.
+Every check is non-fatal (`ignore_errors` + `register`, or `block`/`rescue` for the TLS
+sequence) — Ansible aborts the *entire* `ansible-playbook` run, not just the current play, the
+moment a play ends with 100% of its hosts failed, and `playbooks/verify.yml` runs servers,
+runners, and clients as separate plays. See `docs/verify.md`'s "Non-Fatal Design" section.
 
-- `verify-os.yml` — asserts RHEL/Rocky 8/9, x86\_64
+- `verify-os.yml` — asserts RHEL/Rocky 8/9, x86\_64; initializes `validation_errors`
 - `verify-specs.yml` — asserts CPU, RAM, and disk against documented minimums
+- `verify-connectivity.yml` — checks reachability of a `required_repositories` list passed in
+  by the caller (servers/runners only — clients have no fixed public repository to check)
+- `verify-proxy.yml` — detects HTTP/HTTPS proxy configuration (warning, not a hard requirement)
 - `verify-tls-files.yml` — 14 checks on TLS source files (existence, PEM validity, expiry,
   cert/key match, CA chain, EKU, SANs)
+- `verify-results.yml` — combines whichever of the above ran into one non-fatal per-host
+  `verification_passed` fact and a `component_validation_errors` dict keyed by `component_name`,
+  both merged (not overwritten) across components so a host checked more than once doesn't
+  lose an earlier failure
 
 ## Running the Collection
 
