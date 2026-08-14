@@ -6,9 +6,18 @@
     name: itential.iag5.verify_common
     tasks_from: verify-os.yml
 
-# No connectivity check here (unlike gateway_server): the client's only install-time
-# dependency is gateway_client_packages, a customer-supplied Nexus/JFrog/GitLab URL, not a
-# fixed public repository -- there's nothing generic to check reachability against.
+# gateway_client_packages can be a local artifact path or an https:// URL. When it's a URL it's
+# usually the Itential registry (the same fixed public endpoint gateway_server always checks),
+# though it can also point to a customer-supplied Nexus/JFrog/GitLab host -- there's no generic
+# way to verify reachability of a customer-specific URL, but the fixed Itential endpoint is
+# always worth checking.
+- name: Verify connectivity to required public repositories
+  ansible.builtin.include_role:
+    name: itential.iag5.verify_common
+    tasks_from: verify-connectivity.yml
+  vars:
+    required_repositories: "{{ gateway_client_required_repositories }}"
+
 - name: Verify proxy configuration
   ansible.builtin.include_role:
     name: itential.iag5.verify_common

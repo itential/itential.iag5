@@ -127,7 +127,9 @@ runners, and clients as separate plays. See `docs/verify.md`'s "Non-Fatal Design
 - `verify-os.yml` — asserts RHEL/Rocky 8/9, x86\_64; initializes `validation_errors`
 - `verify-specs.yml` — asserts CPU, RAM, and disk against documented minimums
 - `verify-connectivity.yml` — checks reachability of a `required_repositories` list passed in
-  by the caller (servers/runners only — clients have no fixed public repository to check)
+  by the caller: `gateway_server_required_repositories` (computed from enabled features) for
+  servers/runners, `gateway_client_required_repositories` (`https://registry.aws.itential.com`
+  only) for clients, since `gateway_client_packages` can itself be an `https://` URL
 - `verify-proxy.yml` — detects HTTP/HTTPS proxy configuration (warning, not a hard requirement)
 - `verify-tls-files.yml` — 14 checks on TLS source files (existence, PEM validity, expiry,
   cert/key match, CA chain, EKU, SANs)

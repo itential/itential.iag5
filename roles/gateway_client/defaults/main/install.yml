@@ -6,8 +6,17 @@
 ##################################
 
 # The list of gateway client packages to install. Currently this is a single tarball.
-# Must be defined in the inventory.
+# Must be defined in the inventory. May be a local artifact path or an https:// URL (usually
+# the Itential registry, though it can also point to a customer-supplied Nexus/JFrog/GitLab host).
 gateway_client_packages:
+
+# Public repositories required for installing the IAG5 client, checked by the verify playbook.
+# Mirrors the "IAG5" row of the README "Required Public Repositories" table -- unlike
+# gateway_server, the client has no feature flags gating additional repositories.
+gateway_client_required_repositories:
+  - url: "https://registry.aws.itential.com"
+    type: bare
+    notes: "IAG5 packages"
 
 # Gateway client user/group
 gateway_client_user: itential

@@ -33,7 +33,7 @@ for this playbook to run.
 |----------|----------------|---------------|
 | OS | Distribution, version, and architecture | Managed node |
 | Hardware | CPU, RAM, and disk against documented minimums | Managed node (servers and runners only) |
-| Connectivity | Outbound reachability of required public repositories | Managed node (servers and runners only) |
+| Connectivity | Outbound reachability of required public repositories | Managed node |
 | Proxy | Detects HTTP/HTTPS proxy configuration | Managed node |
 | TLS files | Cert existence, PEM validity, expiry, cert/key match, CA chain, EKU, SANs | Control node |
 
@@ -162,15 +162,14 @@ iag5_runners:
 
 ### Connectivity Checks
 
-Runs on: `iag5_servers` and `iag5_runners` only. Clients have no fixed public repository to
-check — their only install-time dependency is `gateway_client_packages`, a customer-supplied
-Nexus/JFrog/GitLab URL, not a generic reachability target.
+Runs on: all node types (`iag5_servers`, `iag5_runners`, `iag5_clients`).
 
 Checks outbound access to the "IAG5" rows of the README
-[Required Public Repositories](../README.md#required-public-repositories) table. The list is
-built dynamically in `roles/gateway_server/tasks/verify.yml` based on which optional features
-are enabled, so a host with, say, OpenTofu disabled isn't failed against a repository it
-doesn't need:
+[Required Public Repositories](../README.md#required-public-repositories) table.
+
+For servers and runners, the list is built dynamically in `roles/gateway_server/tasks/verify.yml`
+based on which optional features are enabled, so a host with, say, OpenTofu disabled isn't failed
+against a repository it doesn't need:
 
 | Repository | Included when |
 |------------|---------------|
@@ -178,6 +177,12 @@ doesn't need:
 | `https://galaxy.ansible.com` | `gateway_server_features_ansible_enabled: true` (default) |
 | `https://pypi.org`, `https://python.org`, `https://pythonhosted.org` | `gateway_server_features_python_enabled: true` (default) |
 | `https://packages.opentofu.org`, `https://get.opentofu.org` | `gateway_server_features_opentofu_enabled: true` (default) |
+
+For clients, only `https://registry.aws.itential.com` is checked (`gateway_client_required_repositories`,
+a static default — the client has no feature flags gating additional repositories). This matters
+because `gateway_client_packages` can be an `https://` URL rather than a local artifact path, and
+when it is, it's usually the Itential registry. A customer-supplied Nexus/JFrog/GitLab URL is not
+checked — there's no generic way to verify reachability of a customer-specific endpoint.
 
 Any real HTTP response counts as reachable; only a connection-level failure (DNS/TCP/TLS/timeout)
 counts as unreachable.
