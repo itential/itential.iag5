@@ -17,6 +17,9 @@ gateway_client_required_repositories:
   - url: "https://registry.aws.itential.com"
     type: bare
     notes: "IAG5 packages"
+  - url: "https://itential.jfrog.io"
+    type: bare
+    notes: "IAG5 packages"
 
 # Gateway client user/group
 gateway_client_user: itential

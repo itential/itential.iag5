@@ -191,16 +191,17 @@ against a repository it doesn't need:
 
 | Repository | Included when |
 |------------|---------------|
-| `https://registry.aws.itential.com` | Always |
+| `https://registry.aws.itential.com`, `https://itential.jfrog.io` | Always |
 | `https://galaxy.ansible.com` | `gateway_server_features_ansible_enabled: true` (default) |
 | `https://pypi.org`, `https://python.org`, `https://pythonhosted.org` | `gateway_server_features_python_enabled: true` (default) |
 | `https://packages.opentofu.org`, `https://get.opentofu.org` | `gateway_server_features_opentofu_enabled: true` (default) |
 
-For clients, only `https://registry.aws.itential.com` is checked (`gateway_client_required_repositories`,
-a static default — the client has no feature flags gating additional repositories). This matters
-because `gateway_client_packages` can be an `https://` URL rather than a local artifact path, and
-when it is, it's usually the Itential registry. A customer-supplied Nexus/JFrog/GitLab URL is not
-checked — there's no generic way to verify reachability of a customer-specific endpoint.
+For clients, `https://registry.aws.itential.com` and `https://itential.jfrog.io` are checked
+(`gateway_client_required_repositories`, a static default — the client has no feature flags
+gating additional repositories). This matters because `gateway_client_packages` can be an
+`https://` URL rather than a local artifact path, and when it is, it's usually one of these two
+Itential registries. A customer-supplied Nexus/GitLab URL is not checked — there's no generic
+way to verify reachability of a customer-specific endpoint.
 
 Any real HTTP response counts as reachable; only a connection-level failure (DNS/TCP/TLS/timeout)
 counts as unreachable.
@@ -304,7 +305,8 @@ checks run against every host regardless of earlier failures.
 
 | Variable | Description |
 |----------|-------------|
-| `gateway_server_required_repositories` | Computed in `roles/gateway_server/tasks/verify.yml` (not a static default) — starts with `https://registry.aws.itential.com`, then appends the Ansible/Python/OpenTofu repositories only when the matching `gateway_server_features_*_enabled` flag is `true`. |
+| `gateway_server_required_repositories` | Computed in `roles/gateway_server/tasks/verify.yml` (not a static default) — starts with `https://registry.aws.itential.com` and `https://itential.jfrog.io`, then appends the Ansible/Python/OpenTofu repositories only when the matching `gateway_server_features_*_enabled` flag is `true`. |
+| `gateway_client_required_repositories` | Static default in `roles/gateway_client/defaults/main/install.yml` — `https://registry.aws.itential.com` and `https://itential.jfrog.io`. |
 | `gateway_server_features_ansible_enabled` | Default `true`. Gates `https://galaxy.ansible.com`. |
 | `gateway_server_features_python_enabled` | Default `true`. Gates `https://pypi.org`, `https://python.org`, `https://pythonhosted.org`. |
 | `gateway_server_features_opentofu_enabled` | Default `true`. Gates `https://packages.opentofu.org`, `https://get.opentofu.org`. |

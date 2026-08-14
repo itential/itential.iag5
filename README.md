@@ -129,6 +129,7 @@ install the required repository or download the packages.
 | Ansible Control Node | <https://pypi.org> | |
 | Ansible Control Node | <https://galaxy.ansible.com> | |
 | IAG5 | <https://registry.aws.itential.com> | |
+| IAG5 | <https://itential.jfrog.io> | |
 | IAG5 | <https://galaxy.ansible.com> | When Ansible is enabled |
 | IAG5 | <https://python.org> | When Python is enabled |
 | IAG5 | <https://pythonhosted.org> | When Python is enabled |

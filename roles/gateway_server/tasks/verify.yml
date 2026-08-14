@@ -42,6 +42,9 @@
       - url: "https://registry.aws.itential.com"
         type: bare
         notes: "IAG5 packages"
+      - url: "https://itential.jfrog.io"
+        type: bare
+        notes: "IAG5 packages"
 
 - name: Add Ansible Galaxy repository when Ansible is enabled
   ansible.builtin.set_fact:

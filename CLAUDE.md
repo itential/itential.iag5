@@ -134,7 +134,8 @@ runners, and clients as separate plays. See `docs/verify.md`'s "Non-Fatal Design
 - `verify-connectivity.yml` — checks reachability of a `required_repositories` list passed in
   by the caller: `gateway_server_required_repositories` (computed from enabled features) for
   servers/runners, `gateway_client_required_repositories` (`https://registry.aws.itential.com`
-  only) for clients, since `gateway_client_packages` can itself be an `https://` URL
+  and `https://itential.jfrog.io`) for clients, since `gateway_client_packages` can itself be an
+  `https://` URL pointing to either registry
 - `verify-proxy.yml` — detects HTTP/HTTPS proxy configuration (warning, not a hard requirement)
 - `verify-tls-files.yml` — 14 checks on TLS source files (existence, PEM validity, expiry,
   cert/key match, CA chain, EKU, SANs)
