@@ -74,8 +74,21 @@ itential.iag5/
 
 ### How node type is determined
 
-`gateway_application_mode` is set by the playbook (`server` or `runner`) and controls which
-hardware spec defaults are used for the specs check.
+`gateway_application_mode` is set by the playbook (`server` or `runner`). For runner hosts this
+directly selects `gateway_runner_hw_specs`. For server hosts it's not that simple: whether a
+server is checked against `gateway_server_hw_specs` or `gateway_runner_hw_specs` also depends on
+whether the inventory has a separate `iag5_runners` group:
+
+| Inventory has... | `iag5_servers` hosts are checked against | Why |
+|-------------------|-------------------------------------------|-----|
+| Only `iag5_servers` (single-node all-in-one) | `gateway_runner_hw_specs` | The server also performs runner work locally, so it needs to meet the (higher) runner minimums |
+| `iag5_servers` and `iag5_runners` (distributed execution) | `gateway_server_hw_specs` | Runner work happens on the dedicated runner hosts instead |
+
+`roles/gateway_server/tasks/verify.yml` determines this the same way
+`roles/gateway_server/tasks/certify-tls.yml` already detects the topology:
+`'iag5_runners' in groups and groups['iag5_runners'] | length > 0`. When a server is acting as a
+runner this way, its `component_name` in reports/logs is `"Server (acting as Runner)"` rather
+than plain `"Server"`, so it's clear from the output which spec set was applied.
 
 ### TLS check delegation
 
@@ -135,6 +148,11 @@ Requires: `gather_facts: true` (default).
 
 Runs on: `iag5_servers` and `iag5_runners` only. Clients have no documented hardware minimums
 and are skipped.
+
+Which minimums apply to a given `iag5_servers` host is not fixed — see
+[How node type is determined](#how-node-type-is-determined): in a single-node all-in-one
+inventory (no `iag5_runners` group) servers are checked against the runner minimums instead,
+since they perform runner work locally.
 
 Hardware failures are collected across all three dimensions and reported together in a single
 final assertion, so all failures are visible in one run. That final assertion is non-fatal —

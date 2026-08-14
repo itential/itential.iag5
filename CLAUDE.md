@@ -91,7 +91,12 @@ Defaults are split by domain: `install.yml`, `server.yml`, `store.yml`, `connect
 `common.yml`, `terminal.yml`, `specs.yml`.
 
 `specs.yml` defines minimum hardware requirements for servers and runners used by the
-`verify` pre-flight check.
+`verify` pre-flight check. Which minimums apply to an `iag5_servers` host is topology-dependent:
+`roles/gateway_server/tasks/verify.yml` checks servers against `gateway_runner_hw_specs` instead
+of `gateway_server_hw_specs` when there's no separate `iag5_runners` group (single-node
+all-in-one), since the server performs runner work locally in that case. Same
+`'iag5_runners' in groups and groups['iag5_runners'] | length > 0` check `certify-tls.yml`
+already uses to detect this topology.
 
 ### gateway\_client
 
