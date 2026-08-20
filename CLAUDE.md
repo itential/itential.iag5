@@ -91,7 +91,12 @@ Defaults are split by domain: `install.yml`, `server.yml`, `store.yml`, `connect
 `common.yml`, `terminal.yml`, `specs.yml`.
 
 `specs.yml` defines minimum hardware requirements for servers and runners used by the
-`verify` pre-flight check.
+`verify` pre-flight check. Which minimums apply to an `iag5_servers` host is topology-dependent:
+`roles/gateway_server/tasks/verify.yml` checks servers against `gateway_runner_hw_specs` instead
+of `gateway_server_hw_specs` when there's no separate `iag5_runners` group (single-node
+all-in-one), since the server performs runner work locally in that case. Same
+`'iag5_runners' in groups and groups['iag5_runners'] | length > 0` check `certify-tls.yml`
+already uses to detect this topology.
 
 ### gateway\_client
 
@@ -119,11 +124,25 @@ Provides shared task files (not called directly) for post-deployment TLS certifi
 
 Provides shared task files (not called directly) for pre-flight environment verification.
 All TLS tasks run `delegate_to: localhost` since cert files reside on the control node.
+Every check is non-fatal (`ignore_errors` + `register`, or `block`/`rescue` for the TLS
+sequence) — Ansible aborts the *entire* `ansible-playbook` run, not just the current play, the
+moment a play ends with 100% of its hosts failed, and `playbooks/verify.yml` runs servers,
+runners, and clients as separate plays. See `docs/verify.md`'s "Non-Fatal Design" section.
 
-- `verify-os.yml` — asserts RHEL/Rocky 8/9, x86\_64
+- `verify-os.yml` — asserts RHEL/Rocky 8/9, x86\_64; initializes `validation_errors`
 - `verify-specs.yml` — asserts CPU, RAM, and disk against documented minimums
+- `verify-connectivity.yml` — checks reachability of a `required_repositories` list passed in
+  by the caller: `gateway_server_required_repositories` (computed from enabled features) for
+  servers/runners, `gateway_client_required_repositories` (`https://registry.aws.itential.com`
+  and `https://itential.jfrog.io`) for clients, since `gateway_client_packages` can itself be an
+  `https://` URL pointing to either registry
+- `verify-proxy.yml` — detects HTTP/HTTPS proxy configuration (warning, not a hard requirement)
 - `verify-tls-files.yml` — 14 checks on TLS source files (existence, PEM validity, expiry,
   cert/key match, CA chain, EKU, SANs)
+- `verify-results.yml` — combines whichever of the above ran into one non-fatal per-host
+  `verification_passed` fact and a `component_validation_errors` dict keyed by `component_name`,
+  both merged (not overwritten) across components so a host checked more than once doesn't
+  lose an earlier failure
 
 ## Running the Collection
 

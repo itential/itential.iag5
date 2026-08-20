@@ -6,13 +6,81 @@
     name: itential.iag5.verify_common
     tasks_from: verify-os.yml
 
+# In the single-node all-in-one topology there's no separate iag5_runners group, so hosts in
+# iag5_servers also perform runner work locally and must be checked against the (higher)
+# runner hardware minimums. When iag5_runners exists as its own group with members, servers
+# are server-only and use the lower server minimums. Same "does iag5_runners have members"
+# check roles/gateway_server/tasks/certify-tls.yml already uses to detect this topology.
+- name: Determine whether this server is also acting as a runner
+  ansible.builtin.set_fact:
+    gateway_server_acting_as_runner: "{{ gateway_application_mode == 'server' and
+      not ('iag5_runners' in groups and groups['iag5_runners'] | length > 0) }}"
+
+- name: Set the component name and hardware spec dict for this host
+  ansible.builtin.set_fact:
+    gateway_server_verify_component_name: >-
+      {{ 'Runner' if gateway_application_mode == 'runner'
+         else ('Server (acting as Runner)' if gateway_server_acting_as_runner else 'Server') }}
+    gateway_server_verify_hw_specs: "{{ gateway_runner_hw_specs
+      if (gateway_application_mode == 'runner' or gateway_server_acting_as_runner)
+      else gateway_server_hw_specs }}"
+
 - name: Verify hardware specifications
   ansible.builtin.include_role:
     name: itential.iag5.verify_common
     tasks_from: verify-specs.yml
   vars:
-    component_name: "{{ 'Runner' if gateway_application_mode == 'runner' else 'Server' }}"
-    hw_specs: "{{ gateway_runner_hw_specs if gateway_application_mode == 'runner' else gateway_server_hw_specs }}"
+    component_name: "{{ gateway_server_verify_component_name }}"
+    hw_specs: "{{ gateway_server_verify_hw_specs }}"
+
+# The required-repository list depends on which optional features are enabled, so it's built
+# here (rather than as a static default) -- a host with OpenTofu/Ansible/Python disabled
+# shouldn't fail connectivity checks against a repository it doesn't actually need.
+- name: Set the base required repositories for this component
+  ansible.builtin.set_fact:
+    gateway_server_required_repositories:
+      - url: "https://registry.aws.itential.com"
+        type: bare
+        notes: "IAG5 packages"
+      - url: "https://itential.jfrog.io"
+        type: bare
+        notes: "IAG5 packages"
+
+- name: Add Ansible Galaxy repository when Ansible is enabled
+  ansible.builtin.set_fact:
+    gateway_server_required_repositories: "{{ gateway_server_required_repositories + [
+      {'url': 'https://galaxy.ansible.com', 'type': 'bare', 'notes': 'Ansible collections'}
+      ] }}"
+  when: gateway_server_features_ansible_enabled | bool
+
+- name: Add Python repositories when Python is enabled
+  ansible.builtin.set_fact:
+    gateway_server_required_repositories: "{{ gateway_server_required_repositories + [
+      {'url': 'https://pypi.org', 'type': 'bare', 'notes': 'Python packages'},
+      {'url': 'https://python.org', 'type': 'bare', 'notes': 'Python'},
+      {'url': 'https://pythonhosted.org', 'type': 'bare', 'notes': 'Python packages'}
+      ] }}"
+  when: gateway_server_features_python_enabled | bool
+
+- name: Add OpenTofu repositories when OpenTofu is enabled
+  ansible.builtin.set_fact:
+    gateway_server_required_repositories: "{{ gateway_server_required_repositories + [
+      {'url': 'https://packages.opentofu.org', 'type': 'bare', 'notes': 'OpenTofu YUM repo'},
+      {'url': 'https://get.opentofu.org', 'type': 'bare', 'notes': 'OpenTofu GPG key'}
+      ] }}"
+  when: gateway_server_features_opentofu_enabled | bool
+
+- name: Verify connectivity to required public repositories
+  ansible.builtin.include_role:
+    name: itential.iag5.verify_common
+    tasks_from: verify-connectivity.yml
+  vars:
+    required_repositories: "{{ gateway_server_required_repositories }}"
+
+- name: Verify proxy configuration
+  ansible.builtin.include_role:
+    name: itential.iag5.verify_common
+    tasks_from: verify-proxy.yml
 
 - name: Verify TLS source files
   when: gateway_pki_upload | bool
@@ -24,3 +92,10 @@
     pki_key_src: "{{ gateway_server_pki_key_src }}"
     pki_ca_cert_src: "{{ gateway_server_pki_ca_cert_src }}"
     check_san: true
+
+- name: Report verification results
+  ansible.builtin.include_role:
+    name: itential.iag5.verify_common
+    tasks_from: verify-results.yml
+  vars:
+    component_name: "{{ gateway_server_verify_component_name }}"

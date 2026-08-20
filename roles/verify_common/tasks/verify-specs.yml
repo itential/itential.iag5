@@ -64,3 +64,13 @@
     that: specs_validation_errors | length == 0
     fail_msg: "{{ component_name }} hardware check failed: {{ specs_validation_errors | join('; ') }}"
     success_msg: "{{ component_name }} hardware check passed"
+    quiet: true
+  ignore_errors: true
+  register: specs_check
+
+# Folded into the shared validation_errors list (initialized by verify-os.yml, which always
+# runs first) so verify-results.yml's final report includes hardware failures alongside every
+# other check. A no-op when specs_validation_errors is empty.
+- name: Merge hardware spec errors into the shared validation errors list
+  ansible.builtin.set_fact:
+    validation_errors: "{{ validation_errors + specs_validation_errors }}"
