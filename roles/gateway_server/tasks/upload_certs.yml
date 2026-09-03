@@ -72,3 +72,42 @@
               when:
                 - gateway_server_connect_local_private_key_filename is defined
                 - gateway_server_connect_local_private_key_filename is not none
+
+    - name: Upload etcd TLS certificates
+      when: gateway_server_store_etcd_use_tls | bool
+      block:
+        - name: Upload etcd CA certificate
+          ansible.builtin.copy:
+            src: "{{ gateway_server_store_etcd_ca_cert_src }}"
+            dest: "{{ gateway_server_store_etcd_ca_certificate_filename }}"
+            owner: "{{ gateway_server_user }}"
+            group: "{{ gateway_server_group }}"
+            mode: "0444"
+          when:
+            - gateway_server_store_etcd_ca_cert_src is defined
+            - gateway_server_store_etcd_ca_cert_src is not none
+
+        - name: Upload etcd client certificate and key
+          when: gateway_server_store_etcd_client_cert_auth | bool
+          block:
+            - name: Upload etcd client certificate
+              ansible.builtin.copy:
+                src: "{{ gateway_server_store_etcd_cert_src }}"
+                dest: "{{ gateway_server_store_etcd_certificate_filename }}"
+                owner: "{{ gateway_server_user }}"
+                group: "{{ gateway_server_group }}"
+                mode: "0644"
+              when:
+                - gateway_server_store_etcd_cert_src is defined
+                - gateway_server_store_etcd_cert_src is not none
+
+            - name: Upload etcd client private key
+              ansible.builtin.copy:
+                src: "{{ gateway_server_store_etcd_key_src }}"
+                dest: "{{ gateway_server_store_etcd_private_key_filename }}"
+                owner: "{{ gateway_server_user }}"
+                group: "{{ gateway_server_group }}"
+                mode: "0400"
+              when:
+                - gateway_server_store_etcd_key_src is defined
+                - gateway_server_store_etcd_key_src is not none
