@@ -97,7 +97,8 @@ Reference: [Import Gateway Configuration](https://docs.itential.com/itential-gat
 1. Open the cluster list in Gateway Manager.
 2. Locate the target cluster and select the overflow menu (**...**).
 3. Choose **Import Configuration**.
-4. Upload `iag5-initial-config.json`, or enter its path.
+4. Copy the JSON block above into a new file (e.g. `iag5-initial-config.json`), then upload
+   that file, or enter its path.
 5. Click **Import** to apply the settings.
 
 The UI accepts both JSON and YAML. By default, existing resources are not overwritten; enable
