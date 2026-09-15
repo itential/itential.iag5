@@ -97,7 +97,8 @@ Reference: [Import Gateway Configuration](https://docs.itential.com/itential-gat
 1. Open the cluster list in Gateway Manager.
 2. Locate the target cluster and select the overflow menu (**...**).
 3. Choose **Import Configuration**.
-4. Copy the JSON block above into a new file (e.g. `iag5-initial-config.json`), then upload
+4. Copy the JSON block above into a new file (e.g. `i
+ag5-initial-config.json`), then upload
    that file, or enter its path.
 5. Click **Import** to apply the settings.
 
@@ -112,13 +113,61 @@ Call:
 POST /v1/gateways/:clusterId/configuration/import
 ```
 
-Supply the configuration as inline JSON content in the request body, or reference a Git
-repository (URL, file path, branch, and credentials).
+Request body, with the configuration inlined as a string under `options.content`:
 
-Optional flags:
+```json
+{
+  "options": {
+    "source": "content",
+    "content": "<yaml-or-json-string>"
+  }
+}
+```
 
-| Flag | Purpose |
-|------|---------|
-| `force` | Overwrite conflicting resources |
-| `validate` | Check the configuration without applying it |
-| `check` | Preview the changes that would be made |
+Instead of inline content, you can reference a Git repository:
+
+```json
+{
+  "options": {
+    "source": "git",
+    "git": {
+      "url": "git@github.com:<org>/<repo>.git",
+      "file": "iag5-initial-config.json",
+      "reference": "main",
+      "privateKey": "/path/to/private-key"
+    }
+  }
+}
+```
+
+Optional flags (added to the `options` object):
+
+| Flag | Type | Purpose |
+|------|------|---------|
+| `force` | boolean | Overwrite conflicting resources (default: false) |
+| `validate` | boolean | Parse and validate the configuration without applying changes (default: false) |
+| `check` | boolean | Preview the changes without applying them (default: false) |
+
+#### Example
+
+Save the JSON block from the [Configuration](#configuration) section above to a local file,
+then submit it as inline content. This example uses `jq` to build the request body and embed
+the file contents as a properly escaped string:
+
+```bash
+PLATFORM_HOST="https://platform.example.com"
+PLATFORM_TOKEN="<bearer-token>"
+CLUSTER_ID="cluster_1"
+
+jq -n --rawfile cfg iag5-initial-config.json \
+  '{options: {source: "content", content: $cfg, validate: true}}' \
+  > import-request.json
+
+curl -sS -X POST "${PLATFORM_HOST}/v1/gateways/${CLUSTER_ID}/configuration/import" \
+  -H "Authorization: Bearer ${PLATFORM_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d @import-request.json
+```
+
+`PLATFORM_TOKEN` is a bearer token from your normal Platform authentication flow. Drop
+`validate: true` (or set it to `false`) once you have confirmed the preview looks correct.
