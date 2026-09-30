@@ -1,0 +1,11 @@
+# Copyright (c) 2025, Itential, Inc
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+---
+###########################
+# Gateway metrics variables
+###########################
+
+gateway_server_metrics_collection_enabled: false
+gateway_server_metrics_endpoint_enabled: false
+gateway_server_metrics_listen_address: '0.0.0.0'
+gateway_server_metrics_port: 9091

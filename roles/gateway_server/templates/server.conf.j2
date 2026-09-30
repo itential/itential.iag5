@@ -73,3 +73,9 @@ etcd_private_key_file    = '{{ gateway_server_store_etcd_private_key_filename }}
 [terminal]
 no_color           = {{ gateway_server_terminal_no_color | to_json }}
 timestamp_timezone = '{{ gateway_server_terminal_timestamp_timezone }}'
+
+[metrics]
+collection_enabled = {{ gateway_server_metrics_collection_enabled | to_json }}
+endpoint_enabled   = {{ gateway_server_metrics_endpoint_enabled | to_json }}
+listen_address     = {{ gateway_server_metrics_listen_address }}
+port               = {{ gateway_server_metrics_port }}
