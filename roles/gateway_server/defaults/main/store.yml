@@ -13,27 +13,16 @@ gateway_server_store_etcd_hosts: localhost:2379
 gateway_server_store_etcd_use_tls: true
 gateway_server_store_etcd_client_cert_auth: true
 
-# Source paths on the control node for dedicated etcd TLS certs. Undefined by default -
-# set these to have the role upload separate etcd certs instead of reusing the main
-# Gateway PKI (see gateway_server_store_etcd_*_filename below).
-gateway_server_store_etcd_ca_cert_src:
-gateway_server_store_etcd_cert_src:
-gateway_server_store_etcd_key_src:
-
-# Where a dedicated etcd cert would live on the target host, if one is supplied above.
-gateway_server_store_etcd_ca_certificate_filename_dedicated: "{{ gateway_server_pki_dir }}/etcd-ca{{ gateway_pki_cert_suffix }}"
-gateway_server_store_etcd_certificate_filename_dedicated: "{{ gateway_server_pki_dir }}/etcd-client{{ gateway_pki_cert_suffix }}"
-gateway_server_store_etcd_private_key_filename_dedicated: "{{ gateway_server_pki_dir }}/etcd-client{{ gateway_pki_key_suffix }}"
-
-# Actual destination used: the dedicated path above when a matching *_src is set, otherwise
-# the same file as the main Gateway PKI (today's default, unchanged for anyone not opting in
-# to a separate etcd PKI).
-gateway_server_store_etcd_ca_certificate_filename: "{{ gateway_server_store_etcd_ca_certificate_filename_dedicated
-  if gateway_server_store_etcd_ca_cert_src is not none else gateway_server_pki_ca_cert_dest }}"
-gateway_server_store_etcd_certificate_filename: "{{ gateway_server_store_etcd_certificate_filename_dedicated
-  if gateway_server_store_etcd_cert_src is not none else gateway_server_pki_cert_dest }}"
-gateway_server_store_etcd_private_key_filename: "{{ gateway_server_store_etcd_private_key_filename_dedicated
-  if gateway_server_store_etcd_key_src is not none else gateway_server_pki_key_dest }}"
+# Destination paths for the etcd certs on the target host, read by server.conf.j2/
+# runner.conf.j2 whenever gateway_server_store_etcd_use_tls is true. Sourced from
+# roles/gateway_server/defaults/main/pki.yml (gateway_server_pki_etcd_*_dest), which also
+# defines where those files come from on the control node - see pki.yml for the source
+# paths. Those source paths are always derived from gateway_pki_src_dir, the same as the
+# main Gateway cert/key/CA, so the corresponding etcd-ca.crt/etcd-client.crt/etcd-client.key
+# files must exist there whenever etcd TLS is enabled.
+gateway_server_store_etcd_ca_certificate_filename: "{{ gateway_server_pki_etcd_ca_cert_dest }}"
+gateway_server_store_etcd_certificate_filename: "{{ gateway_server_pki_etcd_cert_dest }}"
+gateway_server_store_etcd_private_key_filename: "{{ gateway_server_pki_etcd_key_dest }}"
 
 # Gateway DynamoDB variables
 gateway_server_store_dynamodb_table_name: itential.gateway5.store

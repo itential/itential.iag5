@@ -20,3 +20,15 @@ gateway_server_pki_cert_dest: '{{ gateway_server_pki_dir }}/{{ gateway_server_pk
 gateway_server_pki_ca_file: 'ca{{ gateway_pki_cert_suffix }}'
 gateway_server_pki_ca_cert_src: '{{ gateway_pki_src_dir }}/{{ gateway_server_pki_ca_file }}'
 gateway_server_pki_ca_cert_dest: '{{ gateway_server_pki_dir }}/{{ gateway_server_pki_ca_file }}'
+
+gateway_server_pki_etcd_key_file: 'etcd-client{{ gateway_pki_key_suffix }}'
+gateway_server_pki_etcd_key_src: '{{ gateway_pki_src_dir }}/{{ gateway_server_pki_etcd_key_file }}'
+gateway_server_pki_etcd_key_dest: '{{ gateway_server_pki_dir }}/{{ gateway_server_pki_etcd_key_file }}'
+
+gateway_server_pki_etcd_cert_file: 'etcd-client{{ gateway_pki_cert_suffix }}'
+gateway_server_pki_etcd_cert_src: '{{ gateway_pki_src_dir }}/{{ gateway_server_pki_etcd_cert_file }}'
+gateway_server_pki_etcd_cert_dest: '{{ gateway_server_pki_dir }}/{{ gateway_server_pki_etcd_cert_file }}'
+
+gateway_server_pki_etcd_ca_file: 'etcd-ca{{ gateway_pki_cert_suffix }}'
+gateway_server_pki_etcd_ca_cert_src: '{{ gateway_pki_src_dir }}/{{ gateway_server_pki_etcd_ca_file }}'
+gateway_server_pki_etcd_ca_cert_dest: '{{ gateway_server_pki_dir }}/{{ gateway_server_pki_etcd_ca_file }}'
