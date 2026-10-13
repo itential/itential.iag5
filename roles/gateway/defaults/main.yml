@@ -38,26 +38,30 @@ offline_install_enabled: false  # noqa var-naming[no-role-prefix]
 offline_target_node_root: /var/tmp  # noqa var-naming[no-role-prefix]
 # The offline_control_node_root must be defined in the inventory when downloading packages or installing in offline mode
 offline_control_node_root:  # noqa var-naming[no-role-prefix]
-offline_itential_packages_path:  # noqa var-naming[no-role-prefix]
-  "itential_packages/{{ ansible_distribution | lower }}_{{ ansible_distribution_major_version }}"
+offline_itential_packages_path: itential_packages  # noqa var-naming[no-role-prefix]
 
-# The Gateway release the packages are downloaded for (for example 5.5.3). Used to build the
-# package directory names. Must be defined in the inventory when downloading packages or
-# installing in offline mode.
-gateway_offline_release:
+# The Gateway version of the server and client packages, taken from the file names in
+# gateway_server_packages and gateway_client_packages (for example iagctl-v5.5.3-linux-amd64-server.rpm
+# gives 5.5.3). Used to build the package directory names.
+gateway_offline_version_regex: '(\d+\.\d+\.\d+(?:-(?:rc|alpha|beta)\.?\d+)?)'
+gateway_offline_server_version: "{{ gateway_server_packages | first | basename | regex_findall(gateway_offline_version_regex) | first | default('') }}"
+gateway_offline_client_version: "{{ gateway_client_packages | first | basename | regex_findall(gateway_offline_version_regex) | first | default('') }}"
+
+# The OS directory name
+gateway_offline_os: "{{ ansible_distribution | lower }}_{{ ansible_distribution_major_version }}"
 
 # Base directories
-gateway_offline_packages_root: "{{ offline_itential_packages_path }}/{{ gateway_offline_release }}/gateway"
+gateway_offline_packages_root: "{{ offline_itential_packages_path }}/gateway"
 gateway_offline_target_node_root: "{{ offline_target_node_root }}/{{ gateway_offline_packages_root }}"
 gateway_offline_control_node_root: "{{ offline_control_node_root }}/{{ gateway_offline_packages_root }}"
 
 # Target node download directories
-gateway_offline_target_node_rpms_dir: "{{ gateway_offline_target_node_root }}/rpms"
-gateway_offline_target_node_archives_dir: "{{ gateway_offline_target_node_root }}/archives"
+gateway_offline_target_node_rpms_dir: "{{ gateway_offline_target_node_root }}/{{ gateway_offline_server_version }}/{{ gateway_offline_os }}/rpms"
+gateway_offline_target_node_archives_dir: "{{ gateway_offline_target_node_root }}/{{ gateway_offline_client_version }}/{{ gateway_offline_os }}/archives"
 
 # Control node download directories
-gateway_offline_control_node_rpms_dir: "{{ gateway_offline_control_node_root }}/rpms"
-gateway_offline_control_node_archives_dir: "{{ gateway_offline_control_node_root }}/archives"
+gateway_offline_control_node_rpms_dir: "{{ gateway_offline_control_node_root }}/{{ gateway_offline_server_version }}/{{ gateway_offline_os }}/rpms"
+gateway_offline_control_node_archives_dir: "{{ gateway_offline_control_node_root }}/{{ gateway_offline_client_version }}/{{ gateway_offline_os }}/archives"
 
 # How the Python and OpenTofu RPMs are downloaded. One of: yum_module, yum_install,
 # yum_reinstall, repotrack, yumdownloader. Use yumdownloader or repotrack when the download

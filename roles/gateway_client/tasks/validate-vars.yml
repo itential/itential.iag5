@@ -22,13 +22,17 @@
     - name: Validate offline packages exist on the control node
       when: offline_install_enabled | bool
       block:
-        - name: Validate gateway_offline_release is set
+        - name: Validate the Gateway version can be determined from gateway_client_packages
           ansible.builtin.assert:
             that:
-              - gateway_offline_release is defined
-              - gateway_offline_release is not none
-              - gateway_offline_release | string | length > 0
-            fail_msg: gateway_offline_release must be defined when offline_install_enabled is set to 'true'
+              - gateway_client_packages is defined
+              - gateway_client_packages is iterable
+              - gateway_client_packages | length > 0
+              - gateway_client_packages | map('basename') | map('regex_search', gateway_offline_version_regex) | select('none') | list | length == 0
+              - gateway_client_packages | map('basename') | map('regex_findall', gateway_offline_version_regex) | map('first') | unique | list | length == 1
+            fail_msg:
+              - "The Gateway version could not be determined from gateway_client_packages when offline_install_enabled is set to 'true'"
+              - "Every package file name must contain exactly one version (for example iagctl-v5.5.3-linux-amd64.tar.gz), and all packages must have the same version"
 
         - name: Validate offline_control_node_root is set
           ansible.builtin.assert:

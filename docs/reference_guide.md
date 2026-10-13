@@ -28,16 +28,19 @@ The variables in this section configure air-gapped installs. See the
 | `offline_install_enabled` | Boolean | Install from the packages on the control node instead of the repositories. | false |
 | `offline_target_node_root` | String | Root directory on the target node where the download playbook downloads packages. | /var/tmp |
 | `offline_control_node_root` | String | Root directory on the control node where packages are downloaded to and installed from. Must be an existing directory. | N/A (must be defined in inventory) |
-| `offline_itential_packages_path` | String | Path appended to the root directories. | "itential_packages/{{ ansible_distribution \| lower }}_{{ ansible_distribution_major_version }}" |
-| `gateway_offline_release` | String | The Gateway release the packages are for, for example 5.5.3. | N/A (must be defined in inventory) |
+| `offline_itential_packages_path` | String | Path appended to the root directories. | itential_packages |
+| `gateway_offline_server_version` | String | The Gateway server version, taken from the file names in gateway_server_packages. | "{{ gateway_server_packages \| first \| basename \| regex_findall(gateway_offline_version_regex) \| first \| default('') }}" |
+| `gateway_offline_client_version` | String | The Gateway client version, taken from the file names in gateway_client_packages. | "{{ gateway_client_packages \| first \| basename \| regex_findall(gateway_offline_version_regex) \| first \| default('') }}" |
+| `gateway_offline_version_regex` | String | Regular expression used to find the version in a package file name. | '(\d+\.\d+\.\d+(?:-(?:rc\|alpha\|beta)\.?\d+)?)' |
+| `gateway_offline_os` | String | The OS directory name. | "{{ ansible_distribution \| lower }}_{{ ansible_distribution_major_version }}" |
 | `gateway_offline_download_method` | String | How the Python and OpenTofu RPMs are downloaded: yum_module, yum_install, yum_reinstall, repotrack or yumdownloader. | yum_module |
-| `gateway_offline_packages_root` | String | Gateway packages root directory. | "{{ offline_itential_packages_path }}/{{ gateway_offline_release }}/gateway" |
+| `gateway_offline_packages_root` | String | Gateway packages root directory. | "{{ offline_itential_packages_path }}/gateway" |
 | `gateway_offline_target_node_root` | String | Gateway target node root directory. | "{{ offline_target_node_root }}/{{ gateway_offline_packages_root }}" |
 | `gateway_offline_control_node_root` | String | Gateway control node root directory. | "{{ offline_control_node_root }}/{{ gateway_offline_packages_root }}" |
-| `gateway_offline_target_node_rpms_dir` | String | Target node RPMs directory. | "{{ gateway_offline_target_node_root }}/rpms" |
-| `gateway_offline_target_node_archives_dir` | String | Target node archives directory. | "{{ gateway_offline_target_node_root }}/archives" |
-| `gateway_offline_control_node_rpms_dir` | String | Control node RPMs directory. | "{{ gateway_offline_control_node_root }}/rpms" |
-| `gateway_offline_control_node_archives_dir` | String | Control node archives directory. | "{{ gateway_offline_control_node_root }}/archives" |
+| `gateway_offline_target_node_rpms_dir` | String | Target node RPMs directory. | "{{ gateway_offline_target_node_root }}/{{ gateway_offline_server_version }}/{{ gateway_offline_os }}/rpms" |
+| `gateway_offline_target_node_archives_dir` | String | Target node archives directory. | "{{ gateway_offline_target_node_root }}/{{ gateway_offline_client_version }}/{{ gateway_offline_os }}/archives" |
+| `gateway_offline_control_node_rpms_dir` | String | Control node RPMs directory. | "{{ gateway_offline_control_node_root }}/{{ gateway_offline_server_version }}/{{ gateway_offline_os }}/rpms" |
+| `gateway_offline_control_node_archives_dir` | String | Control node archives directory. | "{{ gateway_offline_control_node_root }}/{{ gateway_offline_client_version }}/{{ gateway_offline_os }}/archives" |
 
 ## Client Variables
 

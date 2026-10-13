@@ -40,14 +40,15 @@ The inventory must define the following variables:
 - `offline_control_node_root` - an existing directory on the control node. The packages are
   copied here by the download playbook and installed from here in offline mode. There is no
   default, and the playbooks fail if it is not set or is not a directory on the control node.
-- `gateway_offline_release` (for example `5.5.3`) - used to name the package directories, so that
-  packages for different releases do not mix.
+- `gateway_server_packages` and `gateway_client_packages` - the Gateway version (for example
+  `5.5.3`) is taken from the package file names, such as `iagctl-v5.5.3-linux-amd64-server.rpm`,
+  and is used to name the package directories so that packages for different versions do not
+  mix. Every package in a list must contain the same version, otherwise the playbooks fail.
 
 ```yaml
 all:
   vars:
     offline_control_node_root: /opt/itential/offline
-    gateway_offline_release: 5.5.3
 ```
 
 ```bash
@@ -64,9 +65,9 @@ By default the packages are placed in `/var/tmp/itential_packages` on the target
 
 ```bash
 <offline_control_node_root>/itential_packages
-└── rocky_9
+└── gateway
     └── 5.5.3
-        └── gateway
+        └── rocky_9
             ├── archives
             └── rpms
                 ├── gateway
@@ -92,7 +93,6 @@ all:
   vars:
     offline_install_enabled: true
     offline_control_node_root: /opt/itential/offline
-    gateway_offline_release: 5.5.3
 ```
 
 ### Run the Playbooks
@@ -128,16 +128,19 @@ All variables below work out of the box and rarely need to be overridden.
 | `offline_install_enabled` | Boolean | Install from the packages on the control node. | `false` |
 | `offline_target_node_root` | String | Root directory on the target node where the download playbook downloads packages. | `/var/tmp` |
 | `offline_control_node_root` | String | Root directory on the control node where packages are downloaded to and installed from. Must be an existing directory. | N/A (must be defined in inventory) |
-| `offline_itential_packages_path` | String | Path appended to the root directories. | `itential_packages/{{ ansible_distribution \| lower }}_{{ ansible_distribution_major_version }}` |
-| `gateway_offline_release` | String | The Gateway release the packages are for. | N/A (must be defined in inventory) |
+| `offline_itential_packages_path` | String | Path appended to the root directories. | `itential_packages` |
+| `gateway_offline_server_version` | String | The Gateway server version, taken from `gateway_server_packages`. | `{{ gateway_server_packages \| first \| basename \| regex_findall(gateway_offline_version_regex) \| first \| default('') }}` |
+| `gateway_offline_client_version` | String | The Gateway client version, taken from `gateway_client_packages`. | `{{ gateway_client_packages \| first \| basename \| regex_findall(gateway_offline_version_regex) \| first \| default('') }}` |
+| `gateway_offline_version_regex` | String | Regular expression used to find the version in a package file name. | `(\d+\.\d+\.\d+(?:-(?:rc\|alpha\|beta)\.?\d+)?)` |
+| `gateway_offline_os` | String | The OS directory name. | `{{ ansible_distribution \| lower }}_{{ ansible_distribution_major_version }}` |
 | `gateway_offline_download_method` | String | How the Python and OpenTofu RPMs are downloaded: `yum_module`, `yum_install`, `yum_reinstall`, `repotrack` or `yumdownloader`. | `yum_module` |
-| `gateway_offline_packages_root` | String | Gateway packages root directory. | `{{ offline_itential_packages_path }}/{{ gateway_offline_release }}/gateway` |
+| `gateway_offline_packages_root` | String | Gateway packages root directory. | `{{ offline_itential_packages_path }}/gateway` |
 | `gateway_offline_target_node_root` | String | Gateway target node root directory. | `{{ offline_target_node_root }}/{{ gateway_offline_packages_root }}` |
 | `gateway_offline_control_node_root` | String | Gateway control node root directory. | `{{ offline_control_node_root }}/{{ gateway_offline_packages_root }}` |
-| `gateway_offline_target_node_rpms_dir` | String | Target node RPMs directory. | `{{ gateway_offline_target_node_root }}/rpms` |
-| `gateway_offline_target_node_archives_dir` | String | Target node archives directory. | `{{ gateway_offline_target_node_root }}/archives` |
-| `gateway_offline_control_node_rpms_dir` | String | Control node RPMs directory. | `{{ gateway_offline_control_node_root }}/rpms` |
-| `gateway_offline_control_node_archives_dir` | String | Control node archives directory. | `{{ gateway_offline_control_node_root }}/archives` |
+| `gateway_offline_target_node_rpms_dir` | String | Target node RPMs directory. | `{{ gateway_offline_target_node_root }}/{{ gateway_offline_server_version }}/{{ gateway_offline_os }}/rpms` |
+| `gateway_offline_target_node_archives_dir` | String | Target node archives directory. | `{{ gateway_offline_target_node_root }}/{{ gateway_offline_client_version }}/{{ gateway_offline_os }}/archives` |
+| `gateway_offline_control_node_rpms_dir` | String | Control node RPMs directory. | `{{ gateway_offline_control_node_root }}/{{ gateway_offline_server_version }}/{{ gateway_offline_os }}/rpms` |
+| `gateway_offline_control_node_archives_dir` | String | Control node archives directory. | `{{ gateway_offline_control_node_root }}/{{ gateway_offline_client_version }}/{{ gateway_offline_os }}/archives` |
 
 ## Limitations
 

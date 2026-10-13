@@ -127,9 +127,12 @@ Utility role with no `main.yml` and no defaults, called via `tasks_from:` by `ga
   `install_tofu.yml` and `install_gateway_client.yml` install from the control node with all repos
   disabled; `validate-vars.yml` asserts the packages exist first; `verify.yml` skips the public
   repository connectivity check.
-- `offline_control_node_root` and `gateway_offline_release` have no defaults and must be set in the
-  inventory; the download and install tasks assert both (and that the root is a directory on the
-  control node).
+- `offline_control_node_root` has no default and must be set in the inventory; the download and
+  install tasks assert it is a directory on the control node. The Gateway version is not set
+  directly: it is parsed from the file names in `gateway_server_packages` and
+  `gateway_client_packages` (`gateway_offline_server_version` / `gateway_offline_client_version`),
+  and the tasks assert it can be found and is the same for every package in a list. Packages
+  live in `<root>/itential_packages/gateway/<version>/<os>/{archives,rpms/{gateway,python,opentofu}}`.
 - See `docs/offline_install_guide.md`.
 
 ### certify\_common

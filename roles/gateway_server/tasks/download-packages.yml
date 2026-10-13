@@ -7,13 +7,17 @@
     fail_msg: offline_install_enabled must be set to false for download
   tags: always
 
-- name: Validate gateway_offline_release is set
+- name: Validate the Gateway version can be determined from gateway_server_packages
   ansible.builtin.assert:
     that:
-      - gateway_offline_release is defined
-      - gateway_offline_release is not none
-      - gateway_offline_release | string | length > 0
-    fail_msg: gateway_offline_release must be defined (for example 5.5.3)
+      - gateway_server_packages is defined
+      - gateway_server_packages is iterable
+      - gateway_server_packages | length > 0
+      - gateway_server_packages | map('basename') | map('regex_search', gateway_offline_version_regex) | select('none') | list | length == 0
+      - gateway_server_packages | map('basename') | map('regex_findall', gateway_offline_version_regex) | map('first') | unique | list | length == 1
+    fail_msg:
+      - "The Gateway version could not be determined from gateway_server_packages"
+      - "Every package file name must contain exactly one version (for example iagctl-v5.5.3-linux-amd64-server.rpm), and all packages must have the same version"
   tags: always
 
 - name: Validate offline_control_node_root is set and is a valid directory
@@ -45,8 +49,8 @@
 - name: Print download directories
   ansible.builtin.debug:
     msg:
-      - "Target node download directory: {{ gateway_offline_target_node_root }}"
-      - "Control node download directory: {{ gateway_offline_control_node_root }}"
+      - "Target node download directory: {{ gateway_offline_target_node_rpms_dir }}"
+      - "Control node download directory: {{ gateway_offline_control_node_rpms_dir }}"
 
 - name: Download the gateway RPMs
   ansible.builtin.import_role:

@@ -91,15 +91,15 @@
       ansible.builtin.find:
         paths: "{{ gateway_server_download_dir.path }}"
         patterns: "*.rpm"
-      register: gateway_server_packages
+      register: gateway_server_found_packages
       changed_when: false
 
     - name: Install the gateway packages (local)
       ansible.builtin.dnf:
-        name: "{{ gateway_server_packages.files | map(attribute='path') | join(',') }}"
+        name: "{{ gateway_server_found_packages.files | map(attribute='path') | join(',') }}"
         disable_gpg_check: true
         state: present
-      when: gateway_server_packages | length > 0
+      when: gateway_server_found_packages | length > 0
 
     - name: Remove the temporary download directory
       ansible.builtin.file:
