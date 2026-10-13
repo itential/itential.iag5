@@ -54,7 +54,9 @@
     url_password: "{{ repository_password | default(omit) }}"
     validate_certs: true
   loop: "{{ gateway_client_packages }}"
-  when: "'http' in item"
+  when:
+    - not offline_install_enabled | bool
+    - "'http' in item"
   register: gateway_client_download_result
   changed_when: false
 
@@ -67,7 +69,20 @@
     mode: "0775"
     force: false
   loop: "{{ gateway_client_packages }}"
-  when: "'http' not in item"
+  when:
+    - not offline_install_enabled | bool
+    - "'http' not in item"
+  changed_when: false
+
+- name: Propagate the gateway packages from the control node (offline)
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "{{ gateway_client_download_dir.path }}/{{ item | basename }}"
+    owner: "{{ gateway_client_user }}"
+    group: "{{ gateway_client_group }}"
+    mode: "0775"
+  with_fileglob: "{{ gateway_offline_control_node_archives_dir }}/*.tar.gz"
+  when: offline_install_enabled | bool
   changed_when: false
 
 - name: Find the gateway packages

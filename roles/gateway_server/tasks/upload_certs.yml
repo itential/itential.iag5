@@ -45,6 +45,23 @@
         - gateway_server_pki_key_src is defined
         - gateway_server_pki_key_src is not none
 
+    - name: Add the CA certificate to the OS trust store
+      when:
+        - gateway_application_mode == 'server'
+        - gateway_server_connect_enabled | bool
+        - gateway_server_pki_trust_ca_enabled | bool
+        - gateway_server_pki_trust_ca_src is defined
+        - gateway_server_pki_trust_ca_src is not none
+      block:
+        - name: Copy the CA certificate to the OS trust store directory
+          ansible.builtin.copy:
+            src: "{{ gateway_server_pki_trust_ca_src }}"
+            dest: "{{ gateway_server_pki_trust_ca_dest }}"
+            owner: root
+            group: root
+            mode: "0644"
+          notify: Update OS trust store
+
     - name: Upload Gateway Manager certificate and key
       when: gateway_application_mode == 'server'
       block:
@@ -74,7 +91,9 @@
                 - gateway_server_connect_local_private_key_filename is not none
 
     - name: Upload etcd TLS certificates
-      when: gateway_server_store_etcd_use_tls | bool
+      when:
+        - gateway_server_store_backend == 'etcd'
+        - gateway_server_store_etcd_use_tls | bool
       block:
         - name: Upload etcd CA certificate
           ansible.builtin.copy:

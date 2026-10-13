@@ -6,7 +6,7 @@
 ##########################
 
 # Gateway cluster ID
-gateway_cluster_id: cluster_1
+gateway_cluster_id: "{{ inventory_hostname }}"
 
 # Gateway TLS
 gateway_pki_upload: true
@@ -25,3 +25,41 @@ gateway_secrets_encrypt_key_file: "{{ gateway_secrets_encrypt_key_dir }}/encrypt
 # Nexus repository.
 repository_username:  # noqa var-naming[no-role-prefix]
 repository_password:  # noqa var-naming[no-role-prefix]
+
+###########################
+# Gateway offline variables
+###########################
+
+# Set to true to install from packages previously downloaded to the control node (air-gapped
+# install). The download playbook always overrides this to false.
+offline_install_enabled: false  # noqa var-naming[no-role-prefix]
+
+# Root directories for the downloaded packages
+offline_target_node_root: /var/tmp  # noqa var-naming[no-role-prefix]
+# The offline_control_node_root must be defined in the inventory when downloading packages or installing in offline mode
+offline_control_node_root:  # noqa var-naming[no-role-prefix]
+offline_itential_packages_path:  # noqa var-naming[no-role-prefix]
+  "itential_packages/{{ ansible_distribution | lower }}_{{ ansible_distribution_major_version }}"
+
+# The Gateway release the packages are downloaded for (for example 5.5.3). Used to build the
+# package directory names. Must be defined in the inventory when downloading packages or
+# installing in offline mode.
+gateway_offline_release:
+
+# Base directories
+gateway_offline_packages_root: "{{ offline_itential_packages_path }}/{{ gateway_offline_release }}/gateway"
+gateway_offline_target_node_root: "{{ offline_target_node_root }}/{{ gateway_offline_packages_root }}"
+gateway_offline_control_node_root: "{{ offline_control_node_root }}/{{ gateway_offline_packages_root }}"
+
+# Target node download directories
+gateway_offline_target_node_rpms_dir: "{{ gateway_offline_target_node_root }}/rpms"
+gateway_offline_target_node_archives_dir: "{{ gateway_offline_target_node_root }}/archives"
+
+# Control node download directories
+gateway_offline_control_node_rpms_dir: "{{ gateway_offline_control_node_root }}/rpms"
+gateway_offline_control_node_archives_dir: "{{ gateway_offline_control_node_root }}/archives"
+
+# How the Python and OpenTofu RPMs are downloaded. One of: yum_module, yum_install,
+# yum_reinstall, repotrack, yumdownloader. Use yumdownloader or repotrack when the download
+# host already has some of the packages installed, so their dependencies are still downloaded.
+gateway_offline_download_method: yum_module

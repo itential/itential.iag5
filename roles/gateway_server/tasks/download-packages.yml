@@ -1,0 +1,118 @@
+# Copyright (c) 2025, Itential, Inc
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+---
+- name: Validate offline_install_enabled is false for download
+  ansible.builtin.assert:
+    that: not offline_install_enabled | bool
+    fail_msg: offline_install_enabled must be set to false for download
+  tags: always
+
+- name: Validate gateway_offline_release is set
+  ansible.builtin.assert:
+    that:
+      - gateway_offline_release is defined
+      - gateway_offline_release is not none
+      - gateway_offline_release | string | length > 0
+    fail_msg: gateway_offline_release must be defined (for example 5.5.3)
+  tags: always
+
+- name: Validate offline_control_node_root is set and is a valid directory
+  tags: always
+  block:
+    - name: Assert offline_control_node_root is defined
+      ansible.builtin.assert:
+        that:
+          - offline_control_node_root is defined
+          - offline_control_node_root is not none
+          - offline_control_node_root | string | length > 0
+        fail_msg: offline_control_node_root must be defined
+
+    - name: Get status of the offline_control_node_root
+      ansible.builtin.stat:
+        path: "{{ offline_control_node_root }}"
+        follow: true
+      register: gateway_server_offline_control_node_root_status
+      delegate_to: localhost
+      become: false
+
+    - name: Assert offline_control_node_root is a directory
+      ansible.builtin.assert:
+        that:
+          - gateway_server_offline_control_node_root_status.stat.exists
+          - gateway_server_offline_control_node_root_status.stat.isdir
+        fail_msg: "offline_control_node_root {{ offline_control_node_root }} is not a valid directory on the control node"
+
+- name: Print download directories
+  ansible.builtin.debug:
+    msg:
+      - "Target node download directory: {{ gateway_offline_target_node_root }}"
+      - "Control node download directory: {{ gateway_offline_control_node_root }}"
+
+- name: Download the gateway RPMs
+  ansible.builtin.import_role:
+    name: itential.iag5.offline
+    tasks_from: download-rpms
+  vars:
+    offline_download_method: get_url
+    offline_download_packages: "{{ gateway_server_packages }}"
+    offline_download_dir: "{{ gateway_offline_target_node_rpms_dir }}/gateway"
+  tags: download_gateway_packages
+
+- name: Copy the gateway RPMs to the control node
+  ansible.builtin.import_role:
+    name: itential.iag5.offline
+    tasks_from: fetch-packages
+  vars:
+    offline_src_dir: "{{ gateway_offline_target_node_rpms_dir }}/gateway"
+    offline_dest_dir: "{{ gateway_offline_control_node_rpms_dir }}/gateway"
+  tags: download_gateway_packages
+
+- name: Download the Python RPMs
+  when: gateway_server_features_python_enabled | bool
+  tags: download_python_packages
+  block:
+    - name: Download the Python RPMs
+      ansible.builtin.import_role:
+        name: itential.iag5.offline
+        tasks_from: download-rpms
+      vars:
+        offline_download_method: "{{ gateway_offline_download_method }}"
+        offline_download_packages: "{{ gateway_server_python_packages }}"
+        offline_download_dir: "{{ gateway_offline_target_node_rpms_dir }}/python"
+
+    - name: Copy the Python RPMs to the control node
+      ansible.builtin.import_role:
+        name: itential.iag5.offline
+        tasks_from: fetch-packages
+      vars:
+        offline_src_dir: "{{ gateway_offline_target_node_rpms_dir }}/python"
+        offline_dest_dir: "{{ gateway_offline_control_node_rpms_dir }}/python"
+
+- name: Download the OpenTofu RPMs
+  when: gateway_server_features_opentofu_enabled | bool
+  tags: download_opentofu_packages
+  block:
+    - name: Install OpenTofu repository
+      ansible.builtin.copy:
+        src: opentofu.repo
+        dest: /etc/yum.repos.d/
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Download the OpenTofu RPMs
+      ansible.builtin.import_role:
+        name: itential.iag5.offline
+        tasks_from: download-rpms
+      vars:
+        offline_download_method: "{{ gateway_offline_download_method }}"
+        offline_download_packages: "{{ gateway_server_opentofu_packages }}"
+        offline_download_dir: "{{ gateway_offline_target_node_rpms_dir }}/opentofu"
+
+    - name: Copy the OpenTofu RPMs to the control node
+      ansible.builtin.import_role:
+        name: itential.iag5.offline
+        tasks_from: fetch-packages
+      vars:
+        offline_src_dir: "{{ gateway_offline_target_node_rpms_dir }}/opentofu"
+        offline_dest_dir: "{{ gateway_offline_control_node_rpms_dir }}/opentofu"

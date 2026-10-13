@@ -36,8 +36,9 @@
     3. [Distributed Service Execution with Single Cluster Inventory](#distributed-service-execution-with-single-cluster-inventory)
     4. [High Availability with Distributed Execution Inventory](#high-availability-with-distributed-execution-inventory)
     5. [Multiple Cluster Architecture Inventories](#multiple-cluster-architecture-inventories)
-7. [Reference Guide](#reference-guide)
-8. [Patching IAG5](#patching-iag5)
+7. [Air-Gapped Installation](#air-gapped-installation)
+8. [Reference Guide](#reference-guide)
+9. [Patching IAG5](#patching-iag5)
 
 ## Overview
 
@@ -927,6 +928,11 @@ all:
         gateway_client_packages:
           - <IAGCTL-TARBALL>
 ```
+
+## Air-Gapped Installation
+
+IAG5 can be installed on hosts without internet access. See the
+[Offline Install Guide](docs/offline_install_guide.md).
 
 ## Reference Guide
 

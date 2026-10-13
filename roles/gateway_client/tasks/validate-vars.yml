@@ -19,6 +19,53 @@
           - gateway_secrets_encrypt_key | length == 64
         fail_msg: gateway_secrets_encrypt_key must be a 64 character hexadecimal string
 
+    - name: Validate offline packages exist on the control node
+      when: offline_install_enabled | bool
+      block:
+        - name: Validate gateway_offline_release is set
+          ansible.builtin.assert:
+            that:
+              - gateway_offline_release is defined
+              - gateway_offline_release is not none
+              - gateway_offline_release | string | length > 0
+            fail_msg: gateway_offline_release must be defined when offline_install_enabled is set to 'true'
+
+        - name: Validate offline_control_node_root is set
+          ansible.builtin.assert:
+            that:
+              - offline_control_node_root is defined
+              - offline_control_node_root is not none
+              - offline_control_node_root | string | length > 0
+            fail_msg: offline_control_node_root must be defined when offline_install_enabled is set to 'true'
+
+        - name: Get status of the offline_control_node_root
+          ansible.builtin.stat:
+            path: "{{ offline_control_node_root }}"
+            follow: true
+          register: gateway_client_offline_control_node_root_status
+          delegate_to: localhost
+          become: false
+
+        - name: Validate offline_control_node_root is a directory
+          ansible.builtin.assert:
+            that:
+              - gateway_client_offline_control_node_root_status.stat.exists
+              - gateway_client_offline_control_node_root_status.stat.isdir
+            fail_msg: "offline_control_node_root {{ offline_control_node_root }} is not a valid directory on the control node"
+
+        - name: Find the offline client archive on the control node
+          ansible.builtin.find:
+            paths: "{{ gateway_offline_control_node_archives_dir }}"
+            patterns: "*.tar.gz"
+          register: gateway_client_offline_archives_result
+          delegate_to: localhost
+          become: false
+
+        - name: Validate the offline client archive exists on the control node
+          ansible.builtin.assert:
+            that: gateway_client_offline_archives_result.matched > 0
+            fail_msg: "No client archive found in {{ gateway_offline_control_node_archives_dir }}. Run the download_packages playbook and copy the packages to the control node."
+
     - name: Validate variables when uploading is configured on
       when: gateway_pki_upload | bool
       block:

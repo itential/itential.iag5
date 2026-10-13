@@ -11,7 +11,9 @@
 # though it can also point to a customer-supplied Nexus/JFrog/GitLab host -- there's no generic
 # way to verify reachability of a customer-specific URL, but the fixed Itential endpoint is
 # always worth checking.
+# Air-gapped installs do not reach the public repositories
 - name: Verify connectivity to required public repositories
+  when: not offline_install_enabled | bool
   ansible.builtin.include_role:
     name: itential.iag5.verify_common
     tasks_from: verify-connectivity.yml
