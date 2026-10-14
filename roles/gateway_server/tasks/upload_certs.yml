@@ -59,9 +59,34 @@
             owner: root
             group: root
             mode: "0644"
-          notify:
-            - Update OS trust store
-            - Enable and start Gateway
+
+        - name: Read the CA certificate in the OS trust store directory
+          ansible.builtin.slurp:
+            src: "{{ gateway_server_pki_trust_ca_dest }}"
+          register: gateway_server_trust_ca_anchor
+
+        - name: Read the OS trust bundle
+          ansible.builtin.slurp:
+            src: "{{ gateway_server_pki_trust_bundle }}"
+          register: gateway_server_trust_bundle
+          failed_when: false
+
+        # Compares the certificates in the anchor file with the extracted bundle instead of relying on the
+        # copy task result, so a previous run that copied the CA but did not rebuild the trust store is repaired
+        - name: Check whether the CA certificate is missing from the OS trust bundle
+          ansible.builtin.set_fact:
+            gateway_server_trust_ca_missing: >-
+              {{ gateway_server_trust_ca_anchor.content | b64decode
+                 | regex_findall('(?s)-----BEGIN CERTIFICATE-----(.*?)-----END CERTIFICATE-----')
+                 | map('regex_replace', '\\s', '')
+                 | reject('in', gateway_server_trust_bundle.content | default('') | b64decode | regex_replace('\\s', ''))
+                 | list | length > 0 }}
+
+        - name: Update the OS trust store
+          ansible.builtin.command: update-ca-trust
+          changed_when: true
+          when: gateway_server_trust_ca_missing | bool
+          notify: Enable and start Gateway
 
     - name: Upload Gateway Manager certificate and key
       when: gateway_application_mode == 'server'

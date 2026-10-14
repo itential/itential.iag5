@@ -1,11 +1,6 @@
 # Copyright (c) 2025, Itential, Inc
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 ---
-# Must stay above "Enable and start Gateway" so the trust store is rebuilt before the gateway restarts
-- name: Update OS trust store
-  ansible.builtin.command: update-ca-trust
-  changed_when: true
-
 - name: Enable and start Gateway
   ansible.builtin.systemd:
     name: iagctl
