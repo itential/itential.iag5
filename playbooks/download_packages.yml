@@ -7,7 +7,7 @@
   hosts: iag5_servers:iag5_runners
   become: true
   vars:
-    offline_install_enabled: false
+    gateway_offline_install_enabled: false
   roles:
     - role: itential.iag5.gateway
       tags: always
@@ -22,7 +22,7 @@
   hosts: iag5_clients
   become: true
   vars:
-    offline_install_enabled: false
+    gateway_offline_install_enabled: false
   roles:
     - role: itential.iag5.gateway
       tags: always

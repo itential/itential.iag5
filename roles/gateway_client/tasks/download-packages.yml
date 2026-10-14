@@ -1,10 +1,10 @@
 # Copyright (c) 2025, Itential, Inc
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 ---
-- name: Validate offline_install_enabled is false for download
+- name: Validate gateway_offline_install_enabled is false for download
   ansible.builtin.assert:
-    that: not offline_install_enabled | bool
-    fail_msg: offline_install_enabled must be set to false for download
+    that: not gateway_offline_install_enabled | bool
+    fail_msg: gateway_offline_install_enabled must be set to false for download
   tags: always
 
 - name: Validate the Gateway version can be determined from gateway_client_packages
@@ -20,31 +20,31 @@
       - "Every package file name must contain exactly one version (for example iagctl-v5.5.3-linux-amd64.tar.gz), and all packages must have the same version"
   tags: always
 
-- name: Validate offline_control_node_root is set and is a valid directory
+- name: Validate gateway_offline_control_node_root is set and is a valid directory
   tags: always
   block:
-    - name: Assert offline_control_node_root is defined
+    - name: Assert gateway_offline_control_node_root is defined
       ansible.builtin.assert:
         that:
-          - offline_control_node_root is defined
-          - offline_control_node_root is not none
-          - offline_control_node_root | string | length > 0
-        fail_msg: offline_control_node_root must be defined
+          - gateway_offline_control_node_root is defined
+          - gateway_offline_control_node_root is not none
+          - gateway_offline_control_node_root | string | length > 0
+        fail_msg: gateway_offline_control_node_root must be defined
 
-    - name: Get status of the offline_control_node_root
+    - name: Get status of the gateway_offline_control_node_root
       ansible.builtin.stat:
-        path: "{{ offline_control_node_root }}"
+        path: "{{ gateway_offline_control_node_root }}"
         follow: true
-      register: gateway_client_offline_control_node_root_status
+      register: gateway_client_offline_control_node_path_status
       delegate_to: localhost
       become: false
 
-    - name: Assert offline_control_node_root is a directory
+    - name: Assert gateway_offline_control_node_root is a directory
       ansible.builtin.assert:
         that:
-          - gateway_client_offline_control_node_root_status.stat.exists
-          - gateway_client_offline_control_node_root_status.stat.isdir
-        fail_msg: "offline_control_node_root {{ offline_control_node_root }} is not a valid directory on the control node"
+          - gateway_client_offline_control_node_path_status.stat.exists
+          - gateway_client_offline_control_node_path_status.stat.isdir
+        fail_msg: "gateway_offline_control_node_root {{ gateway_offline_control_node_root }} is not a valid directory on the control node"
 
 - name: Download the gateway client archive
   ansible.builtin.import_role:

@@ -65,11 +65,11 @@ instead.
 ## Offline Directory Structure
 
 The paths are built in `roles/gateway/defaults/main.yml`. There is one tree under
-`offline_control_node_root` on the control node and one under `offline_target_node_root`
+`gateway_offline_control_node_root` on the control node and one under `gateway_offline_target_node_root`
 (default `/var/tmp`) on the target node:
 
 ```text
-<offline_control_node_root>/itential_packages
+<gateway_offline_control_node_root>/itential_packages
 └── gateway
     └── <VERSION>
         └── <OS>
@@ -89,11 +89,11 @@ The paths are built in `roles/gateway/defaults/main.yml`. There is one tree unde
 
 ## Dependencies / Assumptions
 
-- `offline_control_node_root` must be set in the inventory and be a directory on the control node.
+- `gateway_offline_control_node_root` must be set in the inventory and be a directory on the control node.
   The `gateway_server` and `gateway_client` `validate-vars.yml` and `download-packages.yml` assert it.
 - The role is not applied on its own. The download task files run from
-  `playbooks/download_packages.yml`, which forces `offline_install_enabled` to `false`; the install
-  task files run when `offline_install_enabled` is `true`.
+  `playbooks/download_packages.yml`, which forces `gateway_offline_install_enabled` to `false`; the install
+  task files run when `gateway_offline_install_enabled` is `true`.
 - `install-rpms.yml` relies on the RPMs being self-contained, with all dependencies downloaded.
   Use `yumdownloader` or `repotrack` as `gateway_offline_download_method` when the download host
   already has some of the packages installed.

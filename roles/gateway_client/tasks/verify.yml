@@ -13,7 +13,7 @@
 # always worth checking.
 # Air-gapped installs do not reach the public repositories
 - name: Verify connectivity to required public repositories
-  when: not offline_install_enabled | bool
+  when: not gateway_offline_install_enabled | bool
   ansible.builtin.include_role:
     name: itential.iag5.verify_common
     tasks_from: verify-connectivity.yml

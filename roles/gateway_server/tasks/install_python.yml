@@ -5,7 +5,7 @@
   ansible.builtin.dnf:
     name: "{{ gateway_server_python_packages }}"
     state: present
-  when: not offline_install_enabled | bool
+  when: not gateway_offline_install_enabled | bool
 
 - name: Install Python packages (offline)
   ansible.builtin.import_role:
@@ -13,7 +13,7 @@
     tasks_from: install-rpms
   vars:
     offline_rpms_path: "{{ gateway_offline_control_node_rpms_dir }}/python"
-  when: offline_install_enabled | bool
+  when: gateway_offline_install_enabled | bool
 
 - name: Create the local bin directory for the gateway user
   ansible.builtin.file:

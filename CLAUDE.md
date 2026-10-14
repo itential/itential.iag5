@@ -117,17 +117,17 @@ Defaults split by domain: `install.yml`, `server.yml`, `pki.yml`, `secrets.yml`,
 Utility role with no `main.yml` and no defaults, called via `tasks_from:` by `gateway_server` and
 `gateway_client` (mirrors `itential.deployer.offline`). Task files: `download-rpms.yml`,
 `download-archives.yml`, `fetch-packages.yml`, `install-rpms.yml`. The offline variables
-(`offline_install_enabled`, `gateway_offline_*`) are defined in `roles/gateway/defaults/main.yml`.
+(`gateway_offline_install_enabled`, `gateway_offline_*`) are defined in `roles/gateway/defaults/main.yml`.
 
 - `playbooks/download_packages.yml` runs `gateway_server/tasks/download-packages.yml` (iagctl RPM,
   Python RPMs, OpenTofu RPMs) and `gateway_client/tasks/download-packages.yml` (client tarball) on a
   host with internet access and fetches the results to the control node. It forces
-  `offline_install_enabled` to false.
-- With `offline_install_enabled: true`, `install_gateway.yml`, `install_python.yml`,
+  `gateway_offline_install_enabled` to false.
+- With `gateway_offline_install_enabled: true`, `install_gateway.yml`, `install_python.yml`,
   `install_tofu.yml` and `install_gateway_client.yml` install from the control node with all repos
   disabled; `validate-vars.yml` asserts the packages exist first; `verify.yml` skips the public
   repository connectivity check.
-- `offline_control_node_root` has no default and must be set in the inventory; the download and
+- `gateway_offline_control_node_root` has no default and must be set in the inventory; the download and
   install tasks assert it is a directory on the control node. The Gateway version is not set
   directly: it is parsed from the file names in `gateway_server_packages` and
   `gateway_client_packages` (`gateway_offline_server_version` / `gateway_offline_client_version`),
