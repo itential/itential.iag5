@@ -7,7 +7,7 @@ overridden in the `iag5_clients`, `iag5_servers` or `iag5_runners` group vars.
 
 | Variable | Type | Description | Default Value |
 | :------- | :--- | :---------- | :------------ |
-| `gateway_cluster_id` | String | The IAG5 cluster ID. | cluster_1 |
+| `gateway_cluster_id` | String | The IAG5 cluster ID. Servers, runners, and clients in the same cluster must share the same value, so set it explicitly for any multi-node cluster. | {{ inventory_hostname }} |
 | `gateway_pki_upload` | Boolean | Flag for enabling/disabling upload of PKI certificates and keys. | true |
 | `gateway_pki_key_suffix` | String | The default PKI key suffix. | .key |
 | `gateway_pki_cert_suffix` | String | The default PKI certificate suffix. | .crt |
@@ -17,6 +17,29 @@ overridden in the `iag5_clients`, `iag5_servers` or `iag5_runners` group vars.
 | `gateway_secrets_encrypt_key_file` | String | The path to the secrets encrypt key. | "{{ gateway_secrets_encrypt_key_dir }}/encryption-key" |
 | `repository_username` | String | The username for authenticating to the Itential Nexus repository. | N/A |
 | `repository_password` | String | The password for authenticating to the Itential Nexus repository. | N/A |
+
+## Offline Variables
+
+The variables in this section configure air-gapped installs. See the
+[Offline Install Guide](offline_install_guide.md).
+
+| Variable | Type | Description | Default Value |
+| :------- | :--- | :---------- | :------------ |
+| `gateway_offline_install_enabled` | Boolean | Install from the packages on the control node instead of the repositories. | false |
+| `gateway_offline_target_node_root` | String | Root directory on the target node where the download playbook downloads packages. | /var/tmp |
+| `gateway_offline_control_node_root` | String | Root directory on the control node where packages are downloaded to and installed from. Must be an existing directory. | N/A (must be defined in inventory) |
+| `gateway_offline_server_version` | String | The Gateway server version, taken from the file names in gateway_server_packages. | "{{ gateway_server_packages \| first \| basename \| regex_findall(gateway_offline_version_regex) \| first \| default('') }}" |
+| `gateway_offline_client_version` | String | The Gateway client version, taken from the file names in gateway_client_packages. | "{{ gateway_client_packages \| first \| basename \| regex_findall(gateway_offline_version_regex) \| first \| default('') }}" |
+| `gateway_offline_version_regex` | String | Regular expression used to find the version in a package file name. | '(\d+\.\d+\.\d+(?:-(?:rc\|alpha\|beta)\.?\d+)?)' |
+| `gateway_offline_os` | String | The OS directory name. | "{{ ansible_distribution \| lower }}_{{ ansible_distribution_major_version }}" |
+| `gateway_offline_download_method` | String | How the Python and OpenTofu RPMs are downloaded: yum_module, yum_install, yum_reinstall, repotrack or yumdownloader. | yum_module |
+| `gateway_offline_packages_root` | String | Gateway packages root directory. | itential_packages/gateway |
+| `gateway_offline_target_node_path` | String | Gateway target node packages directory. | "{{ gateway_offline_target_node_root }}/{{ gateway_offline_packages_root }}" |
+| `gateway_offline_control_node_path` | String | Gateway control node packages directory. | "{{ gateway_offline_control_node_root }}/{{ gateway_offline_packages_root }}" |
+| `gateway_offline_target_node_rpms_dir` | String | Target node RPMs directory. | "{{ gateway_offline_target_node_path }}/{{ gateway_offline_server_version }}/{{ gateway_offline_os }}/rpms" |
+| `gateway_offline_target_node_archives_dir` | String | Target node archives directory. | "{{ gateway_offline_target_node_path }}/{{ gateway_offline_client_version }}/{{ gateway_offline_os }}/archives" |
+| `gateway_offline_control_node_rpms_dir` | String | Control node RPMs directory. | "{{ gateway_offline_control_node_path }}/{{ gateway_offline_server_version }}/{{ gateway_offline_os }}/rpms" |
+| `gateway_offline_control_node_archives_dir` | String | Control node archives directory. | "{{ gateway_offline_control_node_path }}/{{ gateway_offline_client_version }}/{{ gateway_offline_os }}/archives" |
 
 ## Client Variables
 
@@ -103,6 +126,11 @@ the `iag5_servers` or `iag5_runners` group vars.
 | `gateway_server_pki_ca_file` | String | The name of the server TLS CA certificate file. | "ca{{ gateway_pki_cert_suffix }}" |
 | `gateway_server_pki_ca_cert_src` | String | The path to the source server TLS CA certificate on the control node. | "{{ gateway_pki_src_dir }}/{{ gateway_server_pki_ca_file }}" |
 | `gateway_server_pki_ca_cert_dest` | String | The path to the server TLS CA certificate. | "{{ gateway_server_pki_dir }}/{{ gateway_server_pki_ca_file }}" |
+| `gateway_server_pki_trust_ca_enabled` | Boolean | Flag for copying a CA certificate into the OS trust store and running `update-ca-trust`, so the gateway can verify the Gateway Manager server certificate. Only applies in server mode when `gateway_server_connect_enabled` and `gateway_pki_upload` are true. | false |
+| `gateway_server_pki_trust_ca_src` | String | The path to the CA certificate on the control node to add to the OS trust store. Set this to the CA that signed the Gateway Manager certificate if it differs from the gateway CA. | "{{ gateway_server_pki_ca_cert_src }}" |
+| `gateway_server_pki_trust_ca_dir` | String | The OS trust store anchors directory on the target host. | /etc/pki/ca-trust/source/anchors |
+| `gateway_server_pki_trust_ca_dest` | String | The destination path of the CA certificate in the OS trust store directory. | "{{ gateway_server_pki_trust_ca_dir }}/{{ gateway_server_pki_ca_file }}" |
+| `gateway_server_pki_trust_bundle` | String | The extracted OS trust bundle on the target host. The CA certificate is compared against it, and `update-ca-trust` and a Gateway restart run only when the CA is missing from it. | /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem |
 | `gateway_server_registry_default_overridable` | Boolean | Controls whether users can override the default PyPI or Ansible Galaxy registries when creating a Python or Ansible service. | true |
 | `gateway_server_store_backend` | String | Sets the backend type for persistent data storage.<br>Valid values are 'local', 'memory', 'etcd' and 'dynamodb' | local |
 | `gateway_server_store_etcd_hosts` | String | Sets the etcd hosts that the gateway connects to for backend storage.<br>A host entry consists of an address and port: hostname:port.<br>If there are multiple etcd hosts, enter them as a space separated list: hostname1:port hostname2:port. | localhost:2379 |
