@@ -9,6 +9,15 @@ gateway_server_use_tls: true
 
 gateway_server_pki_dir: "{{ gateway_server_config_dir }}/ssl"
 
+# Install a CA certificate into the OS trust store (and run update-ca-trust) so the gateway can verify the
+# Gateway Manager server certificate. Disabled by default so the OS trust store is only changed when requested. Only applies when the gateway is in server mode, gateway_server_connect_enabled
+# is true and gateway_pki_upload is true. Set the src to the CA that signed the Gateway Manager cert.
+gateway_server_pki_trust_ca_enabled: false
+gateway_server_pki_trust_ca_src: "{{ gateway_server_pki_ca_cert_src }}"
+gateway_server_pki_trust_ca_dir: /etc/pki/ca-trust/source/anchors
+gateway_server_pki_trust_ca_dest: "{{ gateway_server_pki_trust_ca_dir }}/{{ gateway_server_pki_ca_file }}"
+gateway_server_pki_trust_bundle: /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem
+
 gateway_server_pki_key_file: '{{ inventory_hostname }}{{ gateway_pki_key_suffix }}'
 gateway_server_pki_key_src: '{{ gateway_pki_src_dir }}/{{ gateway_server_pki_key_file }}'
 gateway_server_pki_key_dest: '{{ gateway_server_pki_dir }}/{{ gateway_server_pki_key_file }}'

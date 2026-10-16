@@ -1,0 +1,42 @@
+# Copyright (c) 2025, Itential, Inc
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+---
+- name: Validate required variables are set
+  ansible.builtin.assert:
+    that:
+      - offline_download_dir is defined
+      - offline_download_packages is defined
+    msg: offline_download_dir and offline_download_packages must be set
+
+- name: Download archives
+  when:
+    - offline_download_packages is iterable
+    - offline_download_packages | length > 0
+  block:
+    - name: Create download directory
+      ansible.builtin.file:
+        path: "{{ offline_download_dir }}"
+        state: directory
+        mode: '0755'
+
+    - name: Download archives (get_url)
+      ansible.builtin.get_url:
+        url: "{{ package }}"
+        dest: "{{ offline_download_dir }}"
+        mode: '0755'
+        # Sets the appropriate header based on the repository type (see download-rpms.yml)
+        headers: >-
+          {%- if repository_api_key is defined and package is search("jfrog") -%}
+            {"X-JFrog-Art-Api": "{{ repository_api_key }}", "Accept": "application/octet-stream"}
+          {%- elif repository_api_key is defined and package is search("gitlab") -%}
+            {"PRIVATE-TOKEN": "{{ repository_api_key }}", "Accept": "application/octet-stream"}
+          {%- else -%}
+            {"Accept": "application/octet-stream"}
+          {%- endif -%}
+        url_username: "{{ repository_username | default(omit) }}"
+        url_password: "{{ repository_password | default(omit) }}"
+        validate_certs: true
+      loop: "{{ offline_download_packages }}"
+      loop_control:
+        loop_var: package
+      when: "'http' in package"

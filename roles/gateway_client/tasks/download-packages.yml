@@ -1,0 +1,63 @@
+# Copyright (c) 2025, Itential, Inc
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+---
+- name: Validate gateway_offline_install_enabled is false for download
+  ansible.builtin.assert:
+    that: not gateway_offline_install_enabled | bool
+    fail_msg: gateway_offline_install_enabled must be set to false for download
+  tags: always
+
+- name: Validate the Gateway version can be determined from gateway_client_packages
+  ansible.builtin.assert:
+    that:
+      - gateway_client_packages is defined
+      - gateway_client_packages is iterable
+      - gateway_client_packages | length > 0
+      - gateway_client_packages | map('basename') | map('regex_search', gateway_offline_version_regex) | select('none') | list | length == 0
+      - gateway_client_packages | map('basename') | map('regex_findall', gateway_offline_version_regex) | map('first') | unique | list | length == 1
+    fail_msg:
+      - "The Gateway version could not be determined from gateway_client_packages"
+      - "Every package file name must contain exactly one version (for example iagctl-v5.5.3-linux-amd64.tar.gz), and all packages must have the same version"
+  tags: always
+
+- name: Validate gateway_offline_control_node_root is set and is a valid directory
+  tags: always
+  block:
+    - name: Assert gateway_offline_control_node_root is defined
+      ansible.builtin.assert:
+        that:
+          - gateway_offline_control_node_root is defined
+          - gateway_offline_control_node_root is not none
+          - gateway_offline_control_node_root | string | length > 0
+        fail_msg: gateway_offline_control_node_root must be defined
+
+    - name: Get status of the gateway_offline_control_node_root
+      ansible.builtin.stat:
+        path: "{{ gateway_offline_control_node_root }}"
+        follow: true
+      register: gateway_client_offline_control_node_path_status
+      delegate_to: localhost
+      become: false
+
+    - name: Assert gateway_offline_control_node_root is a directory
+      ansible.builtin.assert:
+        that:
+          - gateway_client_offline_control_node_path_status.stat.exists
+          - gateway_client_offline_control_node_path_status.stat.isdir
+        fail_msg: "gateway_offline_control_node_root {{ gateway_offline_control_node_root }} is not a valid directory on the control node"
+
+- name: Download the gateway client archive
+  ansible.builtin.import_role:
+    name: itential.iag5.offline
+    tasks_from: download-archives
+  vars:
+    offline_download_packages: "{{ gateway_client_packages }}"
+    offline_download_dir: "{{ gateway_offline_target_node_archives_dir }}"
+
+- name: Copy the gateway client archive to the control node
+  ansible.builtin.import_role:
+    name: itential.iag5.offline
+    tasks_from: fetch-packages
+  vars:
+    offline_src_dir: "{{ gateway_offline_target_node_archives_dir }}"
+    offline_dest_dir: "{{ gateway_offline_control_node_archives_dir }}"

@@ -48,6 +48,7 @@ itential.iag5/
 │   ├── runners.yml
 │   ├── clients.yml
 │   ├── certify.yml            # Post-deployment TLS verification (standalone)
+│   ├── download_packages.yml  # Downloads packages to the control node for air-gapped installs
 │   └── verify.yml     # Pre-flight checks — run before install or upgrade
 ├── roles/
 │   ├── gateway/                   # Common variables only (no tasks)
@@ -110,6 +111,29 @@ Deploys the IAG5 CLI client. Task execution order:
 
 Defaults split by domain: `install.yml`, `server.yml`, `pki.yml`, `secrets.yml`, `log.yml`,
 `terminal.yml`.
+
+### offline
+
+Utility role with no `main.yml` and no defaults, called via `tasks_from:` by `gateway_server` and
+`gateway_client` (mirrors `itential.deployer.offline`). Task files: `download-rpms.yml`,
+`download-archives.yml`, `fetch-packages.yml`, `install-rpms.yml`. The offline variables
+(`gateway_offline_install_enabled`, `gateway_offline_*`) are defined in `roles/gateway/defaults/main.yml`.
+
+- `playbooks/download_packages.yml` runs `gateway_server/tasks/download-packages.yml` (iagctl RPM,
+  Python RPMs, OpenTofu RPMs) and `gateway_client/tasks/download-packages.yml` (client tarball) on a
+  host with internet access and fetches the results to the control node. It forces
+  `gateway_offline_install_enabled` to false.
+- With `gateway_offline_install_enabled: true`, `install_gateway.yml`, `install_python.yml`,
+  `install_tofu.yml` and `install_gateway_client.yml` install from the control node with all repos
+  disabled; `validate-vars.yml` asserts the packages exist first; `verify.yml` skips the public
+  repository connectivity check.
+- `gateway_offline_control_node_root` has no default and must be set in the inventory; the download and
+  install tasks assert it is a directory on the control node. The Gateway version is not set
+  directly: it is parsed from the file names in `gateway_server_packages` and
+  `gateway_client_packages` (`gateway_offline_server_version` / `gateway_offline_client_version`),
+  and the tasks assert it can be found and is the same for every package in a list. Packages
+  live in `<root>/itential_packages/gateway/<version>/<os>/{archives,rpms/{gateway,python,opentofu}}`.
+- See `docs/offline_install_guide.md`.
 
 ### certify\_common
 
@@ -273,8 +297,9 @@ Logs: `/var/log/gateway/`
 The full variable reference (100+ variables with types, defaults, and descriptions) is at
 `docs/reference_guide.md`. The most commonly changed variables are:
 
-- `gateway_cluster_id` — cluster name (default: `cluster_1`)
+- `gateway_cluster_id` — cluster name (default: `{{ inventory_hostname }}`; set explicitly when a cluster spans multiple hosts)
 - `gateway_pki_upload` — upload TLS certs (default: `true`)
+- `gateway_server_pki_trust_ca_enabled` — copy a CA into the OS trust store and run `update-ca-trust` so the server can verify the Gateway Manager cert (default: `false`; server mode with connect enabled only; source defaults to the gateway CA, override `gateway_server_pki_trust_ca_src`)
 - `gateway_server_store_type` — storage backend: `local`, `etcd`, `dynamodb`, `memory`
 - `gateway_server_features_python_enabled` — enable Python script/service management (default: `true`)
 - `gateway_server_features_opentofu_enabled` — enable OpenTofu plan/service management (default: `true`)
