@@ -1,0 +1,127 @@
+# Copyright (c) 2025, Itential, Inc
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+---
+- name: Validate Gateway Manager variables
+  ansible.builtin.assert:
+    that:
+      - gateway_server_gateway_manager_client_id is not none
+      - gateway_server_gateway_manager_client_id | length > 0
+      - gateway_server_gateway_manager_client_secret is not none
+      - gateway_server_gateway_manager_client_secret | length > 0
+      - gateway_server_connect_hosts is not none
+      - gateway_server_gateway_manager_groups | length > 0
+    fail_msg: >-
+      gateway_server_gateway_manager_client_id, gateway_server_gateway_manager_client_secret and
+      gateway_server_gateway_manager_groups must be defined in the inventory, and gateway_server_connect_hosts must be defined.
+
+- name: Read the certificates from the Gateway host
+  ansible.builtin.slurp:
+    src: "{{ item.src }}"
+  loop:
+    - name: ca
+      src: "{{ gateway_server_pki_ca_cert_dest }}"
+    - name: host
+      src: "{{ gateway_server_pki_cert_dest }}"
+  register: gateway_server_gw_mgr_cert_files
+
+- name: Configure Gateway Manager through the Itential Platform API
+  delegate_to: localhost
+  become: false
+  module_defaults:
+    ansible.builtin.uri:
+      validate_certs: "{{ gateway_server_gateway_manager_validate_certs }}"
+      return_content: true
+  block:
+    - name: Get an OAuth access token
+      ansible.builtin.uri:
+        url: "{{ gateway_server_gateway_manager_url }}/oauth/token"
+        method: POST
+        body_format: form-urlencoded
+        body:
+          grant_type: client_credentials
+          client_id: "{{ gateway_server_gateway_manager_client_id }}"
+          client_secret: "{{ gateway_server_gateway_manager_client_secret }}"
+      register: gateway_server_gw_mgr_token
+      no_log: true
+
+    - name: Set the Gateway Manager API request headers
+      ansible.builtin.set_fact:
+        gateway_server_gw_mgr_headers:
+          Authorization: "Bearer {{ gateway_server_gw_mgr_token.json.access_token }}"
+      no_log: true
+
+    - name: Get the list of Gateways in Gateway Manager
+      ansible.builtin.uri:
+        url: "{{ gateway_server_gateway_manager_url }}/gateway_manager/v1/gateways"
+        headers: "{{ gateway_server_gw_mgr_headers }}"
+      register: gateway_server_gw_mgr_gateways
+
+    - name: Set the existing Gateway
+      ansible.builtin.set_fact:
+        gateway_server_gw_mgr_gateway: >-
+          {{ gateway_server_gw_mgr_gateways.json.results | selectattr('cluster_id', 'equalto', gateway_cluster_id) | first | default({}) }}
+
+    - name: Create the Gateway in Gateway Manager
+      ansible.builtin.uri:
+        url: "{{ gateway_server_gateway_manager_url }}/gateway_manager/v1/gateways"
+        method: POST
+        headers: "{{ gateway_server_gw_mgr_headers }}"
+        body_format: json
+        body:
+          gateway:
+            cluster_id: "{{ gateway_cluster_id }}"
+            enabled: true
+            readonly: false
+            groups: "{{ gateway_server_gateway_manager_groups }}"
+      register: gateway_server_gw_mgr_gateway_created
+      changed_when: true
+      when: gateway_server_gw_mgr_gateway | length == 0
+
+    - name: Set the Gateway ID
+      ansible.builtin.set_fact:
+        gateway_server_gw_mgr_gateway_id: >-
+          {{ gateway_server_gw_mgr_gateway._id | default(gateway_server_gw_mgr_gateway_created.json.id | default('')) }}
+
+    - name: Create or update the CA and host certificates in Gateway Manager
+      ansible.builtin.include_tasks:
+        file: configure_gateway_manager_certificate.yml
+      loop:
+        - name: ca
+          alias: "{{ gateway_server_gateway_manager_ca_cert_alias }}"
+        - name: host
+          alias: "{{ gateway_server_gateway_manager_host_cert_alias }}"
+      loop_control:
+        label: "{{ item.name }}"
+
+    - name: Get the Gateway
+      ansible.builtin.uri:
+        url: "{{ gateway_server_gateway_manager_url }}/gateway_manager/v1/gateways/{{ gateway_server_gw_mgr_gateway_id }}"
+        headers: "{{ gateway_server_gw_mgr_headers }}"
+      register: gateway_server_gw_mgr_gateway_current
+
+    - name: Get the list of certificates in Gateway Manager
+      ansible.builtin.uri:
+        url: "{{ gateway_server_gateway_manager_url }}/gateway_manager/v1/certificates"
+        headers: "{{ gateway_server_gw_mgr_headers }}"
+      register: gateway_server_gw_mgr_certs
+
+    - name: Set the certificates that should be linked to the Gateway
+      ansible.builtin.set_fact:
+        gateway_server_gw_mgr_linked_cert_ids: >-
+          {{ (gateway_server_gw_mgr_gateway_current.json.result.value.certificates | default([])
+              | intersect(gateway_server_gw_mgr_certs.json.results | map(attribute='_id') | list)
+              + [gateway_server_gw_mgr_cert_ids.host]) | unique | list }}
+
+    - name: Link the host certificate to the Gateway
+      ansible.builtin.uri:
+        url: "{{ gateway_server_gateway_manager_url }}/gateway_manager/v1/gateways/{{ gateway_server_gw_mgr_gateway_id }}"
+        method: PUT
+        headers: "{{ gateway_server_gw_mgr_headers }}"
+        body_format: json
+        body:
+          payload:
+            certificates: "{{ gateway_server_gw_mgr_linked_cert_ids }}"
+      changed_when: true
+      when: >-
+        gateway_server_gw_mgr_linked_cert_ids | sort
+        != gateway_server_gw_mgr_gateway_current.json.result.value.certificates | default([]) | sort

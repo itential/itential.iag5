@@ -48,6 +48,7 @@ itential.iag5/
 │   ├── runners.yml
 │   ├── clients.yml
 │   ├── certify.yml            # Post-deployment TLS verification (standalone)
+│   ├── configure_gateway_manager.yml  # Registers servers in Gateway Manager via the Itential Platform API (standalone)
 │   └── verify.yml     # Pre-flight checks — run before install or upgrade
 ├── roles/
 │   ├── gateway/                   # Common variables only (no tasks)
@@ -83,12 +84,22 @@ Deploys server **or** runner depending on `gateway_application_mode`. Task execu
 7. `configure_firewalld.yml` — opens ports in firewalld (optional)
 8. `certify.yml` — live TLS handshake tests post-deployment
 
+`configure_gateway_manager.yml` is not part of the `main.yml` flow. `playbooks/configure_gateway_manager.yml` runs
+it against `iag5_servers` with `include_role` and `tasks_from`. For each server it gets an OAuth token from the Itential
+Platform (`gateway_server_gateway_manager_client_id` / `_client_secret`, vault the secret in the inventory), creates the
+Gateway in Gateway Manager by `gateway_cluster_id` if it is missing, uploads the CA cert (`gateway_server_pki_ca_cert_dest`)
+and host cert (`gateway_server_pki_cert_dest`) via `configure_gateway_manager_certificate.yml`, and links the host cert to
+the Gateway. The API URL defaults to the first entry of `gateway_server_connect_hosts` on port 3443
+(`gateway_server_gateway_manager_url` overrides it). The certificate update endpoint only changes the alias, so a cert is
+matched by PEM, and a cert with the same alias but a different PEM is deleted and uploaded again. Defaults are in
+`defaults/main/gateway_manager.yml`.
+
 Handler: `restart iagctl` — restarts the `iagctl` systemd service (4 retries, 5s delay,
 validates `ActiveState == "active"`).
 
 Defaults are split by domain: `install.yml`, `server.yml`, `store.yml`, `connect.yml`,
 `features.yml`, `registry.yml`, `pki.yml`, `secrets.yml`, `log.yml`, `runner.yml`,
-`common.yml`, `terminal.yml`, `specs.yml`.
+`common.yml`, `terminal.yml`, `specs.yml`, `gateway_manager.yml`.
 
 `specs.yml` defines minimum hardware requirements for servers and runners used by the
 `verify` pre-flight check. Which minimums apply to an `iag5_servers` host is topology-dependent:
@@ -201,6 +212,9 @@ ansible-playbook itential.iag5.clients  -i inventories/production
 
 # Post-deployment TLS verification only
 ansible-playbook itential.iag5.certify -i inventories/production
+
+# Register the servers in Gateway Manager (requires the gateway_server_gateway_manager_* variables)
+ansible-playbook itential.iag5.configure_gateway_manager -i inventories/production
 ```
 
 ### Ansible Tags
