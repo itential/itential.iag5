@@ -108,7 +108,7 @@
     - name: Set the certificates that should be linked to the Gateway
       ansible.builtin.set_fact:
         gateway_server_gw_mgr_linked_cert_ids: >-
-          {{ (gateway_server_gw_mgr_gateway_current.json.result.value.certificates | default([])
+          {{ (gateway_server_gw_mgr_gateway_current.json.result.certificates | default([])
               | intersect(gateway_server_gw_mgr_certs.json.results | map(attribute='_id') | list)
               + [gateway_server_gw_mgr_cert_ids.host]) | unique | list }}
 
@@ -124,4 +124,4 @@
       changed_when: true
       when: >-
         gateway_server_gw_mgr_linked_cert_ids | sort
-        != gateway_server_gw_mgr_gateway_current.json.result.value.certificates | default([]) | sort
+        != gateway_server_gw_mgr_gateway_current.json.result.certificates | default([]) | sort
