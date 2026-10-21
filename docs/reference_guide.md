@@ -175,6 +175,22 @@ The variables in this section may be overridden in the inventory in the `iag5_se
 | `gateway_server_connect_proxy_username` | String | The proxy username, written to `iagctl.env`. Optional. | N/A |
 | `gateway_server_connect_proxy_password` | String | The proxy password, written to `iagctl.env`. Optional. | N/A |
 
+## Gateway Manager Variables
+
+The variables in this section are used by the `configure_gateway_manager` playbook, which creates each server's Gateway in Gateway Manager, uploads its CA and host certificates, and links the host certificate to the Gateway. They may be overridden in the inventory in the `iag5_servers` group vars.
+
+| Variable | Type | Description | Default |
+|----------|------|-------------|---------|
+| `gateway_server_gateway_manager_client_id` | String | The OAuth client ID of the Itential Platform user that calls the Gateway Manager API. Must be defined in the inventory. | N/A (must be defined in inventory) |
+| `gateway_server_gateway_manager_client_secret` | String | The OAuth client secret for the client ID. Must be defined in the inventory. Store it in Ansible Vault. | N/A (must be defined in inventory) |
+| `gateway_server_gateway_manager_groups` | List | The Itential Platform group names that can act on the Gateway. Gateway Manager requires at least one when a Gateway is created. Must be defined in the inventory. | [] |
+| `gateway_server_gateway_manager_url` | String | The Itential Platform API URL. Override this when the control node cannot reach the first host in `gateway_server_connect_hosts`. | "https://{{ first host in gateway_server_connect_hosts }}:3443" |
+| `gateway_server_gateway_manager_validate_certs` | Boolean | Validate the Itential Platform TLS certificate when calling the API. | true |
+| `gateway_server_gateway_manager_ca_cert_alias` | String | The alias of the CA certificate in Gateway Manager. | "{{ gateway_cluster_id }} CA cert" |
+| `gateway_server_gateway_manager_host_cert_alias` | String | The alias of the host certificate in Gateway Manager. | "{{ gateway_cluster_id }} cert" |
+
+The API calls run on the control node. A certificate is matched in Gateway Manager by its PEM content. The Gateway Manager API only allows the alias of a stored certificate to be changed, so a certificate with the same alias and a different PEM is deleted and uploaded again.
+
 # Runner Variables
 
 The variables in this section may be overridden in the inventory in the `iag5_runners` group vars.

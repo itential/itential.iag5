@@ -1,0 +1,75 @@
+# Copyright (c) 2025, Itential, Inc
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+---
+# Expects item.name (ca or host) and item.alias. The Gateway Manager API only allows the alias of a stored
+# certificate to be changed, so a certificate whose PEM has changed is deleted and uploaded again.
+- name: Set the certificate to upload
+  ansible.builtin.set_fact:
+    gateway_server_gw_mgr_cert_pem: >-
+      {{ (gateway_server_gw_mgr_cert_files.results | selectattr('item.name', 'equalto', item.name) | first).content | b64decode }}
+
+- name: Get the list of certificates in Gateway Manager
+  ansible.builtin.uri:
+    url: "{{ gateway_server_gateway_manager_url }}/gateway_manager/v1/certificates"
+    headers: "{{ gateway_server_gw_mgr_headers }}"
+  register: gateway_server_gw_mgr_certs
+
+- name: Find the stored certificate with the same PEM and the same alias
+  ansible.builtin.set_fact:
+    gateway_server_gw_mgr_cert_pem_normalized: "{{ gateway_server_gw_mgr_cert_pem | regex_replace('\\s', '') }}"
+    gateway_server_gw_mgr_stored_pems: >-
+      {{ gateway_server_gw_mgr_certs.json.results | map(attribute='certificate', default='') | map('regex_replace', '\s', '') | list }}
+    gateway_server_gw_mgr_cert_alias_match: >-
+      {{ gateway_server_gw_mgr_certs.json.results | selectattr('alias', 'equalto', item.alias) | first | default({}) }}
+
+- name: Set the contract ID for the certificate
+  ansible.builtin.set_fact:
+    gateway_server_gw_mgr_cert_contract_id: >-
+      {{ item.alias | lower | regex_replace('[^a-z0-9]+', '-') | regex_replace('^-|-$', '') }}-crt-{{
+      (gateway_server_gw_mgr_cert_pem_normalized | hash('sha1'))[:8] }}
+
+- name: Set the stored certificate that has the same PEM
+  ansible.builtin.set_fact:
+    gateway_server_gw_mgr_cert_pem_match: >-
+      {{ gateway_server_gw_mgr_certs.json.results[gateway_server_gw_mgr_stored_pems.index(gateway_server_gw_mgr_cert_pem_normalized)]
+         if gateway_server_gw_mgr_cert_pem_normalized in gateway_server_gw_mgr_stored_pems else {} }}
+
+- name: Delete the stored certificate with the same alias and a different PEM
+  ansible.builtin.uri:
+    url: "{{ gateway_server_gateway_manager_url }}/gateway_manager/v1/certificates/{{ gateway_server_gw_mgr_cert_alias_match._id }}"
+    method: DELETE
+    headers: "{{ gateway_server_gw_mgr_headers }}"
+  changed_when: true
+  when:
+    - gateway_server_gw_mgr_cert_pem_match | length == 0
+    - gateway_server_gw_mgr_cert_alias_match | length > 0
+
+- name: Upload the certificate to Gateway Manager
+  ansible.builtin.uri:
+    url: "{{ gateway_server_gateway_manager_url }}/gateway_manager/v1/certificates"
+    method: POST
+    headers: "{{ gateway_server_gw_mgr_headers }}"
+    body_format: json
+    body:
+      raw_certificate: "{{ gateway_server_gw_mgr_cert_pem }}"
+      contract_id: "{{ gateway_server_gw_mgr_cert_contract_id }}"
+      alias: "{{ item.alias }}"
+  changed_when: true
+  when: gateway_server_gw_mgr_cert_pem_match | length == 0
+
+- name: Get the list of certificates in Gateway Manager
+  ansible.builtin.uri:
+    url: "{{ gateway_server_gateway_manager_url }}/gateway_manager/v1/certificates"
+    headers: "{{ gateway_server_gw_mgr_headers }}"
+  register: gateway_server_gw_mgr_certs
+
+- name: Find the uploaded certificate
+  ansible.builtin.set_fact:
+    gateway_server_gw_mgr_stored_pems: >-
+      {{ gateway_server_gw_mgr_certs.json.results | map(attribute='certificate', default='') | map('regex_replace', '\s', '') | list }}
+
+- name: Record the certificate ID
+  ansible.builtin.set_fact:
+    gateway_server_gw_mgr_cert_ids: >-
+      {{ gateway_server_gw_mgr_cert_ids | default({}) | combine({item.name: (
+      gateway_server_gw_mgr_certs.json.results[gateway_server_gw_mgr_stored_pems.index(gateway_server_gw_mgr_cert_pem_normalized)]._id)}) }}

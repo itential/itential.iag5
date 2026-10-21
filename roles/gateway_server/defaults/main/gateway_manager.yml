@@ -1,0 +1,24 @@
+# Copyright (c) 2025, Itential, Inc
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+---
+#######################################
+# Gateway Manager automation variables
+#######################################
+
+# OAuth client credentials used by playbooks/configure_gateway_manager.yml to call the Itential
+# Platform API. Both must be defined in the inventory (vault the secret) when running that playbook.
+gateway_server_gateway_manager_client_id:
+gateway_server_gateway_manager_client_secret:
+
+# Itential Platform API URL. Defaults to the first host in gateway_server_connect_hosts on port 3443.
+# Override this when the control node cannot reach that address.
+gateway_server_gateway_manager_url: "https://{{ (gateway_server_connect_hosts.split() | first).split(':') | first }}:3443"
+gateway_server_gateway_manager_validate_certs: true
+
+# Itential Platform group names that can act on the Gateway. Gateway Manager requires at least one when a
+# Gateway is created, so this must be defined in the inventory when running the configure_gateway_manager playbook.
+gateway_server_gateway_manager_groups: []
+
+# Aliases for the certificates stored in Gateway Manager
+gateway_server_gateway_manager_ca_cert_alias: "{{ gateway_cluster_id }} CA cert"
+gateway_server_gateway_manager_host_cert_alias: "{{ gateway_cluster_id }} cert"
