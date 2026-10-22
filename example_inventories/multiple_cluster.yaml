@@ -21,25 +21,16 @@ all:
         cluster2-server01.example.com:
           ansible_host: <CLUSTER2-SERVER01-IP>
       vars:
-        gateway_server_connect_hosts: <GATEWAY-MANAGER-IP>:8080
+        gateway_server_connect_hosts: <PLATFORM-IP>:8080
         gateway_server_distributed_execution: true
+
         # Optional: used by playbooks/gwm_gateways.yml to register the servers in Gateway Manager
-        # gateway_server_gateway_manager_client_id: <OAUTH-CLIENT-ID>
-        # gateway_server_gateway_manager_client_secret: <OAUTH-CLIENT-SECRET>  # store in Ansible Vault
-        # gateway_server_gateway_manager_groups:
-        #   - <PLATFORM-GROUP>
+        gateway_server_gateway_manager_client_id: <OAUTH-CLIENT-ID>
+        gateway_server_gateway_manager_client_secret: <OAUTH-CLIENT-SECRET>  # store in Ansible Vault
+        gateway_server_gateway_manager_groups:
+          - <PLATFORM-GROUP>
         # Defaults to the first gateway_server_connect_hosts host on port 3443
-        # gateway_server_gateway_manager_url: https://<PLATFORM-IP>:3443
-        # Optional: used by playbooks/gwm_virtual_clusters.yml. Run gwm_gateways.yml first.
-        # A virtual cluster groups Gateways that have different gateway_cluster_id values (cluster_1 and cluster_2 here).
-        # primary and backups are Gateway cluster IDs. Backup order is the failover order.
-        # distribution_mode: sorted (active/standby) or least-open-requests (load balanced)
-        # gateway_server_gateway_manager_virtual_clusters:
-        #   - cluster_id: <VIRTUAL-CLUSTER-ID>
-        #     distribution_mode: least-open-requests
-        #     primary: cluster_1
-        #     backups:
-        #       - cluster_2
+        gateway_server_gateway_manager_url: https://<PLATFORM-IP>:3443
 
     iag5_runners:
       hosts:

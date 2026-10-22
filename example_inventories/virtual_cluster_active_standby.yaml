@@ -1,0 +1,57 @@
+# Notes:
+#  - All example inventory_hostname entries must be replaced with the actual server hostnames.
+#  - All hostnames must be resolvable.
+all:
+  vars:
+    ansible_user: <ANSIBLE-USER>
+
+    # Itential Nexus repository credentials
+    repository_username: <NEXUS-USERNAME>
+    repository_password: <NEXUS-PASSWORD>
+
+    gateway_secrets_encrypt_key: <ENCRYPT-KEY>
+    gateway_pki_src_dir: <PKI-DIR>
+
+  children:
+    iag5_servers:
+      hosts:
+        gateway-server01.example.com:
+          ansible_host: <GATEWAY-SERVER01-IP>
+        gateway-server02.example.com:
+          ansible_host: <GATEWAY-SERVER02-IP>
+        gateway-server03.example.com:
+          ansible_host: <GATEWAY-SERVER03-IP>
+      vars:
+        gateway_server_connect_hosts: <PLATFORM-IP>:8080
+        gateway_server_packages:
+          - <IAGCTL-RPM>
+
+        # Optional: used by playbooks/gwm_gateways.yml to register the servers in Gateway Manager.
+        gateway_server_gateway_manager_client_id: <OAUTH-CLIENT-ID>
+        gateway_server_gateway_manager_client_secret: <OAUTH-CLIENT-SECRET>  # store in Ansible Vault
+        gateway_server_gateway_manager_groups:
+          - <PLATFORM-GROUP>
+        # Defaults to the first gateway_server_connect_hosts host on port 3443
+        gateway_server_gateway_manager_url: https://<PLATFORM-IP>:3443
+
+        # Optional: used by playbooks/gwm_virtual_clusters.yml. Run gwm_gateways.yml first.
+        # A virtual cluster groups Gateways that have different gateway_cluster_id values. gateway_cluster_id is not set here,
+        # so each server uses its inventory hostname as its cluster ID.
+        # primary and backups are Gateway cluster IDs. Backup order is the failover order.
+        # distribution_mode: sorted (active/standby) or least-open-requests (load balanced)
+        gateway_server_gateway_manager_virtual_clusters:
+          - cluster_id: <VIRTUAL-CLUSTER-ID>
+            distribution_mode: sorted
+            primary: gateway-server01.example.com
+            backups:
+              - gateway-server02.example.com
+              - gateway-server03.example.com
+
+    iag5_clients:
+      hosts:
+        gateway-client01.example.com:
+          ansible_host: <GATEWAY-CLIENT01-IP>
+          gateway_client_host: <GATEWAY-SERVER01-IP>
+      vars:
+        gateway_client_packages:
+          - <IAGCTL-TARBALL>

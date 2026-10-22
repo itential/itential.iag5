@@ -187,7 +187,7 @@ The variables in this section are used by the `gwm_gateways` playbook, which cre
 | `gateway_server_gateway_manager_url` | String | The Itential Platform API URL. Override this when the control node cannot reach the first host in `gateway_server_connect_hosts`. | "https://{{ first host in gateway_server_connect_hosts }}:3443" |
 | `gateway_server_gateway_manager_validate_certs` | Boolean | Validate the Itential Platform TLS certificate when calling the API. | true |
 | `gateway_server_gateway_manager_ca_cert_alias` | String | The alias of the CA certificate in Gateway Manager. | "{{ gateway_cluster_id }} CA cert" |
-| `gateway_server_gateway_manager_host_cert_alias` | String | The alias of the host certificate in Gateway Manager. | "{{ gateway_cluster_id }} cert" |
+| `gateway_server_gateway_manager_host_cert_alias` | String | The alias of the host certificate in Gateway Manager. Each server has its own host certificate, so the default is per server. | "{{ inventory_hostname }} cert" |
 
 The API calls run on the control node. A certificate is matched in Gateway Manager by its PEM content. The Gateway Manager API only allows the alias of a stored certificate to be changed, so a certificate with the same alias and a different PEM is deleted and uploaded again.
 

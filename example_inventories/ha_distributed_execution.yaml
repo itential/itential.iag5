@@ -21,15 +21,16 @@ all:
         gateway-server02.example.com: # standby gateway server
           ansible_host: <GATEWAY-SERVER02-IP>
       vars:
-        gateway_server_connect_hosts: <GATEWAY-MANAGER-IP>:8080
+        gateway_server_connect_hosts: <PLATFORM-IP>:8080
         gateway_server_distributed_execution: true
+
         # Optional: used by playbooks/gwm_gateways.yml to register the servers in Gateway Manager
-        # gateway_server_gateway_manager_client_id: <OAUTH-CLIENT-ID>
-        # gateway_server_gateway_manager_client_secret: <OAUTH-CLIENT-SECRET>  # store in Ansible Vault
-        # gateway_server_gateway_manager_groups:
-        #   - <PLATFORM-GROUP>
+        gateway_server_gateway_manager_client_id: <OAUTH-CLIENT-ID>
+        gateway_server_gateway_manager_client_secret: <OAUTH-CLIENT-SECRET>  # store in Ansible Vault
+        gateway_server_gateway_manager_groups:
+          - <PLATFORM-GROUP>
         # Defaults to the first gateway_server_connect_hosts host on port 3443
-        # gateway_server_gateway_manager_url: https://<PLATFORM-IP>:3443
+        gateway_server_gateway_manager_url: https://<PLATFORM-IP>:3443
 
     iag5_runners:
       hosts:
@@ -61,3 +62,14 @@ all:
       vars:
         gateway_client_packages:
           - <IAGCTL-TARBALL>
+
+    iag5_all:
+      hosts:
+        gateway-client01.example.com:
+        gateway-server01.example.com:
+        gateway-server02.example.com:
+        gateway-runner01.example.com:
+        gateway-runner02.example.com:
+        gateway-runner03.example.com:
+      vars:
+        gateway_cluster_id: cluster_1

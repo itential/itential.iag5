@@ -94,7 +94,10 @@ Gateway in Gateway Manager by `gateway_cluster_id` if it is missing, uploads the
 and host cert (`gateway_server_pki_cert_dest`) via `configure_gateway_manager_certificate.yml`, and links the host cert to
 the Gateway. The API URL defaults to the first entry of `gateway_server_connect_hosts` on port 3443
 (`gateway_server_gateway_manager_url` overrides it). The certificate update endpoint only changes the alias, so a cert is
-matched by PEM, and a cert with the same alias but a different PEM is deleted and uploaded again. Defaults are in
+matched by PEM, and a cert with the same alias but a different PEM is deleted and uploaded again. Servers that share a
+`gateway_cluster_id` (active/standby HA) share one Gateway and one CA cert, but each has its own host cert, so the host cert
+alias defaults to `inventory_hostname` (not the cluster ID) and every host cert is linked to the Gateway. The playbook runs
+`serial: 1` so those servers do not race to create the Gateway or upload the CA. Defaults are in
 `defaults/main/gateway_manager.yml`.
 
 `configure_gateway_manager_virtual_clusters.yml` (run by `playbooks/gwm_virtual_clusters.yml`, also not

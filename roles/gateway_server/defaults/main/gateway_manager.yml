@@ -19,9 +19,10 @@ gateway_server_gateway_manager_validate_certs: true
 # Gateway is created, so this must be defined in the inventory when running the gwm_gateways playbook.
 gateway_server_gateway_manager_groups: []
 
-# Aliases for the certificates stored in Gateway Manager
+# Aliases for the certificates stored in Gateway Manager. The CA is shared by a cluster. Each server has its own host
+# certificate, so its alias is per server: servers that share a gateway_cluster_id must not share an alias.
 gateway_server_gateway_manager_ca_cert_alias: "{{ gateway_cluster_id }} CA cert"
-gateway_server_gateway_manager_host_cert_alias: "{{ gateway_cluster_id }} cert"
+gateway_server_gateway_manager_host_cert_alias: "{{ inventory_hostname }} cert"
 
 # Virtual clusters to create in Gateway Manager with playbooks/gwm_virtual_clusters.yml.
 # Each entry supports:
