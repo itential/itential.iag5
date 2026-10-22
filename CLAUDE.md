@@ -131,7 +131,7 @@ Utility role with no `main.yml` and no defaults, called via `tasks_from:` by `ga
 (`gateway_offline_install_enabled`, `gateway_offline_*`) are defined in `roles/gateway/defaults/main.yml`.
 
 - `playbooks/download_packages.yml` runs `gateway_server/tasks/download-packages.yml` (iagctl RPM,
-  Python RPMs, OpenTofu RPMs) and `gateway_client/tasks/download-packages.yml` (client tarball) on a
+  Python RPMs, OpenTofu RPMs, and the SELinux tools RPM when the install directory is relocated) and `gateway_client/tasks/download-packages.yml` (client tarball) on a
   host with internet access and fetches the results to the control node. It forces
   `gateway_offline_install_enabled` to false.
 - With `gateway_offline_install_enabled: true`, `install_gateway.yml`, `install_python.yml`,
@@ -143,7 +143,7 @@ Utility role with no `main.yml` and no defaults, called via `tasks_from:` by `ga
   directly: it is parsed from the file names in `gateway_server_packages` and
   `gateway_client_packages` (`gateway_offline_server_version` / `gateway_offline_client_version`),
   and the tasks assert it can be found and is the same for every package in a list. Packages
-  live in `<root>/itential_packages/gateway/<version>/<os>/{archives,rpms/{gateway,python,opentofu}}`.
+  live in `<root>/itential_packages/gateway/<version>/<os>/{archives,rpms/{gateway,python,opentofu,selinux}}`.
 - See `docs/offline_install_guide.md`.
 
 ### certify\_common
@@ -324,7 +324,7 @@ The full variable reference (100+ variables with types, defaults, and descriptio
 - `gateway_server_connect_proxy_url` — proxy URL; required when proxy is enabled
 - `gateway_server_connect_proxy_username` / `gateway_server_connect_proxy_password` — optional proxy credentials
 - `gateway_server_install_dir` / `gateway_server_config_dir` / `gateway_server_data_dir` / `gateway_server_log_server_dir` — RPM install prefixes (defaults `/opt/gateway`, `/etc/gateway`, `/var/lib/gateway`, `/var/log/gateway`); overriding any relocates the RPM and requires iagctl v5.5.4+
-- `gateway_server_selinux_relabel` — label a relocated `gateway_server_install_dir` `usr_t` when SELinux is enabled (default: `true`)
+- `gateway_server_selinux_relabel` — label a relocated `gateway_server_install_dir` `usr_t` with `community.general.sefcontext` when SELinux is enabled (default: `true`). `policycoreutils-python-utils` (`gateway_server_selinux_packages`) is installed with `dnf`, or from the control node in offline mode (downloaded to `rpms/selinux` by `download_packages.yml`)
 - `gateway_server_service_env_file` — path to the systemd environment file (default: `/etc/gateway/iagctl.env`)
 
 ## Key Conventions

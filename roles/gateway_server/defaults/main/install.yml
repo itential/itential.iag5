@@ -40,6 +40,15 @@ gateway_server_relocations:
 # Only applies when gateway_server_install_dir is overridden and SELinux is enabled.
 gateway_server_selinux_relabel: true
 
+# The packages that provide the SELinux policy management tools (and the Python bindings for
+# community.general.sefcontext) used to label a relocated gateway_server_install_dir.
+gateway_server_selinux_packages:
+  - policycoreutils-python-utils
+
+# Whether the SELinux packages are needed: a relocated install directory that is relabeled
+gateway_server_selinux_packages_required: >-
+  {{ gateway_server_selinux_relabel | bool and gateway_server_install_dir != gateway_server_install_dir_default }}
+
 # The rpm options for the prefixes that differ from the default, empty when nothing is relocated
 gateway_server_relocate_opts: >-
   {% for reloc in gateway_server_relocations if reloc.old != reloc.new %}--relocate {{ reloc.old }}={{ reloc.new }} {% endfor %}

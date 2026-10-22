@@ -59,7 +59,7 @@ installed.
 
 Process: creates a temp dir on the target, copies the RPMs, rebuilds the RPM DB, disables all
 repos, installs with `dnf` using `cacheonly: true` and `disable_gpg_check: true`, then removes the
-temp dir. Set `offline_use_rpm_cmd: true` and `offline_rpm_cmd_opts` to install with `rpm -i`
+temp dir. Set `offline_use_rpm_cmd: true` and `offline_rpm_cmd_opts` to install with `rpm -Uvh`
 instead. `gateway_server/tasks/install_gateway.yml` sets both when the install directories are
 relocated (`gateway_server_relocate_opts`).
 
@@ -86,7 +86,8 @@ The paths are built in `roles/gateway/defaults/main.yml`. There is one tree unde
   release variable to set.
 - `<OS>` is `gateway_offline_os`, for example `rocky_9`.
 - `rpms/gateway` holds the `iagctl` RPM, `rpms/python` and `rpms/opentofu` hold those features'
-  RPMs (only when the feature is enabled), and `archives` holds the client tarball.
+  RPMs (only when the feature is enabled), `rpms/selinux` holds the SELinux tools RPM (only when the
+  install directory is relocated), and `archives` holds the client tarball.
 
 ## Dependencies / Assumptions
 
