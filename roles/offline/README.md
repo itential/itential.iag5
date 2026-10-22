@@ -14,7 +14,9 @@ variables are passed in by the calling task. See `docs/offline_install_guide.md`
 | `install-rpms.yml` | Copies RPMs from the control node to the target node and installs them with all repositories disabled. | `offline_rpms_path` |
 
 `install-rpms.yml` installs with `dnf` using `cacheonly: true`. Set `offline_use_rpm_cmd: true`
-and `offline_rpm_cmd_opts` to install with `rpm -i` instead.
+and `offline_rpm_cmd_opts` to install with `rpm -i` instead. `gateway_server` sets both
+automatically when the install directories are relocated, passing the `--relocate` options built
+from `gateway_server_relocations`.
 
 `get_url` downloads support `repository_api_key` (JFrog and GitLab) and `repository_username`
 and `repository_password` (Nexus).

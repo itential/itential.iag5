@@ -100,8 +100,10 @@ the `iag5_servers` or `iag5_runners` group vars.
 | `gateway_server_features_python_enabled` | Boolean | Enables or disables all Python features. When you set this variable to false, the gateway disables the management of Python scripts and the execution of Python services. | true |
 | `gateway_server_user` | String | The server user. All server files and the service will be owned by this user. | itential |
 | `gateway_server_group` | String | The server group. | itential |
-| `gateway_server_config_dir` | String | The directory containing the server configuration files. | /etc/gateway |
-| `gateway_server_data_dir` | String | The directory containing the server data files. | /var/lib/gateway |
+| `gateway_server_install_dir` | String | The directory containing the `iagctl` binary. When this differs from the default, the RPM is installed with `rpm -Uvh --relocate`. Requires a relocatable RPM (iagctl v5.5.4 and later). | /opt/gateway |
+| `gateway_server_selinux_relabel` | Boolean | When `gateway_server_install_dir` is overridden and SELinux is enabled, label it `usr_t` (the policy default for `/opt/gateway`) with `semanage fcontext` and `restorecon` so systemd can execute the binary. Set to false to manage the label yourself. | true |
+| `gateway_server_config_dir` | String | The directory containing the server configuration files. When this differs from the default, the RPM prefix is relocated (see `gateway_server_install_dir`). | /etc/gateway |
+| `gateway_server_data_dir` | String | The directory containing the server data files. When this differs from the default, the RPM prefix is relocated (see `gateway_server_install_dir`). | /var/lib/gateway |
 | `gateway_server_cache_dir` | String | The directory used for the venv cache. | /var/cache/gateway |
 | `gateway_server_python_packages` | List of String | The list of Python packages to install. | - python3.11<br>- python3.11-pip<br>- python3.12<br>- python3.12-pip |
 | `gateway_server_python_executable` | String | The path to the Python executable. | /usr/bin/python3.12 |
@@ -113,7 +115,7 @@ the `iag5_servers` or `iag5_runners` group vars.
 | `gateway_server_log_file_enabled` | Boolean | Flag for enabling/disabling logging. | true |
 | `gateway_server_log_file_json` | Boolean | Flag for enabling/disabling logging in JSON format. | false |
 | `gateway_server_log_level` | String | The logging level. | INFO |
-| `gateway_server_log_server_dir` | String | The directory where log files are written. | /var/log/gateway |
+| `gateway_server_log_server_dir` | String | The directory where log files are written. When this differs from the default, the RPM prefix is relocated (see `gateway_server_install_dir`). | /var/log/gateway |
 | `gateway_server_log_timestamp_timezone` | String | Sets the timezone for timestamps in gateway logs.<br>Timezones are shown in UTC by default. When you set this to 'local', the client uses your machine's timezone.<br>You can also set a timezone (tz) identifier such as 'America/New_York'. | utc |
 | `gateway_server_use_tls` | Boolean | Flag for enabling/disabling TLS. | true |
 | `gateway_server_pki_dir` | String | The directory where TLS certificates and keys are located. | "{{ gateway_server_config_dir }}/ssl" |

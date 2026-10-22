@@ -60,7 +60,8 @@ installed.
 Process: creates a temp dir on the target, copies the RPMs, rebuilds the RPM DB, disables all
 repos, installs with `dnf` using `cacheonly: true` and `disable_gpg_check: true`, then removes the
 temp dir. Set `offline_use_rpm_cmd: true` and `offline_rpm_cmd_opts` to install with `rpm -i`
-instead.
+instead. `gateway_server/tasks/install_gateway.yml` sets both when the install directories are
+relocated (`gateway_server_relocate_opts`).
 
 ## Offline Directory Structure
 

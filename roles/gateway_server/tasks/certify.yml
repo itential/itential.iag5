@@ -475,7 +475,7 @@
 
 - name: Get iagctl version
   ansible.builtin.shell: >-
-    (/opt/gateway/iagctl version 2>/dev/null ||
+    ({{ gateway_server_install_dir }}/iagctl version 2>/dev/null ||
     iagctl version 2>/dev/null ||
     echo "version: not found") | awk '/^version/{print $2}'
   register: iag5_iagctl_version
@@ -485,7 +485,7 @@
 
 - name: Get iagctl binary path
   ansible.builtin.shell: >
-    ls -la /opt/gateway/iagctl 2>/dev/null ||
+    ls -la {{ gateway_server_install_dir }}/iagctl 2>/dev/null ||
     which iagctl 2>/dev/null ||
     echo "not found"
   register: iag5_iagctl_path
