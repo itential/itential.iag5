@@ -32,6 +32,8 @@
     tasks_from: install-rpms
   vars:
     offline_rpms_path: "{{ gateway_offline_control_node_rpms_dir }}/gateway"
+    offline_use_rpm_cmd: "{{ gateway_server_relocate_opts | trim | length > 0 }}"
+    offline_rpm_cmd_opts: "{{ gateway_server_relocate_opts }}"
   when: gateway_offline_install_enabled | bool
 
 - name: Install the gateway packages (online)
@@ -99,10 +101,23 @@
         name: "{{ gateway_server_found_packages.files | map(attribute='path') | join(',') }}"
         disable_gpg_check: true
         state: present
-      when: gateway_server_found_packages | length > 0
+      when:
+        - gateway_server_found_packages | length > 0
+        - gateway_server_relocate_opts | trim | length == 0
+
+    - name: Install the gateway packages (relocate install directories)
+      ansible.builtin.include_tasks:
+        file: install_gateway_packages_relocate.yml
+      when:
+        - gateway_server_found_packages | length > 0
+        - gateway_server_relocate_opts | trim | length > 0
 
     - name: Remove the temporary download directory
       ansible.builtin.file:
         path: "{{ gateway_server_download_dir.path }}"
         state: absent
       changed_when: false
+
+- name: Configure SELinux for the relocated install directory
+  ansible.builtin.include_tasks:
+    file: configure_selinux.yml

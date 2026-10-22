@@ -194,6 +194,10 @@ ansible-playbook itential.iag5.certify-tls -i inventories/dev/hosts -v
 
 ## Check Reference
 
+**Note:** Config file paths in this document show the default `gateway_server_config_dir`
+(`/etc/gateway`). When the install directories are relocated, the checks read
+`{{ gateway_server_config_dir }}/gateway.conf` instead.
+
 ### cluster\_server\_to\_runner
 
 Runs on: **server node** and **runner node** independently.
@@ -358,7 +362,7 @@ All plays use `ignore_errors: true` so a failure in one check does not abort the
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `server_gateway_conf` | `/etc/gateway/gateway.conf` | Path to gateway.conf on server and runner nodes |
+| `server_gateway_conf` | `{{ gateway_server_config_dir }}/gateway.conf` (`/etc/gateway/gateway.conf` by default) | Path to gateway.conf on server and runner nodes |
 | `client_gateway_conf` | `/home/itential/.gateway.d/gateway.conf` | Path to gateway.conf on client nodes |
 | `service_name` | `iagctl` | systemd service name — used for PID lookup and env var checks |
 

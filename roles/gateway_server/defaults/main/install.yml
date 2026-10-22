@@ -13,10 +13,36 @@ gateway_server_packages:
 gateway_server_user: itential
 gateway_server_group: itential
 
-# Gateway configuration and data directories
+# Gateway install, configuration and data directories
+# Overriding gateway_server_install_dir, gateway_server_config_dir, gateway_server_data_dir or
+# gateway_server_log_server_dir relocates the matching RPM prefix. Relocation requires a
+# relocatable RPM (iagctl v5.5.4 and later); older RPMs fail to install.
+gateway_server_install_dir: /opt/gateway
 gateway_server_config_dir: /etc/gateway
 gateway_server_data_dir: /var/lib/gateway
 gateway_server_cache_dir: /var/cache/gateway
+
+# The prefixes the RPM installs to by default. These are the "old" side of the relocation and
+# must not be changed.
+gateway_server_install_dir_default: /opt/gateway
+gateway_server_config_dir_default: /etc/gateway
+gateway_server_data_dir_default: /var/lib/gateway
+gateway_server_log_server_dir_default: /var/log/gateway
+
+# The RPM prefixes to relocate
+gateway_server_relocations:
+  - { old: "{{ gateway_server_install_dir_default }}", new: "{{ gateway_server_install_dir }}" }
+  - { old: "{{ gateway_server_config_dir_default }}", new: "{{ gateway_server_config_dir }}" }
+  - { old: "{{ gateway_server_data_dir_default }}", new: "{{ gateway_server_data_dir }}" }
+  - { old: "{{ gateway_server_log_server_dir_default }}", new: "{{ gateway_server_log_server_dir }}" }
+
+# Label a relocated gateway_server_install_dir for SELinux so systemd can execute the binary.
+# Only applies when gateway_server_install_dir is overridden and SELinux is enabled.
+gateway_server_selinux_relabel: true
+
+# The rpm options for the prefixes that differ from the default, empty when nothing is relocated
+gateway_server_relocate_opts: >-
+  {% for reloc in gateway_server_relocations if reloc.old != reloc.new %}--relocate {{ reloc.old }}={{ reloc.new }} {% endfor %}
 
 # Gateway service environment file
 gateway_server_service_env_file: "{{ gateway_server_config_dir }}/iagctl.env"
