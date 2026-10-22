@@ -87,7 +87,7 @@ Deploys server **or** runner depending on `gateway_application_mode`. Task execu
 7. `configure_firewalld.yml` — opens ports in firewalld (optional)
 8. `certify.yml` — live TLS handshake tests post-deployment
 
-`configure_gateway_manager.yml` is not part of the `main.yml` flow. `playbooks/gwm_gateways.yml` runs
+`configure_gateway_manager_gateways.yml` is not part of the `main.yml` flow. `playbooks/gwm_gateways.yml` runs
 it against `iag5_servers` with `include_role` and `tasks_from`. For each server it gets an OAuth token from the Itential
 Platform (`gateway_server_gateway_manager_client_id` / `_client_secret`, vault the secret in the inventory), creates the
 Gateway in Gateway Manager by `gateway_cluster_id` if it is missing, uploads the CA cert (`gateway_server_pki_ca_cert_dest`)

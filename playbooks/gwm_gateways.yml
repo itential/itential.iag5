@@ -16,6 +16,6 @@
     - name: Configure Gateway Manager gateways and certificates
       ansible.builtin.include_role:
         name: itential.iag5.gateway_server
-        tasks_from: configure_gateway_manager
+        tasks_from: configure_gateway_manager_gateways
       vars:
         gateway_application_mode: server
