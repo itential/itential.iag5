@@ -79,11 +79,11 @@ Variables-only role (no tasks). Centralizes shared defaults consumed by `gateway
 Deploys server **or** runner depending on `gateway_application_mode`. Task execution order:
 
 1. `validate-vars.yml` — asserts required vars
-2. `install_gateway.yml` — creates user/dirs, downloads RPM, installs + enables systemd service
+2. `install_gateway.yml` — creates user/dirs, downloads RPM, installs + enables systemd service; when any of `gateway_server_install_dir`, `_config_dir`, `_data_dir` or `_log_server_dir` differs from the RPM default it includes `install_gateway_packages_relocate.yml` (`rpm -Uvh --relocate`, needs a relocatable RPM, iagctl v5.5.4+) instead of the `dnf` task, then `configure_selinux.yml`
 3. `install_python.yml` — optional Python 3.12 install (controlled by `gateway_server_features_python_enabled`)
 4. `install_tofu.yml` — optional OpenTofu install (controlled by `gateway_server_features_opentofu_enabled`)
 5. `upload_certs.yml` — uploads TLS cert/key and CA cert; when `gateway_server_store_etcd_use_tls: true`, also uploads the Etcd CA cert (and, when `gateway_server_store_etcd_client_cert_auth: true`, the Etcd client cert/key) from `gateway_server_pki_etcd_*_src` (`pki.yml`) - these source paths are always derived from `gateway_pki_src_dir`, same as the main Gateway cert/key/CA, so `etcd-ca.crt`/`etcd-client.crt`/`etcd-client.key` must exist there whenever Etcd TLS is enabled, or the task fails
-6. `configure_gateway.yml` — renders `server.conf.j2` or `runner.conf.j2` to `/etc/gateway/gateway.conf`; also renders `iagctl.service.j2` to `/usr/lib/systemd/system/iagctl.service`, `iagctl.env.j2` to `/etc/gateway/iagctl.env` (mode 0600) when `gateway_server_store_backend == 'dynamodb'` or proxy is enabled, and `iagctl.logrotate.j2` to `/etc/logrotate.d/iagctl`
+6. `configure_gateway.yml` — renders `server.conf.j2` or `runner.conf.j2` to `/etc/gateway/gateway.conf`; also renders `iagctl.service.j2` (ExecStart uses `gateway_server_install_dir`) to `/usr/lib/systemd/system/iagctl.service`, `iagctl.env.j2` to `/etc/gateway/iagctl.env` (mode 0600) when `gateway_server_store_backend == 'dynamodb'` or proxy is enabled, and `iagctl.logrotate.j2` to `/etc/logrotate.d/iagctl`
 7. `configure_firewalld.yml` — opens ports in firewalld (optional)
 8. `certify.yml` — live TLS handshake tests post-deployment
 
@@ -310,11 +310,12 @@ The publish workflow reads the version from the git tag (`v1.0.1` → `1.0.1`), 
 
 | Component | Config file | Cert dir | Key dir |
 |-----------|-------------|----------|---------|
-| Server | `/etc/gateway/gateway.conf` | `/etc/gateway/ssl/` | `/etc/gateway/keys/` |
+| Server | `/etc/gateway/gateway.conf` (`gateway_server_config_dir`) | `/etc/gateway/ssl/` | `/etc/gateway/keys/` |
 | Runner | `/etc/gateway/gateway.conf` | `/etc/gateway/ssl/` | `/etc/gateway/keys/` |
 | Client | `~/.gateway.d/gateway.conf` | `~/.gateway.d/ssl/` | `~/.gateway.d/keys/` |
 
 Systemd service: `iagctl.service`
+Binary: `/opt/gateway/iagctl` (`gateway_server_install_dir`). The config, data, log and binary directories can be relocated; see the variable reference.
 Logs: `/var/log/gateway/`
 
 ## Network Ports
@@ -343,6 +344,8 @@ The full variable reference (100+ variables with types, defaults, and descriptio
 - `gateway_server_connect_proxy_enabled` — enable outbound proxy for Gateway Manager connection (default: `false`); always writes `GATEWAY_CONNECT_PROXY_*` vars to `iagctl.env`
 - `gateway_server_connect_proxy_url` — proxy URL; required when proxy is enabled
 - `gateway_server_connect_proxy_username` / `gateway_server_connect_proxy_password` — optional proxy credentials
+- `gateway_server_install_dir` / `gateway_server_config_dir` / `gateway_server_data_dir` / `gateway_server_log_server_dir` — RPM install prefixes (defaults `/opt/gateway`, `/etc/gateway`, `/var/lib/gateway`, `/var/log/gateway`); overriding any relocates the RPM and requires iagctl v5.5.4+
+- `gateway_server_selinux_relabel` — label a relocated `gateway_server_install_dir` `usr_t` when SELinux is enabled (default: `true`)
 - `gateway_server_service_env_file` — path to the systemd environment file (default: `/etc/gateway/iagctl.env`)
 
 ## Key Conventions

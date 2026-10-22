@@ -21,9 +21,10 @@
     5. [Copy Installation Artifacts into the Files Directory](#copy-installation-artifacts-into-the-files-directory)
     6. [Create a Symlink to the Files Directory](#create-a-symlink-to-the-files-directory)
     7. [Create the Inventory File](#create-the-inventory-file)
-    8. [Run the IAG5 Site Playbook](#run-the-iag5-site-playbook)
-    9. [Confirm Successful Installation](#confirm-successful-installation)
-    10. [Running the IAG5 Component Playbooks](#running-the-iag5-component-playbooks)
+    8. [Relocate the Install Directories (Optional)](#relocate-the-install-directories-optional)
+    9. [Run the IAG5 Site Playbook](#run-the-iag5-site-playbook)
+    10. [Confirm Successful Installation](#confirm-successful-installation)
+    11. [Running the IAG5 Component Playbooks](#running-the-iag5-component-playbooks)
         1. [Clients Playbook](#clients-playbook)
         2. [Servers Playbook](#servers-playbook)
         3. [Runners Playbook](#runners-playbook)
@@ -435,6 +436,57 @@ all:
         gateway_client_packages:
           - <IAGCTL-TARBALL>
 ```
+
+### Relocate the Install Directories (Optional)
+
+By default the IAG5 server and runner RPM installs to the following directories:
+
+| Directory | Default | Variable |
+| :-------- | :------ | :------- |
+| Binary (`iagctl`) | `/opt/gateway` | `gateway_server_install_dir` |
+| Configuration | `/etc/gateway` | `gateway_server_config_dir` |
+| Data | `/var/lib/gateway` | `gateway_server_data_dir` |
+| Logs | `/var/log/gateway` | `gateway_server_log_server_dir` |
+
+To install to different directories, set any of these variables in the inventory. When at least one
+differs from its default, the collection installs the RPM with `rpm -Uvh --relocate` instead of the
+`dnf` module, and writes the new binary and configuration paths into the `iagctl` systemd unit.
+When none are set, the install is unchanged.
+
+**&#9432; Note:**
+Relocation requires a relocatable RPM, which is `iagctl` v5.5.4 and later. Earlier RPMs cannot be
+relocated and the installation fails if you override any of these variables.
+
+#### Example: Relocating the Install Directories
+
+```yaml
+iag5_servers:
+  vars:
+    gateway_server_install_dir: /hosting/itential/gateway
+    gateway_server_config_dir: /hosting/itential/gateway/config
+    gateway_server_data_dir: /hosting/itential/gateway/cache
+    gateway_server_log_server_dir: /hosting/itential/gateway/log
+```
+
+#### SELinux
+
+When SELinux is enabled and `gateway_server_install_dir` is relocated, the new directory is labeled
+`default_t`, the type SELinux assigns to paths that no file context rule covers (for example a new
+top-level directory such as `/hosting`). systemd is not allowed to execute files with that type, so
+the `iagctl` service fails to start with exit status 203. The collection prevents this by labeling
+the relocated install directory `usr_t`, which is the label the SELinux policy applies to
+`/opt/gateway`. It installs `policycoreutils-python-utils`, adds the file context rule with
+`semanage fcontext`, and applies it with `restorecon`. Set `gateway_server_selinux_relabel: false`
+to skip this and manage the label yourself.
+
+#### Additional Notes
+
+- `gateway_server_cache_dir` (`/var/cache/gateway`) and `gateway_server_local_bin_dir`
+  (`/home/<user>/.local/bin`) are not RPM prefixes. They are created where you set them and are not
+  part of the relocation.
+- Set the variables before the first installation. Changing them on an existing installation has
+  not been tested.
+- See the [Reference Guide](docs/reference_guide.md) for the full variable descriptions.
 
 ### Verify the Environment
 
