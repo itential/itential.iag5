@@ -27,7 +27,7 @@ all:
           - <IAGCTL-RPM>
         gateway_server_store_backend: etcd
         gateway_server_store_etcd_hosts: <ETCD-SERVER01-IP>:2379 <ETCD-SERVER02-IP>:2379 <ETCD-SERVER03-IP>:2379
-        # Optional: used by playbooks/configure_gateway_manager.yml to register the servers in Gateway Manager
+        # Optional: used by playbooks/gwm_gateways.yml to register the servers in Gateway Manager
         # gateway_server_gateway_manager_client_id: <OAUTH-CLIENT-ID>
         # gateway_server_gateway_manager_client_secret: <OAUTH-CLIENT-SECRET>  # store in Ansible Vault
         # gateway_server_gateway_manager_groups:

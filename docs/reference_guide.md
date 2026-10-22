@@ -177,7 +177,7 @@ The variables in this section may be overridden in the inventory in the `iag5_se
 
 ## Gateway Manager Variables
 
-The variables in this section are used by the `configure_gateway_manager` playbook, which creates each server's Gateway in Gateway Manager, uploads its CA and host certificates, and links the host certificate to the Gateway. They may be overridden in the inventory in the `iag5_servers` group vars.
+The variables in this section are used by the `gwm_gateways` playbook, which creates each server's Gateway in Gateway Manager, uploads its CA and host certificates, and links the host certificate to the Gateway. They may be overridden in the inventory in the `iag5_servers` group vars.
 
 | Variable | Type | Description | Default |
 |----------|------|-------------|---------|
@@ -191,9 +191,11 @@ The variables in this section are used by the `configure_gateway_manager` playbo
 
 The API calls run on the control node. A certificate is matched in Gateway Manager by its PEM content. The Gateway Manager API only allows the alias of a stored certificate to be changed, so a certificate with the same alias and a different PEM is deleted and uploaded again.
 
+The `gwm` playbook runs `gwm_gateways` and then `gwm_virtual_clusters`, so one command configures the Gateways and the virtual clusters.
+
 ### Virtual Clusters
 
-The `configure_gateway_manager_virtual_clusters` playbook creates and updates virtual clusters in Gateway Manager. A virtual cluster groups Gateways that have different `cluster_id` values. It has one primary and zero or more ordered backups. This is not the same as `gateway_server_connect_server_ha_*`, which runs several servers under a single `cluster_id`. Run `configure_gateway_manager` first so the Gateways exist. The playbook uses the client ID, client secret, URL, and groups variables above.
+The `gwm_virtual_clusters` playbook creates and updates virtual clusters in Gateway Manager. A virtual cluster groups Gateways that have different `cluster_id` values. It has one primary and zero or more ordered backups. This is not the same as `gateway_server_connect_server_ha_*`, which runs several servers under a single `cluster_id`. Run `gwm_gateways` first so the Gateways exist. The playbook uses the client ID, client secret, URL, and groups variables above.
 
 | Variable | Type | Description | Default |
 |----------|------|-------------|---------|

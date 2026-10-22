@@ -21,7 +21,7 @@ all:
       vars:
         gateway_server_connect_hosts: <GATEWAY-MANAGER-IP>:8080
         gateway_server_distributed_execution: true
-        # Optional: used by playbooks/configure_gateway_manager.yml to register the servers in Gateway Manager
+        # Optional: used by playbooks/gwm_gateways.yml to register the servers in Gateway Manager
         # gateway_server_gateway_manager_client_id: <OAUTH-CLIENT-ID>
         # gateway_server_gateway_manager_client_secret: <OAUTH-CLIENT-SECRET>  # store in Ansible Vault
         # gateway_server_gateway_manager_groups:

@@ -30,7 +30,7 @@ all:
         gateway_server_store_dynamodb_aws_region: <AWS-REGION>
         gateway_server_store_dynamodb_aws_access_key_id: <AWS-ACCESS-KEY-ID>
         gateway_server_store_dynamodb_aws_secret_access_key: <AWS-SECRET-ACCESS-KEY>
-        # Optional: used by playbooks/configure_gateway_manager.yml to register the servers in Gateway Manager
+        # Optional: used by playbooks/gwm_gateways.yml to register the servers in Gateway Manager
         # gateway_server_gateway_manager_client_id: <OAUTH-CLIENT-ID>
         # gateway_server_gateway_manager_client_secret: <OAUTH-CLIENT-SECRET>  # store in Ansible Vault
         # gateway_server_gateway_manager_groups:

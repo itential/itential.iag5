@@ -31,7 +31,7 @@
     fail_msg: >-
       Virtual cluster {{ item.cluster_id }} is not valid. Its cluster_id must not match a Gateway, the primary must not
       also be a backup, at least one group is required, and the primary and every backup must be an existing Gateway
-      in Gateway Manager. Run playbooks/configure_gateway_manager.yml first to create the Gateways.
+      in Gateway Manager. Run playbooks/gwm_gateways.yml first to create the Gateways.
 
 - name: Create the virtual cluster in Gateway Manager
   ansible.builtin.uri:
