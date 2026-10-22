@@ -1,0 +1,63 @@
+# Copyright (c) 2025, Itential, Inc
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+---
+- name: Validate Gateway Manager virtual cluster variables
+  ansible.builtin.assert:
+    that:
+      - gateway_server_gateway_manager_client_id is not none
+      - gateway_server_gateway_manager_client_id | length > 0
+      - gateway_server_gateway_manager_client_secret is not none
+      - gateway_server_gateway_manager_client_secret | length > 0
+      - gateway_server_connect_hosts is not none
+      - gateway_server_gateway_manager_virtual_clusters | length > 0
+      - gateway_server_gateway_manager_virtual_clusters | map(attribute='cluster_id', default='') | select('equalto', '') | list | length == 0
+      - gateway_server_gateway_manager_virtual_clusters | map(attribute='primary', default='') | select('equalto', '') | list | length == 0
+      - gateway_server_gateway_manager_virtual_clusters | map(attribute='distribution_mode', default='')
+        | difference(['sorted', 'least-open-requests']) | length == 0
+      - gateway_server_gateway_manager_virtual_clusters | map(attribute='cluster_id', default='') | list | unique | length
+        == gateway_server_gateway_manager_virtual_clusters | length
+    fail_msg: >-
+      gateway_server_gateway_manager_client_id, gateway_server_gateway_manager_client_secret and
+      gateway_server_gateway_manager_virtual_clusters must be defined in the inventory, and gateway_server_connect_hosts must
+      be defined. Each virtual cluster needs a unique cluster_id and a primary, and distribution_mode must be
+      'sorted' or 'least-open-requests'.
+
+- name: Configure Gateway Manager virtual clusters through the Itential Platform API
+  delegate_to: localhost
+  become: false
+  run_once: true
+  module_defaults:
+    ansible.builtin.uri:
+      validate_certs: "{{ gateway_server_gateway_manager_validate_certs }}"
+      return_content: true
+  block:
+    - name: Get an OAuth access token
+      ansible.builtin.uri:
+        url: "{{ gateway_server_gateway_manager_url }}/oauth/token"
+        method: POST
+        body_format: form-urlencoded
+        body:
+          grant_type: client_credentials
+          client_id: "{{ gateway_server_gateway_manager_client_id }}"
+          client_secret: "{{ gateway_server_gateway_manager_client_secret }}"
+      register: gateway_server_gw_mgr_token
+      no_log: true
+
+    - name: Set the Gateway Manager API request headers
+      ansible.builtin.set_fact:
+        gateway_server_gw_mgr_headers:
+          Authorization: "Bearer {{ gateway_server_gw_mgr_token.json.access_token }}"
+      no_log: true
+
+    - name: Get the list of Gateways and virtual clusters in Gateway Manager
+      ansible.builtin.uri:
+        url: "{{ gateway_server_gateway_manager_url }}/gateway_manager/v1/gateways"
+        headers: "{{ gateway_server_gw_mgr_headers }}"
+      register: gateway_server_gw_mgr_gateways
+
+    - name: Create or update the virtual clusters in Gateway Manager
+      ansible.builtin.include_tasks:
+        file: configure_gateway_manager_virtual_cluster.yml
+      loop: "{{ gateway_server_gateway_manager_virtual_clusters }}"
+      loop_control:
+        label: "{{ item.cluster_id }}"

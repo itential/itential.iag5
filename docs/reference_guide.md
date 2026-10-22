@@ -191,6 +191,37 @@ The variables in this section are used by the `configure_gateway_manager` playbo
 
 The API calls run on the control node. A certificate is matched in Gateway Manager by its PEM content. The Gateway Manager API only allows the alias of a stored certificate to be changed, so a certificate with the same alias and a different PEM is deleted and uploaded again.
 
+### Virtual Clusters
+
+The `configure_gateway_manager_virtual_clusters` playbook creates and updates virtual clusters in Gateway Manager. A virtual cluster groups Gateways that have different `cluster_id` values. It has one primary and zero or more ordered backups. This is not the same as `gateway_server_connect_server_ha_*`, which runs several servers under a single `cluster_id`. Run `configure_gateway_manager` first so the Gateways exist. The playbook uses the client ID, client secret, URL, and groups variables above.
+
+| Variable | Type | Description | Default |
+|----------|------|-------------|---------|
+| `gateway_server_gateway_manager_virtual_clusters` | List | The virtual clusters to create or update. Each entry is a dictionary, described below. | [] |
+
+Each entry in `gateway_server_gateway_manager_virtual_clusters` supports these keys:
+
+- `cluster_id` (required): The unique cluster ID of the virtual cluster. It must not match the `cluster_id` of a Gateway.
+- `distribution_mode` (required): `sorted` for active/standby, or `least-open-requests` for load balanced. These are the Gateway Manager API values, and the API rejects anything else.
+- `primary` (required): The `cluster_id` of the primary Gateway. It must already exist in Gateway Manager.
+- `backups`: An ordered list of backup Gateway `cluster_id` values. Failover follows this order. The primary must not be in the list.
+- `groups`: The Itential Platform group names that can act on the virtual cluster. Defaults to `gateway_server_gateway_manager_groups`.
+- `description`: Free text. Defaults to an empty string.
+
+Example:
+
+```yaml
+gateway_server_gateway_manager_virtual_clusters:
+  - cluster_id: vcluster_lb
+    distribution_mode: least-open-requests
+    primary: gateway-a
+    backups:
+      - gateway-b
+      - gateway-c
+```
+
+A virtual cluster is matched by `cluster_id`. If it exists, it is updated only when the primary, backups (order matters), groups, description, or distribution mode differ. Virtual clusters that are not in the list are not deleted.
+
 # Runner Variables
 
 The variables in this section may be overridden in the inventory in the `iag5_runners` group vars.

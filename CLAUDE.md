@@ -49,6 +49,7 @@ itential.iag5/
 │   ├── clients.yml
 │   ├── certify.yml            # Post-deployment TLS verification (standalone)
 │   ├── configure_gateway_manager.yml  # Registers servers in Gateway Manager via the Itential Platform API (standalone)
+│   ├── configure_gateway_manager_virtual_clusters.yml  # Creates/updates Gateway Manager virtual clusters via the Itential Platform API (standalone)
 │   ├── download_packages.yml  # Downloads packages to the control node for air-gapped installs
 │   └── verify.yml     # Pre-flight checks — run before install or upgrade
 ├── roles/
@@ -94,6 +95,16 @@ the Gateway. The API URL defaults to the first entry of `gateway_server_connect_
 (`gateway_server_gateway_manager_url` overrides it). The certificate update endpoint only changes the alias, so a cert is
 matched by PEM, and a cert with the same alias but a different PEM is deleted and uploaded again. Defaults are in
 `defaults/main/gateway_manager.yml`.
+
+`configure_gateway_manager_virtual_clusters.yml` (run by `playbooks/configure_gateway_manager_virtual_clusters.yml`, also not
+part of the `main.yml` flow) creates virtual clusters from `gateway_server_gateway_manager_virtual_clusters`, run once on the
+control node. It uses the same OAuth pattern, finds an existing virtual cluster in `GET /gateways` by `type == 'virtual'` and
+`cluster_id` (there is no GET for virtual clusters), and creates it with `POST /virtual-clusters` or updates it with
+`PUT /virtual-clusters/{id}` (not `/gateways/{id}`, which ignores virtual clusters). The PUT is skipped when nothing differs,
+because a no-op PUT returns 304, which `uri` treats as a failure. `distribution_mode` is the raw API value (`sorted` for
+active/standby, `least-open-requests` for load balanced). Backup order is the failover order. Do not confuse a virtual
+cluster (Gateways with different `cluster_id` values) with `gateway_server_connect_server_ha_*` (several servers sharing
+one `cluster_id`). Per-entry logic is in `configure_gateway_manager_virtual_cluster.yml`.
 
 Handler: `restart iagctl` — restarts the `iagctl` systemd service (4 retries, 5s delay,
 validates `ActiveState == "active"`).
@@ -239,6 +250,9 @@ ansible-playbook itential.iag5.certify -i inventories/production
 
 # Register the servers in Gateway Manager (requires the gateway_server_gateway_manager_* variables)
 ansible-playbook itential.iag5.configure_gateway_manager -i inventories/production
+
+# Create or update Gateway Manager virtual clusters (requires gateway_server_gateway_manager_virtual_clusters; run the previous playbook first)
+ansible-playbook itential.iag5.configure_gateway_manager_virtual_clusters -i inventories/production
 ```
 
 ### Ansible Tags
