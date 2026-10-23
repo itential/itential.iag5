@@ -1,0 +1,21 @@
+# Copyright (c) 2025, Itential, LLC
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+---
+- name: Configure Gateway Manager gateways and certificates
+  hosts: iag5_servers
+  become: true
+  # One host at a time so servers that share a gateway_cluster_id do not race to create the Gateway or upload the CA
+  serial: 1
+  roles:
+    # Pull in the gateway vars
+    - role: itential.iag5.gateway
+      tags: always
+
+  tasks:
+    # Create the Gateway, upload its certificates and link them in Gateway Manager
+    - name: Configure Gateway Manager gateways and certificates
+      ansible.builtin.include_role:
+        name: itential.iag5.gateway_server
+        tasks_from: configure_gateway_manager_gateways
+      vars:
+        gateway_application_mode: server

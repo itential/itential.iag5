@@ -179,7 +179,7 @@ The variables in this section may be overridden in the inventory in the `iag5_se
 
 ## Gateway Manager Variables
 
-The variables in this section are used by the `configure_gateway_manager` playbook, which creates each server's Gateway in Gateway Manager, uploads its CA and host certificates, and links the host certificate to the Gateway. They may be overridden in the inventory in the `iag5_servers` group vars.
+The variables in this section are used by the `gwm_gateways` playbook, which creates each server's Gateway in Gateway Manager, uploads its CA and host certificates, and links the host certificate to the Gateway. They may be overridden in the inventory in the `iag5_servers` group vars.
 
 | Variable | Type | Description | Default |
 |----------|------|-------------|---------|
@@ -189,9 +189,42 @@ The variables in this section are used by the `configure_gateway_manager` playbo
 | `gateway_server_gateway_manager_url` | String | The Itential Platform API URL. Override this when the control node cannot reach the first host in `gateway_server_connect_hosts`. | "https://{{ first host in gateway_server_connect_hosts }}:3443" |
 | `gateway_server_gateway_manager_validate_certs` | Boolean | Validate the Itential Platform TLS certificate when calling the API. | true |
 | `gateway_server_gateway_manager_ca_cert_alias` | String | The alias of the CA certificate in Gateway Manager. | "{{ gateway_cluster_id }} CA cert" |
-| `gateway_server_gateway_manager_host_cert_alias` | String | The alias of the host certificate in Gateway Manager. | "{{ gateway_cluster_id }} cert" |
+| `gateway_server_gateway_manager_host_cert_alias` | String | The alias of the host certificate in Gateway Manager. Each server has its own host certificate, so the default is per server. | "{{ inventory_hostname }} cert" |
 
 The API calls run on the control node. A certificate is matched in Gateway Manager by its PEM content. The Gateway Manager API only allows the alias of a stored certificate to be changed, so a certificate with the same alias and a different PEM is deleted and uploaded again.
+
+The `gwm` playbook runs `gwm_gateways` and then `gwm_virtual_clusters`, so one command configures the Gateways and the virtual clusters.
+
+### Virtual Clusters
+
+The `gwm_virtual_clusters` playbook creates and updates virtual clusters in Gateway Manager. A virtual cluster groups Gateways that have different `cluster_id` values. It has one primary and zero or more ordered backups. This is not the same as `gateway_server_connect_server_ha_*`, which runs several servers under a single `cluster_id`. Run `gwm_gateways` first so the Gateways exist. The playbook uses the client ID, client secret, URL, and groups variables above.
+
+| Variable | Type | Description | Default |
+|----------|------|-------------|---------|
+| `gateway_server_gateway_manager_virtual_clusters` | List | The virtual clusters to create or update. Each entry is a dictionary, described below. | [] |
+
+Each entry in `gateway_server_gateway_manager_virtual_clusters` supports these keys:
+
+- `cluster_id` (required): The unique cluster ID of the virtual cluster. It must not match the `cluster_id` of a Gateway.
+- `distribution_mode` (required): `sorted` for active/standby, or `least-open-requests` for load balanced. These are the Gateway Manager API values, and the API rejects anything else.
+- `primary` (required): The `cluster_id` of the primary Gateway. It must already exist in Gateway Manager.
+- `backups`: An ordered list of backup Gateway `cluster_id` values. Failover follows this order. The primary must not be in the list.
+- `groups`: The Itential Platform group names that can act on the virtual cluster. Defaults to `gateway_server_gateway_manager_groups`.
+- `description`: Free text. Defaults to an empty string.
+
+Example:
+
+```yaml
+gateway_server_gateway_manager_virtual_clusters:
+  - cluster_id: vcluster_lb
+    distribution_mode: least-open-requests
+    primary: gateway-a
+    backups:
+      - gateway-b
+      - gateway-c
+```
+
+A virtual cluster is matched by `cluster_id`. If it exists, it is updated only when the primary, backups (order matters), groups, description, or distribution mode differ. Virtual clusters that are not in the list are not deleted.
 
 # Runner Variables
 

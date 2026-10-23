@@ -48,7 +48,9 @@ itential.iag5/
 │   ├── runners.yml
 │   ├── clients.yml
 │   ├── certify.yml            # Post-deployment TLS verification (standalone)
-│   ├── configure_gateway_manager.yml  # Registers servers in Gateway Manager via the Itential Platform API (standalone)
+│   ├── gwm_gateways.yml       # Registers servers in Gateway Manager via the Itential Platform API (standalone)
+│   ├── gwm_virtual_clusters.yml  # Creates/updates Gateway Manager virtual clusters via the Itential Platform API (standalone)
+│   ├── gwm.yml                # Runs gwm_gateways.yml, then gwm_virtual_clusters.yml (standalone)
 │   ├── download_packages.yml  # Downloads packages to the control node for air-gapped installs
 │   └── verify.yml     # Pre-flight checks — run before install or upgrade
 ├── roles/
@@ -85,15 +87,28 @@ Deploys server **or** runner depending on `gateway_application_mode`. Task execu
 7. `configure_firewalld.yml` — opens ports in firewalld (optional)
 8. `certify.yml` — live TLS handshake tests post-deployment
 
-`configure_gateway_manager.yml` is not part of the `main.yml` flow. `playbooks/configure_gateway_manager.yml` runs
+`configure_gateway_manager_gateways.yml` is not part of the `main.yml` flow. `playbooks/gwm_gateways.yml` runs
 it against `iag5_servers` with `include_role` and `tasks_from`. For each server it gets an OAuth token from the Itential
 Platform (`gateway_server_gateway_manager_client_id` / `_client_secret`, vault the secret in the inventory), creates the
 Gateway in Gateway Manager by `gateway_cluster_id` if it is missing, uploads the CA cert (`gateway_server_pki_ca_cert_dest`)
 and host cert (`gateway_server_pki_cert_dest`) via `configure_gateway_manager_certificate.yml`, and links the host cert to
 the Gateway. The API URL defaults to the first entry of `gateway_server_connect_hosts` on port 3443
 (`gateway_server_gateway_manager_url` overrides it). The certificate update endpoint only changes the alias, so a cert is
-matched by PEM, and a cert with the same alias but a different PEM is deleted and uploaded again. Defaults are in
+matched by PEM, and a cert with the same alias but a different PEM is deleted and uploaded again. Servers that share a
+`gateway_cluster_id` (active/standby HA) share one Gateway and one CA cert, but each has its own host cert, so the host cert
+alias defaults to `inventory_hostname` (not the cluster ID) and every host cert is linked to the Gateway. The playbook runs
+`serial: 1` so those servers do not race to create the Gateway or upload the CA. Defaults are in
 `defaults/main/gateway_manager.yml`.
+
+`configure_gateway_manager_virtual_clusters.yml` (run by `playbooks/gwm_virtual_clusters.yml`, also not
+part of the `main.yml` flow) creates virtual clusters from `gateway_server_gateway_manager_virtual_clusters`, run once on the
+control node. It uses the same OAuth pattern, finds an existing virtual cluster in `GET /gateways` by `type == 'virtual'` and
+`cluster_id` (there is no GET for virtual clusters), and creates it with `POST /virtual-clusters` or updates it with
+`PUT /virtual-clusters/{id}` (not `/gateways/{id}`, which ignores virtual clusters). The PUT is skipped when nothing differs,
+because a no-op PUT returns 304, which `uri` treats as a failure. `distribution_mode` is the raw API value (`sorted` for
+active/standby, `least-open-requests` for load balanced). Backup order is the failover order. Do not confuse a virtual
+cluster (Gateways with different `cluster_id` values) with `gateway_server_connect_server_ha_*` (several servers sharing
+one `cluster_id`). Per-entry logic is in `configure_gateway_manager_virtual_cluster.yml`.
 
 Handler: `restart iagctl` — restarts the `iagctl` systemd service (4 retries, 5s delay,
 validates `ActiveState == "active"`).
@@ -238,7 +253,13 @@ ansible-playbook itential.iag5.clients  -i inventories/production
 ansible-playbook itential.iag5.certify -i inventories/production
 
 # Register the servers in Gateway Manager (requires the gateway_server_gateway_manager_* variables)
-ansible-playbook itential.iag5.configure_gateway_manager -i inventories/production
+ansible-playbook itential.iag5.gwm_gateways -i inventories/production
+
+# Create or update Gateway Manager virtual clusters (requires gateway_server_gateway_manager_virtual_clusters; run the previous playbook first)
+ansible-playbook itential.iag5.gwm_virtual_clusters -i inventories/production
+
+# Both of the above, in order
+ansible-playbook itential.iag5.gwm -i inventories/production
 ```
 
 ### Ansible Tags

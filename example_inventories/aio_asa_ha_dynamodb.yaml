@@ -22,7 +22,7 @@ all:
         gateway-server02.example.com:  # standby gateway server
           ansible_host: <GATEWAY-SERVER02-IP>
       vars:
-        gateway_server_connect_hosts: <GATEWAY-MANAGER-IP>:8080
+        gateway_server_connect_hosts: <PLATFORM-IP>:8080
         gateway_server_packages:
           - <IAGCTL-RPM>
         gateway_server_store_backend: dynamodb
@@ -30,13 +30,14 @@ all:
         gateway_server_store_dynamodb_aws_region: <AWS-REGION>
         gateway_server_store_dynamodb_aws_access_key_id: <AWS-ACCESS-KEY-ID>
         gateway_server_store_dynamodb_aws_secret_access_key: <AWS-SECRET-ACCESS-KEY>
-        # Optional: used by playbooks/configure_gateway_manager.yml to register the servers in Gateway Manager
-        # gateway_server_gateway_manager_client_id: <OAUTH-CLIENT-ID>
-        # gateway_server_gateway_manager_client_secret: <OAUTH-CLIENT-SECRET>  # store in Ansible Vault
-        # gateway_server_gateway_manager_groups:
-        #   - <PLATFORM-GROUP>
+
+        # Optional: used by playbooks/gwm_gateways.yml to register the servers in Gateway Manager
+        gateway_server_gateway_manager_client_id: <OAUTH-CLIENT-ID>
+        gateway_server_gateway_manager_client_secret: <OAUTH-CLIENT-SECRET>  # store in Ansible Vault
+        gateway_server_gateway_manager_groups:
+          - <PLATFORM-GROUP>
         # Defaults to the first gateway_server_connect_hosts host on port 3443
-        # gateway_server_gateway_manager_url: https://<PLATFORM-IP>:3443
+        gateway_server_gateway_manager_url: https://<PLATFORM-IP>:3443
 
     iag5_clients:
       hosts:
@@ -46,3 +47,11 @@ all:
       vars:
         gateway_client_packages:
           - <IAGCTL-TARBALL>
+
+    iag5_all:
+      hosts:
+        gateway-client01.example.com:
+        gateway-server01.example.com:
+        gateway-server02.example.com:
+      vars:
+        gateway_cluster_id: cluster_1

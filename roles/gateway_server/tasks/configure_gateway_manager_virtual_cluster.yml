@@ -1,0 +1,68 @@
+# Copyright (c) 2025, Itential, Inc
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+---
+# Expects item.cluster_id, item.distribution_mode, item.primary and optionally item.backups, item.groups and
+# item.description. Virtual clusters are updated through /virtual-clusters/{id}. PUT /gateways/{id} ignores them.
+- name: Set the desired virtual cluster
+  ansible.builtin.set_fact:
+    gateway_server_gw_mgr_vc_desired:
+      primary_cluster_id: "{{ item.primary }}"
+      backup_cluster_ids: "{{ item.backups | default([]) }}"
+      groups: "{{ item.groups | default(gateway_server_gateway_manager_groups) }}"
+      description: "{{ item.description | default('') }}"
+      distribution_mode: "{{ item.distribution_mode }}"
+    gateway_server_gw_mgr_vc_existing: >-
+      {{ gateway_server_gw_mgr_gateways.json.results | selectattr('type', 'equalto', 'virtual')
+         | selectattr('cluster_id', 'equalto', item.cluster_id) | first | default({}) }}
+    gateway_server_gw_mgr_vc_physical_ids: >-
+      {{ gateway_server_gw_mgr_gateways.json.results | selectattr('type', 'equalto', 'physical')
+         | map(attribute='cluster_id') | list }}
+    gateway_server_gw_mgr_vc_physical_clash: >-
+      {{ gateway_server_gw_mgr_gateways.json.results | selectattr('type', 'equalto', 'physical')
+         | selectattr('cluster_id', 'equalto', item.cluster_id) | list | length > 0 }}
+
+- name: Validate the virtual cluster
+  ansible.builtin.assert:
+    that:
+      - not gateway_server_gw_mgr_vc_physical_clash
+      - item.primary not in gateway_server_gw_mgr_vc_desired.backup_cluster_ids
+      - gateway_server_gw_mgr_vc_desired.groups | length > 0
+      - ([item.primary] + gateway_server_gw_mgr_vc_desired.backup_cluster_ids) | difference(gateway_server_gw_mgr_vc_physical_ids) | length == 0
+    fail_msg: >-
+      Virtual cluster {{ item.cluster_id }} is not valid. Its cluster_id must not match a Gateway, the primary must not
+      also be a backup, at least one group is required, and the primary and every backup must be an existing Gateway
+      in Gateway Manager. Run playbooks/gwm_gateways.yml first to create the Gateways.
+
+- name: Create the virtual cluster in Gateway Manager
+  ansible.builtin.uri:
+    url: "{{ gateway_server_gateway_manager_url }}/gateway_manager/v1/virtual-clusters"
+    method: POST
+    headers: "{{ gateway_server_gw_mgr_headers }}"
+    body_format: json
+    body:
+      virtualCluster: >-
+        {{ gateway_server_gw_mgr_vc_desired | combine({'cluster_id': item.cluster_id, 'enabled': true, 'readonly': false}) }}
+  changed_when: true
+  when: gateway_server_gw_mgr_vc_existing | length == 0
+
+- name: Check whether the virtual cluster needs to be updated
+  ansible.builtin.set_fact:
+    gateway_server_gw_mgr_vc_update_needed: >-
+      {{ gateway_server_gw_mgr_vc_existing | length > 0 and (
+         gateway_server_gw_mgr_vc_existing.primary_cluster_id | default('') != gateway_server_gw_mgr_vc_desired.primary_cluster_id
+         or gateway_server_gw_mgr_vc_existing.backup_cluster_ids | default([]) != gateway_server_gw_mgr_vc_desired.backup_cluster_ids
+         or gateway_server_gw_mgr_vc_existing.groups | default([]) | sort != gateway_server_gw_mgr_vc_desired.groups | sort
+         or gateway_server_gw_mgr_vc_existing.description | default('') != gateway_server_gw_mgr_vc_desired.description
+         or gateway_server_gw_mgr_vc_existing.distribution_mode | default('') != gateway_server_gw_mgr_vc_desired.distribution_mode
+         ) }}
+
+- name: Update the virtual cluster in Gateway Manager
+  ansible.builtin.uri:
+    url: "{{ gateway_server_gateway_manager_url }}/gateway_manager/v1/virtual-clusters/{{ gateway_server_gw_mgr_vc_existing._id }}"
+    method: PUT
+    headers: "{{ gateway_server_gw_mgr_headers }}"
+    body_format: json
+    body:
+      payload: "{{ gateway_server_gw_mgr_vc_desired }}"
+  changed_when: true
+  when: gateway_server_gw_mgr_vc_update_needed | bool

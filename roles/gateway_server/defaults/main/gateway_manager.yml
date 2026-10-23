@@ -5,7 +5,7 @@
 # Gateway Manager automation variables
 #######################################
 
-# OAuth client credentials used by playbooks/configure_gateway_manager.yml to call the Itential
+# OAuth client credentials used by playbooks/gwm_gateways.yml to call the Itential
 # Platform API. Both must be defined in the inventory (vault the secret) when running that playbook.
 gateway_server_gateway_manager_client_id:
 gateway_server_gateway_manager_client_secret:
@@ -16,9 +16,20 @@ gateway_server_gateway_manager_url: "https://{{ (gateway_server_connect_hosts.sp
 gateway_server_gateway_manager_validate_certs: true
 
 # Itential Platform group names that can act on the Gateway. Gateway Manager requires at least one when a
-# Gateway is created, so this must be defined in the inventory when running the configure_gateway_manager playbook.
+# Gateway is created, so this must be defined in the inventory when running the gwm_gateways playbook.
 gateway_server_gateway_manager_groups: []
 
-# Aliases for the certificates stored in Gateway Manager
+# Aliases for the certificates stored in Gateway Manager. The CA is shared by a cluster. Each server has its own host
+# certificate, so its alias is per server: servers that share a gateway_cluster_id must not share an alias.
 gateway_server_gateway_manager_ca_cert_alias: "{{ gateway_cluster_id }} CA cert"
-gateway_server_gateway_manager_host_cert_alias: "{{ gateway_cluster_id }} cert"
+gateway_server_gateway_manager_host_cert_alias: "{{ inventory_hostname }} cert"
+
+# Virtual clusters to create in Gateway Manager with playbooks/gwm_virtual_clusters.yml.
+# Each entry supports:
+#   cluster_id (required)         Unique cluster ID of the virtual cluster
+#   distribution_mode (required)  'sorted' (active/standby) or 'least-open-requests' (load balanced)
+#   primary (required)            cluster_id of the primary Gateway
+#   backups                       Ordered list of backup Gateway cluster_ids. Failover follows this order.
+#   groups                        Itential Platform groups. Defaults to gateway_server_gateway_manager_groups.
+#   description                   Optional free text
+gateway_server_gateway_manager_virtual_clusters: []
