@@ -20,7 +20,7 @@
     name: "{{ gateway_server_local_bin_dir }}"
     state: directory
     owner: "{{ gateway_server_user }}"
-    group: "{{ gateway_server_user }}"
+    group: "{{ gateway_server_group }}"
     mode: "0755"
 
 - name: Create local python symlink for gateway user
