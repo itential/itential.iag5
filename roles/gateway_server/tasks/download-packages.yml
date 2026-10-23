@@ -120,3 +120,24 @@
       vars:
         offline_src_dir: "{{ gateway_offline_target_node_rpms_dir }}/opentofu"
         offline_dest_dir: "{{ gateway_offline_control_node_rpms_dir }}/opentofu"
+
+- name: Download the SELinux RPMs
+  when: gateway_server_selinux_packages_required | bool
+  tags: download_selinux_packages
+  block:
+    - name: Download the SELinux RPMs
+      ansible.builtin.import_role:
+        name: itential.iag5.offline
+        tasks_from: download-rpms
+      vars:
+        offline_download_method: "{{ gateway_offline_download_method }}"
+        offline_download_packages: "{{ gateway_server_selinux_packages }}"
+        offline_download_dir: "{{ gateway_offline_target_node_rpms_dir }}/selinux"
+
+    - name: Copy the SELinux RPMs to the control node
+      ansible.builtin.import_role:
+        name: itential.iag5.offline
+        tasks_from: fetch-packages
+      vars:
+        offline_src_dir: "{{ gateway_offline_target_node_rpms_dir }}/selinux"
+        offline_dest_dir: "{{ gateway_offline_control_node_rpms_dir }}/selinux"

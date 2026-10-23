@@ -70,7 +70,8 @@
           vars:
             gateway_server_offline_required_rpm_dirs: "{{ [{'dir': 'gateway'}]
               + ([{'dir': 'python'}] if gateway_server_features_python_enabled | bool else [])
-              + ([{'dir': 'opentofu'}] if gateway_server_features_opentofu_enabled | bool else []) }}"
+              + ([{'dir': 'opentofu'}] if gateway_server_features_opentofu_enabled | bool else [])
+              + ([{'dir': 'selinux'}] if gateway_server_selinux_packages_required | bool else []) }}"
 
         - name: Validate the offline RPMs exist on the control node
           ansible.builtin.assert:

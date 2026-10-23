@@ -102,6 +102,7 @@ the `iag5_servers` or `iag5_runners` group vars.
 | `gateway_server_group` | String | The server group. | itential |
 | `gateway_server_install_dir` | String | The directory containing the `iagctl` binary. When this differs from the default, the RPM is installed with `rpm -Uvh --relocate`. Requires a relocatable RPM (iagctl v5.5.4 and later). | /opt/gateway |
 | `gateway_server_selinux_relabel` | Boolean | When `gateway_server_install_dir` is overridden and SELinux is enabled, label it `usr_t` (the policy default for `/opt/gateway`) with `semanage fcontext` and `restorecon` so systemd can execute the binary. Set to false to manage the label yourself. | true |
+| `gateway_server_selinux_packages` | List of String | The packages that provide the SELinux policy tools used to label a relocated `gateway_server_install_dir`. Downloaded by the download playbook and installed from the control node in offline mode. | - policycoreutils-python-utils |
 | `gateway_server_config_dir` | String | The directory containing the server configuration files. When this differs from the default, the RPM prefix is relocated (see `gateway_server_install_dir`). | /etc/gateway |
 | `gateway_server_data_dir` | String | The directory containing the server data files. When this differs from the default, the RPM prefix is relocated (see `gateway_server_install_dir`). | /var/lib/gateway |
 | `gateway_server_cache_dir` | String | The directory used for the venv cache. | /var/cache/gateway |

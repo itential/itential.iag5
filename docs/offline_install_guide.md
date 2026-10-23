@@ -20,6 +20,7 @@ mode.
 | Server / Runner | `iagctl` RPM from `gateway_server_packages` | always |
 | Server / Runner | Python RPMs from `gateway_server_python_packages` | `gateway_server_features_python_enabled` is true |
 | Server / Runner | OpenTofu RPMs from `gateway_server_opentofu_packages` | `gateway_server_features_opentofu_enabled` is true |
+| Server / Runner | SELinux policy tools from `gateway_server_selinux_packages` (`policycoreutils-python-utils`) | `gateway_server_install_dir` is relocated and `gateway_server_selinux_relabel` is true |
 | Client | `iagctl` tarball from `gateway_client_packages` | always |
 
 Only entries in `gateway_server_packages` and `gateway_client_packages` that are `https://` URLs
@@ -30,7 +31,8 @@ are downloaded. Entries that are local paths are skipped.
 The download playbook must be run against a server that has internet access. It is critical to
 use a server with the same OS image as the target servers in the air-gapped environment,
 otherwise the downloaded RPMs will not match and the installation will most likely fail. The
-server should not already have the Python or OpenTofu packages installed, unless
+server should not already have the Python, OpenTofu or SELinux (`policycoreutils-python-utils`)
+packages installed, unless
 `gateway_offline_download_method` is set to `yumdownloader` or `repotrack`.
 
 The packages are first downloaded to the target node and then copied to the control node.
@@ -140,6 +142,23 @@ All variables below work out of the box and rarely need to be overridden.
 | `gateway_offline_target_node_archives_dir` | String | Target node archives directory. | `{{ gateway_offline_target_node_path }}/{{ gateway_offline_client_version }}/{{ gateway_offline_os }}/archives` |
 | `gateway_offline_control_node_rpms_dir` | String | Control node RPMs directory. | `{{ gateway_offline_control_node_path }}/{{ gateway_offline_server_version }}/{{ gateway_offline_os }}/rpms` |
 | `gateway_offline_control_node_archives_dir` | String | Control node archives directory. | `{{ gateway_offline_control_node_path }}/{{ gateway_offline_client_version }}/{{ gateway_offline_os }}/archives` |
+
+## Relocating the Install Directories
+
+The install directories can be relocated in offline mode in the same way as an online install, by
+setting `gateway_server_install_dir`, `gateway_server_config_dir`, `gateway_server_data_dir` or
+`gateway_server_log_server_dir` (see the [README](../README.md#relocate-the-install-directories-optional)).
+This requires a relocatable `iagctl` RPM (v5.5.4 and later). The download playbook must be run
+with the same variables, because the SELinux packages are only downloaded when the install
+directory is relocated. In offline mode the relocated RPM is installed with `rpm -Uvh --relocate`,
+and when SELinux is enabled the SELinux tools are installed from the control node, so no
+repositories are needed on the target node.
+
+**&#9432; Note:**
+`gateway_offline_download_method: repotrack` downloads the full dependency tree of a package,
+including versions newer than the packages installed on the target node. Installing that set can
+fail with a depsolve error on a target that has not been fully updated. Prefer the default
+`yum_module` for packages the target node does not already have.
 
 ## Limitations
 

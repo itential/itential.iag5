@@ -12,19 +12,23 @@
   block:
     - name: Install the SELinux policy management tools
       ansible.builtin.dnf:
-        name: policycoreutils-python-utils
+        name: "{{ gateway_server_selinux_packages }}"
         state: present
+      when: not gateway_offline_install_enabled | bool
 
-    - name: List the local SELinux file context rules
-      ansible.builtin.command: semanage fcontext --list --locallist
-      register: gateway_server_selinux_fcontexts
-      changed_when: false
+    - name: Install the SELinux policy management tools (offline)
+      ansible.builtin.import_role:
+        name: itential.iag5.offline
+        tasks_from: install-rpms
+      vars:
+        offline_rpms_path: "{{ gateway_offline_control_node_rpms_dir }}/selinux"
+      when: gateway_offline_install_enabled | bool
 
     - name: Add the SELinux file context rule for the install directory
-      ansible.builtin.command: >-
-        semanage fcontext --add --type usr_t '{{ gateway_server_install_dir }}(/.*)?'
-      when: gateway_server_selinux_fcontexts.stdout is not search(gateway_server_install_dir | regex_escape)
-      changed_when: true
+      community.general.sefcontext:
+        target: "{{ gateway_server_install_dir }}(/.*)?"
+        setype: usr_t
+        state: present
 
     - name: Apply the SELinux file context to the install directory
       ansible.builtin.command: restorecon -R -v {{ gateway_server_install_dir }}
