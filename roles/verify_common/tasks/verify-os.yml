@@ -1,6 +1,10 @@
 # Copyright (c) 2026, Itential, Inc
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 ---
+- name: Initialize validation errors list
+  ansible.builtin.set_fact:
+    validation_errors: []
+
 - name: Assert supported OS
   ansible.builtin.assert:
     that:
@@ -10,6 +14,14 @@
       {{ ansible_distribution }} {{ ansible_distribution_version }} is not supported.
       Supported OS: RHEL 8/9, Rocky Linux 8/9.
     success_msg: "OS check passed: {{ ansible_distribution }} {{ ansible_distribution_version }}"
+    quiet: true
+  ignore_errors: true
+  register: os_validation
+
+- name: Add OS error to list
+  ansible.builtin.set_fact:
+    validation_errors: "{{ validation_errors + ['OS: ' ~ ansible_distribution ~ ' ' ~ ansible_distribution_version ~ ' is not supported'] }}"
+  when: os_validation is failed
 
 - name: Assert supported architecture
   ansible.builtin.assert:
@@ -18,3 +30,11 @@
       {{ ansible_architecture }} is not a supported architecture.
       Supported architecture: x86_64.
     success_msg: "Architecture check passed: {{ ansible_architecture }}"
+    quiet: true
+  ignore_errors: true
+  register: arch_validation
+
+- name: Add Architecture error to list
+  ansible.builtin.set_fact:
+    validation_errors: "{{ validation_errors + ['Architecture: ' ~ ansible_architecture ~ ' is not a supported architecture'] }}"
+  when: arch_validation is failed

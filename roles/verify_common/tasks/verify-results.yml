@@ -1,0 +1,55 @@
+# Copyright (c) 2026, Itential, Inc
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+---
+# Combines every verify_common check that ran for this component into one non-fatal result.
+#
+# Expects one variable from the caller:
+#   - component_name: label used to group this component's errors in component_validation_errors
+#     for playbooks/verify.yml's final report, e.g. "Server", "Runner", "Client"
+#
+# Not every caller runs every check (e.g. gateway_client never calls verify-specs.yml or
+# verify-connectivity.yml), so each lookup is defaulted to a non-failed result before the
+# "failed" test runs -- that test raises an error on a plain undefined value.
+
+- name: Display failed validation results
+  ansible.builtin.debug:
+    msg: "{{ validation_errors }}"
+  when: >-
+    (os_validation | default({'failed': false})) is failed or
+    (arch_validation | default({'failed': false})) is failed or
+    (specs_check | default({'failed': false})) is failed or
+    (connectivity_validation | default({'failed': false})) is failed or
+    (proxy_validation | default({'failed': false})) is failed or
+    (tls_validation | default({'failed': false})) is failed
+
+- name: Verify that all tests passed
+  ansible.builtin.assert:
+    that:
+      - "(os_validation | default({'failed': false})) is not failed"
+      - "(arch_validation | default({'failed': false})) is not failed"
+      - "(specs_check | default({'failed': false})) is not failed"
+      - "(connectivity_validation | default({'failed': false})) is not failed"
+      - "(proxy_validation | default({'failed': false})) is not failed"
+      - "(tls_validation | default({'failed': false})) is not failed"
+    fail_msg: "See above, assertions not passed! ✗"
+    success_msg: "All assertions passed! ✓"
+  ignore_errors: true
+  register: component_verification
+
+# Recorded per-host so playbooks/verify.yml can do one final, non-fatal-until-the-end
+# assert after every component has been checked, instead of aborting the whole
+# ansible-playbook run the moment one component's checks fail on a host. ANDed with any
+# prior value (default true) rather than overwritten -- a host can belong to more than one
+# component group, and a later component passing must not erase an earlier component's
+# failure on the same host.
+- name: Record overall verification result for this host
+  ansible.builtin.set_fact:
+    verification_passed: "{{ (verification_passed | default(true)) and (component_verification is not failed) }}"
+
+# Keyed by component_name and merged via combine() rather than overwritten, since a host can
+# be checked by more than one component -- lets playbooks/verify.yml's final report show
+# exactly which checks failed for which component, not just a pass/fail flag.
+- name: Record this component's validation errors for the final report
+  ansible.builtin.set_fact:
+    component_validation_errors: "{{ (component_validation_errors | default({})) | combine({component_name: validation_errors}) }}"
+  when: validation_errors | length > 0

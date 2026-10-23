@@ -52,3 +52,11 @@
     mode: "0600"
     owner: "{{ gateway_server_user }}"
     group: "{{ gateway_server_group }}"
+
+- name: Deploy logrotate config for Gateway
+  ansible.builtin.template:
+    src: iagctl.logrotate.j2
+    dest: /etc/logrotate.d/iagctl
+    owner: root
+    group: root
+    mode: "0644"

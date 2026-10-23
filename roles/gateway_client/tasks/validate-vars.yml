@@ -19,6 +19,57 @@
           - gateway_secrets_encrypt_key | length == 64
         fail_msg: gateway_secrets_encrypt_key must be a 64 character hexadecimal string
 
+    - name: Validate offline packages exist on the control node
+      when: gateway_offline_install_enabled | bool
+      block:
+        - name: Validate the Gateway version can be determined from gateway_client_packages
+          ansible.builtin.assert:
+            that:
+              - gateway_client_packages is defined
+              - gateway_client_packages is iterable
+              - gateway_client_packages | length > 0
+              - gateway_client_packages | map('basename') | map('regex_search', gateway_offline_version_regex) | select('none') | list | length == 0
+              - gateway_client_packages | map('basename') | map('regex_findall', gateway_offline_version_regex) | map('first') | unique | list | length == 1
+            fail_msg:
+              - "The Gateway version could not be determined from gateway_client_packages when gateway_offline_install_enabled is set to 'true'"
+              - "Every package file name must contain exactly one version (for example iagctl-v5.5.3-linux-amd64.tar.gz), and all packages must have the same version"
+
+        - name: Validate gateway_offline_control_node_root is set
+          ansible.builtin.assert:
+            that:
+              - gateway_offline_control_node_root is defined
+              - gateway_offline_control_node_root is not none
+              - gateway_offline_control_node_root | string | length > 0
+            fail_msg: gateway_offline_control_node_root must be defined when gateway_offline_install_enabled is set to 'true'
+
+        - name: Get status of the gateway_offline_control_node_root
+          ansible.builtin.stat:
+            path: "{{ gateway_offline_control_node_root }}"
+            follow: true
+          register: gateway_client_offline_control_node_path_status
+          delegate_to: localhost
+          become: false
+
+        - name: Validate gateway_offline_control_node_root is a directory
+          ansible.builtin.assert:
+            that:
+              - gateway_client_offline_control_node_path_status.stat.exists
+              - gateway_client_offline_control_node_path_status.stat.isdir
+            fail_msg: "gateway_offline_control_node_root {{ gateway_offline_control_node_root }} is not a valid directory on the control node"
+
+        - name: Find the offline client archive on the control node
+          ansible.builtin.find:
+            paths: "{{ gateway_offline_control_node_archives_dir }}"
+            patterns: "*.tar.gz"
+          register: gateway_client_offline_archives_result
+          delegate_to: localhost
+          become: false
+
+        - name: Validate the offline client archive exists on the control node
+          ansible.builtin.assert:
+            that: gateway_client_offline_archives_result.matched > 0
+            fail_msg: "No client archive found in {{ gateway_offline_control_node_archives_dir }}. Run the download_packages playbook and copy the packages to the control node."
+
     - name: Validate variables when uploading is configured on
       when: gateway_pki_upload | bool
       block:

@@ -6,7 +6,12 @@
 # Verifies that target hosts meet all requirements before installation or upgrade:
 #   - OS is a supported distribution and version (RHEL/Rocky 8/9, x86_64)
 #   - Hardware specs meet minimums (servers and runners only)
+#   - Outbound connectivity to required public repositories (servers and runners only)
+#   - No proxy configuration detected
 #   - TLS source files are valid, unexpired, and correctly configured
+#
+# Every check is non-fatal, so one host/component failing doesn't stop the rest from being
+# checked -- the final play asserts the aggregate result and is what actually fails the run.
 #
 # Run standalone before install or upgrade:
 #
@@ -69,3 +74,26 @@
       ansible.builtin.include_role:
         name: itential.iag5.gateway_client
         tasks_from: verify.yml
+
+# -----------------------------------------------------------------------
+# PLAY 4 — Aggregate and report the overall verification result
+# -----------------------------------------------------------------------
+# Every check above is non-fatal (ignore_errors + register, or block/rescue for the TLS
+# checks), so a failure in one play doesn't abort the whole ansible-playbook run before the
+# remaining plays get a chance to execute -- Ansible aborts the entire run, not just the
+# current play, the moment a play ends with 100% of its hosts failed. This final play is the
+# one place that actually fails the run, and since nothing runs after it, that's safe to do.
+- name: Report overall verification result
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Display per-component verification failures for this host
+      ansible.builtin.debug:
+        var: component_validation_errors
+      when: component_validation_errors is defined and component_validation_errors | length > 0
+
+    - name: Fail if any verification check failed for this host
+      ansible.builtin.assert:
+        that: verification_passed | default(true)
+        fail_msg: "One or more IAG5 verification checks failed for this host. See output above for details."
+        success_msg: "All IAG5 verification checks passed for this host."

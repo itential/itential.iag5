@@ -1,0 +1,36 @@
+# Copyright (c) 2026, Itential, Inc
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+---
+# The SELinux policy labels /opt/gateway as usr_t, which systemd is allowed to execute. A relocated
+# install directory gets the default_t label instead, so the service fails with exit status 203.
+# Apply the same label to the relocated directory.
+- name: Label the relocated install directory for SELinux
+  when:
+    - gateway_server_selinux_relabel | bool
+    - gateway_server_install_dir != gateway_server_install_dir_default
+    - ansible_facts.selinux.status | default('disabled') == 'enabled'
+  block:
+    - name: Install the SELinux policy management tools
+      ansible.builtin.dnf:
+        name: "{{ gateway_server_selinux_packages }}"
+        state: present
+      when: not gateway_offline_install_enabled | bool
+
+    - name: Install the SELinux policy management tools (offline)
+      ansible.builtin.import_role:
+        name: itential.iag5.offline
+        tasks_from: install-rpms
+      vars:
+        offline_rpms_path: "{{ gateway_offline_control_node_rpms_dir }}/selinux"
+      when: gateway_offline_install_enabled | bool
+
+    - name: Add the SELinux file context rule for the install directory
+      community.general.sefcontext:
+        target: "{{ gateway_server_install_dir }}(/.*)?"
+        setype: usr_t
+        state: present
+
+    - name: Apply the SELinux file context to the install directory
+      ansible.builtin.command: restorecon -R -v {{ gateway_server_install_dir }}
+      register: gateway_server_selinux_restorecon
+      changed_when: gateway_server_selinux_restorecon.stdout | length > 0

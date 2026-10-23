@@ -5,13 +5,22 @@
   ansible.builtin.dnf:
     name: "{{ gateway_server_python_packages }}"
     state: present
+  when: not gateway_offline_install_enabled | bool
+
+- name: Install Python packages (offline)
+  ansible.builtin.import_role:
+    name: itential.iag5.offline
+    tasks_from: install-rpms
+  vars:
+    offline_rpms_path: "{{ gateway_offline_control_node_rpms_dir }}/python"
+  when: gateway_offline_install_enabled | bool
 
 - name: Create the local bin directory for the gateway user
   ansible.builtin.file:
     name: "{{ gateway_server_local_bin_dir }}"
     state: directory
     owner: "{{ gateway_server_user }}"
-    group: "{{ gateway_server_user }}"
+    group: "{{ gateway_server_group }}"
     mode: "0755"
 
 - name: Create local python symlink for gateway user

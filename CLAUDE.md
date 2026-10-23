@@ -41,13 +41,17 @@ itential.iag5/
 │   ├── reference_guide.md              # Full variable reference (100+ vars)
 │   ├── certify.md                  # Post-deployment TLS verification guide
 │   └── verify.md           # Pre-flight environment verification guide
-├── example_inventories/           # Five reference inventory files
+├── example_inventories/           # Six reference inventory files
 ├── playbooks/
 │   ├── site.yml                   # Meta playbook — imports all others in order
 │   ├── servers.yml
 │   ├── runners.yml
 │   ├── clients.yml
 │   ├── certify.yml            # Post-deployment TLS verification (standalone)
+│   ├── gwm_gateways.yml       # Registers servers in Gateway Manager via the Itential Platform API (standalone)
+│   ├── gwm_virtual_clusters.yml  # Creates/updates Gateway Manager virtual clusters via the Itential Platform API (standalone)
+│   ├── gwm.yml                # Runs gwm_gateways.yml, then gwm_virtual_clusters.yml (standalone)
+│   ├── download_packages.yml  # Downloads packages to the control node for air-gapped installs
 │   └── verify.yml     # Pre-flight checks — run before install or upgrade
 ├── roles/
 │   ├── gateway/                   # Common variables only (no tasks)
@@ -75,23 +79,51 @@ Variables-only role (no tasks). Centralizes shared defaults consumed by `gateway
 Deploys server **or** runner depending on `gateway_application_mode`. Task execution order:
 
 1. `validate-vars.yml` — asserts required vars
-2. `install_gateway.yml` — creates user/dirs, downloads RPM, installs + enables systemd service
-3. `install_python.yml` — optional Python 3.12 install (controlled by `gateway_server_features_python`)
-4. `install_tofu.yml` — optional OpenTofu install (controlled by `gateway_server_features_opentofu`)
-5. `upload_certs.yml` — uploads TLS cert/key and CA cert
-6. `configure_gateway.yml` — renders `server.conf.j2` or `runner.conf.j2` to `/etc/gateway/gateway.conf`; also renders `iagctl.service.j2` to `/usr/lib/systemd/system/iagctl.service` and `iagctl.env.j2` to `/etc/gateway/iagctl.env` (mode 0600) when `gateway_server_store_backend == 'dynamodb'` or proxy is enabled
+2. `install_gateway.yml` — creates user/dirs, downloads RPM, installs + enables systemd service; when any of `gateway_server_install_dir`, `_config_dir`, `_data_dir` or `_log_server_dir` differs from the RPM default it includes `install_gateway_packages_relocate.yml` (`rpm -Uvh --relocate`, needs a relocatable RPM, iagctl v5.5.4+) instead of the `dnf` task, then `configure_selinux.yml`
+3. `install_python.yml` — optional Python 3.12 install (controlled by `gateway_server_features_python_enabled`)
+4. `install_tofu.yml` — optional OpenTofu install (controlled by `gateway_server_features_opentofu_enabled`)
+5. `upload_certs.yml` — uploads TLS cert/key and CA cert; when `gateway_server_store_etcd_use_tls: true`, also uploads the Etcd CA cert (and, when `gateway_server_store_etcd_client_cert_auth: true`, the Etcd client cert/key) from `gateway_server_pki_etcd_*_src` (`pki.yml`) - these source paths are always derived from `gateway_pki_src_dir`, same as the main Gateway cert/key/CA, so `etcd-ca.crt`/`etcd-client.crt`/`etcd-client.key` must exist there whenever Etcd TLS is enabled, or the task fails
+6. `configure_gateway.yml` — renders `server.conf.j2` or `runner.conf.j2` to `/etc/gateway/gateway.conf`; also renders `iagctl.service.j2` (ExecStart uses `gateway_server_install_dir`) to `/usr/lib/systemd/system/iagctl.service`, `iagctl.env.j2` to `/etc/gateway/iagctl.env` (mode 0600) when `gateway_server_store_backend == 'dynamodb'` or proxy is enabled, and `iagctl.logrotate.j2` to `/etc/logrotate.d/iagctl`
 7. `configure_firewalld.yml` — opens ports in firewalld (optional)
 8. `certify.yml` — live TLS handshake tests post-deployment
+
+`configure_gateway_manager_gateways.yml` is not part of the `main.yml` flow. `playbooks/gwm_gateways.yml` runs
+it against `iag5_servers` with `include_role` and `tasks_from`. For each server it gets an OAuth token from the Itential
+Platform (`gateway_server_gateway_manager_client_id` / `_client_secret`, vault the secret in the inventory), creates the
+Gateway in Gateway Manager by `gateway_cluster_id` if it is missing, uploads the CA cert (`gateway_server_pki_ca_cert_dest`)
+and host cert (`gateway_server_pki_cert_dest`) via `configure_gateway_manager_certificate.yml`, and links the host cert to
+the Gateway. The API URL defaults to the first entry of `gateway_server_connect_hosts` on port 3443
+(`gateway_server_gateway_manager_url` overrides it). The certificate update endpoint only changes the alias, so a cert is
+matched by PEM, and a cert with the same alias but a different PEM is deleted and uploaded again. Servers that share a
+`gateway_cluster_id` (active/standby HA) share one Gateway and one CA cert, but each has its own host cert, so the host cert
+alias defaults to `inventory_hostname` (not the cluster ID) and every host cert is linked to the Gateway. The playbook runs
+`serial: 1` so those servers do not race to create the Gateway or upload the CA. Defaults are in
+`defaults/main/gateway_manager.yml`.
+
+`configure_gateway_manager_virtual_clusters.yml` (run by `playbooks/gwm_virtual_clusters.yml`, also not
+part of the `main.yml` flow) creates virtual clusters from `gateway_server_gateway_manager_virtual_clusters`, run once on the
+control node. It uses the same OAuth pattern, finds an existing virtual cluster in `GET /gateways` by `type == 'virtual'` and
+`cluster_id` (there is no GET for virtual clusters), and creates it with `POST /virtual-clusters` or updates it with
+`PUT /virtual-clusters/{id}` (not `/gateways/{id}`, which ignores virtual clusters). The PUT is skipped when nothing differs,
+because a no-op PUT returns 304, which `uri` treats as a failure. `distribution_mode` is the raw API value (`sorted` for
+active/standby, `least-open-requests` for load balanced). Backup order is the failover order. Do not confuse a virtual
+cluster (Gateways with different `cluster_id` values) with `gateway_server_connect_server_ha_*` (several servers sharing
+one `cluster_id`). Per-entry logic is in `configure_gateway_manager_virtual_cluster.yml`.
 
 Handler: `restart iagctl` — restarts the `iagctl` systemd service (4 retries, 5s delay,
 validates `ActiveState == "active"`).
 
 Defaults are split by domain: `install.yml`, `server.yml`, `store.yml`, `connect.yml`,
 `features.yml`, `registry.yml`, `pki.yml`, `secrets.yml`, `log.yml`, `runner.yml`,
-`common.yml`, `terminal.yml`, `specs.yml`.
+`common.yml`, `terminal.yml`, `specs.yml`, `gateway_manager.yml`.
 
 `specs.yml` defines minimum hardware requirements for servers and runners used by the
-`verify` pre-flight check.
+`verify` pre-flight check. Which minimums apply to an `iag5_servers` host is topology-dependent:
+`roles/gateway_server/tasks/verify.yml` checks servers against `gateway_runner_hw_specs` instead
+of `gateway_server_hw_specs` when there's no separate `iag5_runners` group (single-node
+all-in-one), since the server performs runner work locally in that case. Same
+`'iag5_runners' in groups and groups['iag5_runners'] | length > 0` check `certify-tls.yml`
+already uses to detect this topology.
 
 ### gateway\_client
 
@@ -106,6 +138,29 @@ Deploys the IAG5 CLI client. Task execution order:
 Defaults split by domain: `install.yml`, `server.yml`, `pki.yml`, `secrets.yml`, `log.yml`,
 `terminal.yml`.
 
+### offline
+
+Utility role with no `main.yml` and no defaults, called via `tasks_from:` by `gateway_server` and
+`gateway_client` (mirrors `itential.deployer.offline`). Task files: `download-rpms.yml`,
+`download-archives.yml`, `fetch-packages.yml`, `install-rpms.yml`. The offline variables
+(`gateway_offline_install_enabled`, `gateway_offline_*`) are defined in `roles/gateway/defaults/main.yml`.
+
+- `playbooks/download_packages.yml` runs `gateway_server/tasks/download-packages.yml` (iagctl RPM,
+  Python RPMs, OpenTofu RPMs, and the SELinux tools RPM when the install directory is relocated) and `gateway_client/tasks/download-packages.yml` (client tarball) on a
+  host with internet access and fetches the results to the control node. It forces
+  `gateway_offline_install_enabled` to false.
+- With `gateway_offline_install_enabled: true`, `install_gateway.yml`, `install_python.yml`,
+  `install_tofu.yml` and `install_gateway_client.yml` install from the control node with all repos
+  disabled; `validate-vars.yml` asserts the packages exist first; `verify.yml` skips the public
+  repository connectivity check.
+- `gateway_offline_control_node_root` has no default and must be set in the inventory; the download and
+  install tasks assert it is a directory on the control node. The Gateway version is not set
+  directly: it is parsed from the file names in `gateway_server_packages` and
+  `gateway_client_packages` (`gateway_offline_server_version` / `gateway_offline_client_version`),
+  and the tasks assert it can be found and is the same for every package in a list. Packages
+  live in `<root>/itential_packages/gateway/<version>/<os>/{archives,rpms/{gateway,python,opentofu,selinux}}`.
+- See `docs/offline_install_guide.md`.
+
 ### certify\_common
 
 Provides shared task files (not called directly) for post-deployment TLS certification:
@@ -119,11 +174,25 @@ Provides shared task files (not called directly) for post-deployment TLS certifi
 
 Provides shared task files (not called directly) for pre-flight environment verification.
 All TLS tasks run `delegate_to: localhost` since cert files reside on the control node.
+Every check is non-fatal (`ignore_errors` + `register`, or `block`/`rescue` for the TLS
+sequence) — Ansible aborts the *entire* `ansible-playbook` run, not just the current play, the
+moment a play ends with 100% of its hosts failed, and `playbooks/verify.yml` runs servers,
+runners, and clients as separate plays. See `docs/verify.md`'s "Non-Fatal Design" section.
 
-- `verify-os.yml` — asserts RHEL/Rocky 8/9, x86\_64
+- `verify-os.yml` — asserts RHEL/Rocky 8/9, x86\_64; initializes `validation_errors`
 - `verify-specs.yml` — asserts CPU, RAM, and disk against documented minimums
+- `verify-connectivity.yml` — checks reachability of a `required_repositories` list passed in
+  by the caller: `gateway_server_required_repositories` (computed from enabled features) for
+  servers/runners, `gateway_client_required_repositories` (`https://registry.aws.itential.com`
+  and `https://itential.jfrog.io`) for clients, since `gateway_client_packages` can itself be an
+  `https://` URL pointing to either registry
+- `verify-proxy.yml` — detects HTTP/HTTPS proxy configuration (warning, not a hard requirement)
 - `verify-tls-files.yml` — 14 checks on TLS source files (existence, PEM validity, expiry,
   cert/key match, CA chain, EKU, SANs)
+- `verify-results.yml` — combines whichever of the above ran into one non-fatal per-host
+  `verification_passed` fact and a `component_validation_errors` dict keyed by `component_name`,
+  both merged (not overwritten) across components so a host checked more than once doesn't
+  lose an earlier failure
 
 ## Running the Collection
 
@@ -182,6 +251,15 @@ ansible-playbook itential.iag5.clients  -i inventories/production
 
 # Post-deployment TLS verification only
 ansible-playbook itential.iag5.certify -i inventories/production
+
+# Register the servers in Gateway Manager (requires the gateway_server_gateway_manager_* variables)
+ansible-playbook itential.iag5.gwm_gateways -i inventories/production
+
+# Create or update Gateway Manager virtual clusters (requires gateway_server_gateway_manager_virtual_clusters; run the previous playbook first)
+ansible-playbook itential.iag5.gwm_virtual_clusters -i inventories/production
+
+# Both of the above, in order
+ansible-playbook itential.iag5.gwm -i inventories/production
 ```
 
 ### Ansible Tags
@@ -222,6 +300,7 @@ The `.ansible-lint` config warns (not errors) on:
 | Workflow | Trigger | Purpose |
 |----------|---------|---------|
 | `ansible-lint.yml` | push/PR to `main` | Lint validation |
+| `role-readme-check.yml` | push/PR to `dev` | Fails the build if any `roles/*/` directory is missing a README (Ansible Galaxy requirement) |
 | `publish_ansible_collection.yml` | GitHub release or manual | Bump version, update CHANGELOG, publish to Galaxy |
 
 The publish workflow reads the version from the git tag (`v1.0.1` → `1.0.1`), writes it into
@@ -231,11 +310,12 @@ The publish workflow reads the version from the git tag (`v1.0.1` → `1.0.1`), 
 
 | Component | Config file | Cert dir | Key dir |
 |-----------|-------------|----------|---------|
-| Server | `/etc/gateway/gateway.conf` | `/etc/gateway/ssl/` | `/etc/gateway/keys/` |
+| Server | `/etc/gateway/gateway.conf` (`gateway_server_config_dir`) | `/etc/gateway/ssl/` | `/etc/gateway/keys/` |
 | Runner | `/etc/gateway/gateway.conf` | `/etc/gateway/ssl/` | `/etc/gateway/keys/` |
 | Client | `~/.gateway.d/gateway.conf` | `~/.gateway.d/ssl/` | `~/.gateway.d/keys/` |
 
 Systemd service: `iagctl.service`
+Binary: `/opt/gateway/iagctl` (`gateway_server_install_dir`). The config, data, log and binary directories can be relocated; see the variable reference.
 Logs: `/var/log/gateway/`
 
 ## Network Ports
@@ -253,15 +333,19 @@ Logs: `/var/log/gateway/`
 The full variable reference (100+ variables with types, defaults, and descriptions) is at
 `docs/reference_guide.md`. The most commonly changed variables are:
 
-- `gateway_cluster_id` — cluster name (default: `cluster_1`)
+- `gateway_cluster_id` — cluster name (default: `{{ inventory_hostname }}`; set explicitly when a cluster spans multiple hosts)
 - `gateway_pki_upload` — upload TLS certs (default: `true`)
+- `gateway_server_pki_trust_ca_enabled` — copy a CA into the OS trust store and run `update-ca-trust` so the server can verify the Gateway Manager cert (default: `false`; server mode with connect enabled only; source defaults to the gateway CA, override `gateway_server_pki_trust_ca_src`)
 - `gateway_server_store_type` — storage backend: `local`, `etcd`, `dynamodb`, `memory`
-- `gateway_server_features_python` — install Python (default: `false`)
-- `gateway_server_features_opentofu` — install OpenTofu (default: `false`)
+- `gateway_server_features_python_enabled` — enable Python script/service management (default: `true`)
+- `gateway_server_features_opentofu_enabled` — enable OpenTofu plan/service management (default: `true`)
+- `gateway_server_features_mcp_enabled` — enable MCP (Model Context Protocol) commands/endpoints, Gateway 5.5+ (default: `false`)
 - `gateway_application_mode` — set by playbook: `server` or `runner`
 - `gateway_server_connect_proxy_enabled` — enable outbound proxy for Gateway Manager connection (default: `false`); always writes `GATEWAY_CONNECT_PROXY_*` vars to `iagctl.env`
 - `gateway_server_connect_proxy_url` — proxy URL; required when proxy is enabled
 - `gateway_server_connect_proxy_username` / `gateway_server_connect_proxy_password` — optional proxy credentials
+- `gateway_server_install_dir` / `gateway_server_config_dir` / `gateway_server_data_dir` / `gateway_server_log_server_dir` — RPM install prefixes (defaults `/opt/gateway`, `/etc/gateway`, `/var/lib/gateway`, `/var/log/gateway`); overriding any relocates the RPM and requires iagctl v5.5.4+
+- `gateway_server_selinux_relabel` — label a relocated `gateway_server_install_dir` `usr_t` with `community.general.sefcontext` when SELinux is enabled (default: `true`). `policycoreutils-python-utils` (`gateway_server_selinux_packages`) is installed with `dnf`, or from the control node in offline mode (downloaded to `rpms/selinux` by `download_packages.yml`)
 - `gateway_server_service_env_file` — path to the systemd environment file (default: `/etc/gateway/iagctl.env`)
 
 ## Key Conventions

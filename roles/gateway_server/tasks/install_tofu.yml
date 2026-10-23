@@ -8,8 +8,18 @@
     owner: root
     group: root
     mode: "0644"
+  when: not gateway_offline_install_enabled | bool
 
 - name: Install OpenTofu packages
   ansible.builtin.dnf:
     name: "{{ gateway_server_opentofu_packages }}"
     state: present
+  when: not gateway_offline_install_enabled | bool
+
+- name: Install OpenTofu packages (offline)
+  ansible.builtin.import_role:
+    name: itential.iag5.offline
+    tasks_from: install-rpms
+  vars:
+    offline_rpms_path: "{{ gateway_offline_control_node_rpms_dir }}/opentofu"
+  when: gateway_offline_install_enabled | bool

@@ -1,0 +1,57 @@
+# Notes:
+#  - All example inventory_hostname entries must be replaced with the actual server hostnames.
+#  - All hostnames must be resolvable.
+#  - Backend 'etcd' is also supported; see Reference Guide for details.
+#  - gateway_server_store_dynamodb_aws_session_token is only needed for temporary/STS credentials; omit for long-lived IAM keys.
+all:
+  vars:
+    ansible_user: <ANSIBLE-USER>
+
+    # Itential Nexus repository credentials
+    repository_username: <NEXUS-USERNAME>
+    repository_password: <NEXUS-PASSWORD>
+
+    gateway_secrets_encrypt_key: <ENCRYPT-KEY>
+    gateway_pki_src_dir: <PKI-DIR>
+
+  children:
+    iag5_servers:
+      hosts:
+        gateway-server01.example.com:  # active gateway server
+          ansible_host: <GATEWAY-SERVER01-IP>
+        gateway-server02.example.com:  # standby gateway server
+          ansible_host: <GATEWAY-SERVER02-IP>
+      vars:
+        gateway_server_connect_hosts: <PLATFORM-IP>:8080
+        gateway_server_packages:
+          - <IAGCTL-RPM>
+        gateway_server_store_backend: dynamodb
+        gateway_server_store_dynamodb_table_name: <DYNAMODB-TABLE-NAME>
+        gateway_server_store_dynamodb_aws_region: <AWS-REGION>
+        gateway_server_store_dynamodb_aws_access_key_id: <AWS-ACCESS-KEY-ID>
+        gateway_server_store_dynamodb_aws_secret_access_key: <AWS-SECRET-ACCESS-KEY>
+
+        # Optional: used by playbooks/gwm_gateways.yml to register the servers in Gateway Manager
+        gateway_server_gateway_manager_client_id: <OAUTH-CLIENT-ID>
+        gateway_server_gateway_manager_client_secret: <OAUTH-CLIENT-SECRET>  # store in Ansible Vault
+        gateway_server_gateway_manager_groups:
+          - <PLATFORM-GROUP>
+        # Defaults to the first gateway_server_connect_hosts host on port 3443
+        gateway_server_gateway_manager_url: https://<PLATFORM-IP>:3443
+
+    iag5_clients:
+      hosts:
+        gateway-client01.example.com:
+          ansible_host: <GATEWAY-CLIENT01-IP>
+          gateway_client_host: <GATEWAY-SERVER01-IP>
+      vars:
+        gateway_client_packages:
+          - <IAGCTL-TARBALL>
+
+    iag5_all:
+      hosts:
+        gateway-client01.example.com:
+        gateway-server01.example.com:
+        gateway-server02.example.com:
+      vars:
+        gateway_cluster_id: cluster_1

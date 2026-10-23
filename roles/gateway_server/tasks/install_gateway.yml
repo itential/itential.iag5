@@ -26,72 +26,98 @@
     - "{{ gateway_secrets_encrypt_key_dir }}"
     - "{{ gateway_server_log_server_dir }}"
 
-- name: Create a temporary download directory
-  ansible.builtin.tempfile:
-    state: directory
-  register: gateway_server_download_dir
-  changed_when: false
+- name: Install the gateway packages (offline)
+  ansible.builtin.import_role:
+    name: itential.iag5.offline
+    tasks_from: install-rpms
+  vars:
+    offline_rpms_path: "{{ gateway_offline_control_node_rpms_dir }}/gateway"
+    offline_use_rpm_cmd: "{{ gateway_server_relocate_opts | trim | length > 0 }}"
+    offline_rpm_cmd_opts: "{{ gateway_server_relocate_opts }}"
+  when: gateway_offline_install_enabled | bool
 
-- name: Download the gateway packages from repository
-  ansible.builtin.get_url:
-    url: "{{ item }}"
-    dest: "{{ gateway_server_download_dir.path }}/"
-    mode: "0755"
-    # Sets the appropriate header based on the repository type:
-    # - For JFrog: Uses the "X-JFrog-Art-Api" header with the API key if "repository_api_key"
-    #   is defined and "jfrog" is part of the download URL.
-    # - For Gitlab: Uses the "PRIVATE-TOKEN" header with the API key if "repository_api_key"
-    #   is defined and "gitlab" is part of the download URL.
-    # - For Nexus: Uses a default header ("Accept: application/octet-stream") since Nexus doesn't
-    #   support API key authentication.
-    headers: >-
-      {%- if repository_api_key is defined and item is search("jfrog") -%}
-        {"X-JFrog-Art-Api": "{{ repository_api_key }}", "Accept": "application/octet-stream"}
-      {%- elif repository_api_key is defined and item is search("gitlab") -%}
-        {"PRIVATE-TOKEN": "{{ repository_api_key }}", "Accept": "application/octet-stream"}
-      {%- else -%}
-        {"Accept": "application/octet-stream"}
-      {%- endif -%}
-    url_username: "{{ repository_username | default(omit) }}"
-    url_password: "{{ repository_password | default(omit) }}"
-    validate_certs: true
-  loop: "{{ gateway_server_packages }}"
-  when:
-    - "'http' in item"
-    - item.endswith('.rpm')
-  register: gateway_server_download_result
-  changed_when: false
+- name: Install the gateway packages (online)
+  when: not gateway_offline_install_enabled | bool
+  block:
+    - name: Create a temporary download directory
+      ansible.builtin.tempfile:
+        state: directory
+      register: gateway_server_download_dir
+      changed_when: false
 
-- name: Propagate the gateway packages from the control node
-  ansible.builtin.copy:
-    src: "{{ item }}"
-    dest: "{{ gateway_server_download_dir.path }}/{{ item }}"
-    owner: "{{ gateway_server_user }}"
-    group: "{{ gateway_server_group }}"
-    mode: "0775"
-    force: false
-  loop: "{{ gateway_server_packages }}"
-  when:
-    - "'http' not in item"
-    - item.endswith('.rpm')
-  changed_when: false
+    - name: Download the gateway packages from repository
+      ansible.builtin.get_url:
+        url: "{{ item }}"
+        dest: "{{ gateway_server_download_dir.path }}/"
+        mode: "0755"
+        # Sets the appropriate header based on the repository type:
+        # - For JFrog: Uses the "X-JFrog-Art-Api" header with the API key if "repository_api_key"
+        #   is defined and "jfrog" is part of the download URL.
+        # - For Gitlab: Uses the "PRIVATE-TOKEN" header with the API key if "repository_api_key"
+        #   is defined and "gitlab" is part of the download URL.
+        # - For Nexus: Uses a default header ("Accept: application/octet-stream") since Nexus doesn't
+        #   support API key authentication.
+        headers: >-
+          {%- if repository_api_key is defined and item is search("jfrog") -%}
+            {"X-JFrog-Art-Api": "{{ repository_api_key }}", "Accept": "application/octet-stream"}
+          {%- elif repository_api_key is defined and item is search("gitlab") -%}
+            {"PRIVATE-TOKEN": "{{ repository_api_key }}", "Accept": "application/octet-stream"}
+          {%- else -%}
+            {"Accept": "application/octet-stream"}
+          {%- endif -%}
+        url_username: "{{ repository_username | default(omit) }}"
+        url_password: "{{ repository_password | default(omit) }}"
+        validate_certs: true
+      loop: "{{ gateway_server_packages }}"
+      when:
+        - "'http' in item"
+        - item.endswith('.rpm')
+      register: gateway_server_download_result
+      changed_when: false
 
-- name: Find the gateway packages
-  ansible.builtin.find:
-    paths: "{{ gateway_server_download_dir.path }}"
-    patterns: "*.rpm"
-  register: gateway_server_packages
-  changed_when: false
+    - name: Propagate the gateway packages from the control node
+      ansible.builtin.copy:
+        src: "{{ item }}"
+        dest: "{{ gateway_server_download_dir.path }}/{{ item }}"
+        owner: "{{ gateway_server_user }}"
+        group: "{{ gateway_server_group }}"
+        mode: "0775"
+        force: false
+      loop: "{{ gateway_server_packages }}"
+      when:
+        - "'http' not in item"
+        - item.endswith('.rpm')
+      changed_when: false
 
-- name: Install the gateway packages (local)
-  ansible.builtin.dnf:
-    name: "{{ gateway_server_packages.files | map(attribute='path') | join(',') }}"
-    disable_gpg_check: true
-    state: present
-  when: gateway_server_packages | length > 0
+    - name: Find the gateway packages
+      ansible.builtin.find:
+        paths: "{{ gateway_server_download_dir.path }}"
+        patterns: "*.rpm"
+      register: gateway_server_found_packages
+      changed_when: false
 
-- name: Remove the temporary download directory
-  ansible.builtin.file:
-    path: "{{ gateway_server_download_dir.path }}"
-    state: absent
-  changed_when: false
+    - name: Install the gateway packages (local)
+      ansible.builtin.dnf:
+        name: "{{ gateway_server_found_packages.files | map(attribute='path') | join(',') }}"
+        disable_gpg_check: true
+        state: present
+      when:
+        - gateway_server_found_packages | length > 0
+        - gateway_server_relocate_opts | trim | length == 0
+
+    - name: Install the gateway packages (relocate install directories)
+      ansible.builtin.include_tasks:
+        file: install_gateway_packages_relocate.yml
+      when:
+        - gateway_server_found_packages | length > 0
+        - gateway_server_relocate_opts | trim | length > 0
+
+    - name: Remove the temporary download directory
+      ansible.builtin.file:
+        path: "{{ gateway_server_download_dir.path }}"
+        state: absent
+      changed_when: false
+
+- name: Configure SELinux for the relocated install directory
+  ansible.builtin.include_tasks:
+    file: configure_selinux.yml

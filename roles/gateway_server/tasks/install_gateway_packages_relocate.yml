@@ -1,0 +1,24 @@
+# Copyright (c) 2026, Itential, Inc
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+---
+#
+# The ansible dnf module does not support passing the relocate flag. So the command module must
+# be used if the standard install directories are overridden.
+#
+
+# The gateway server package supports the following prefixes that can be relocated:
+#     Prefix:           /opt/gateway
+#     Prefix:           /etc/gateway
+#     Prefix:           /var/lib/gateway
+#     Prefix:           /var/log/gateway
+- name: Install the gateway packages  # noqa command-instead-of-module
+  ansible.builtin.command: >-
+    rpm -Uvh {{ gateway_server_relocate_opts }}
+    {{ gateway_server_found_packages.files | map(attribute='path') | join(' ') }}
+  register: gateway_server_relocate_install_result
+  changed_when:
+    - gateway_server_relocate_install_result.rc == 0
+    - gateway_server_relocate_install_result.stderr is not search("already installed")
+  failed_when:
+    - gateway_server_relocate_install_result.rc != 0
+    - gateway_server_relocate_install_result.stderr is not search("already installed")

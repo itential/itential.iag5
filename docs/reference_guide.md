@@ -7,7 +7,7 @@ overridden in the `iag5_clients`, `iag5_servers` or `iag5_runners` group vars.
 
 | Variable | Type | Description | Default Value |
 | :------- | :--- | :---------- | :------------ |
-| `gateway_cluster_id` | String | The IAG5 cluster ID. | cluster_1 |
+| `gateway_cluster_id` | String | The IAG5 cluster ID. Servers, runners, and clients in the same cluster must share the same value, so set it explicitly for any multi-node cluster. | {{ inventory_hostname }} |
 | `gateway_pki_upload` | Boolean | Flag for enabling/disabling upload of PKI certificates and keys. | true |
 | `gateway_pki_key_suffix` | String | The default PKI key suffix. | .key |
 | `gateway_pki_cert_suffix` | String | The default PKI certificate suffix. | .crt |
@@ -17,6 +17,29 @@ overridden in the `iag5_clients`, `iag5_servers` or `iag5_runners` group vars.
 | `gateway_secrets_encrypt_key_file` | String | The path to the secrets encrypt key. | "{{ gateway_secrets_encrypt_key_dir }}/encryption-key" |
 | `repository_username` | String | The username for authenticating to the Itential Nexus repository. | N/A |
 | `repository_password` | String | The password for authenticating to the Itential Nexus repository. | N/A |
+
+## Offline Variables
+
+The variables in this section configure air-gapped installs. See the
+[Offline Install Guide](offline_install_guide.md).
+
+| Variable | Type | Description | Default Value |
+| :------- | :--- | :---------- | :------------ |
+| `gateway_offline_install_enabled` | Boolean | Install from the packages on the control node instead of the repositories. | false |
+| `gateway_offline_target_node_root` | String | Root directory on the target node where the download playbook downloads packages. | /var/tmp |
+| `gateway_offline_control_node_root` | String | Root directory on the control node where packages are downloaded to and installed from. Must be an existing directory. | N/A (must be defined in inventory) |
+| `gateway_offline_server_version` | String | The Gateway server version, taken from the file names in gateway_server_packages. | "{{ gateway_server_packages \| first \| basename \| regex_findall(gateway_offline_version_regex) \| first \| default('') }}" |
+| `gateway_offline_client_version` | String | The Gateway client version, taken from the file names in gateway_client_packages. | "{{ gateway_client_packages \| first \| basename \| regex_findall(gateway_offline_version_regex) \| first \| default('') }}" |
+| `gateway_offline_version_regex` | String | Regular expression used to find the version in a package file name. | '(\d+\.\d+\.\d+(?:-(?:rc\|alpha\|beta)\.?\d+)?)' |
+| `gateway_offline_os` | String | The OS directory name. | "{{ ansible_distribution \| lower }}_{{ ansible_distribution_major_version }}" |
+| `gateway_offline_download_method` | String | How the Python and OpenTofu RPMs are downloaded: yum_module, yum_install, yum_reinstall, repotrack or yumdownloader. | yum_module |
+| `gateway_offline_packages_root` | String | Gateway packages root directory. | itential_packages/gateway |
+| `gateway_offline_target_node_path` | String | Gateway target node packages directory. | "{{ gateway_offline_target_node_root }}/{{ gateway_offline_packages_root }}" |
+| `gateway_offline_control_node_path` | String | Gateway control node packages directory. | "{{ gateway_offline_control_node_root }}/{{ gateway_offline_packages_root }}" |
+| `gateway_offline_target_node_rpms_dir` | String | Target node RPMs directory. | "{{ gateway_offline_target_node_path }}/{{ gateway_offline_server_version }}/{{ gateway_offline_os }}/rpms" |
+| `gateway_offline_target_node_archives_dir` | String | Target node archives directory. | "{{ gateway_offline_target_node_path }}/{{ gateway_offline_client_version }}/{{ gateway_offline_os }}/archives" |
+| `gateway_offline_control_node_rpms_dir` | String | Control node RPMs directory. | "{{ gateway_offline_control_node_path }}/{{ gateway_offline_server_version }}/{{ gateway_offline_os }}/rpms" |
+| `gateway_offline_control_node_archives_dir` | String | Control node archives directory. | "{{ gateway_offline_control_node_path }}/{{ gateway_offline_client_version }}/{{ gateway_offline_os }}/archives" |
 
 ## Client Variables
 
@@ -43,6 +66,7 @@ The variables in this section may be overridden in the inventory in the `iag5_cl
 | `gateway_client_pki_ca_file` | String | The name of the client TLS CA certificate file. | "ca{{ gateway_pki_cert_suffix }}" |
 | `gateway_client_pki_ca_cert_src` | String | The path to the source client TLS CA certificate on the control node. | "{{ gateway_pki_src_dir }}/{{ gateway_client_pki_ca_file }}" |
 | `gateway_client_pki_ca_cert_dest` | String | The path to the client TLS CA certificate. | "{{ gateway_client_pki_dir }}/{{ gateway_client_pki_ca_file }}" |
+| `gateway_client_terminal_no_color` | Boolean | Determines whether the client's console outputs display in color. | false |
 | `gateway_client_terminal_timestamp_timezone` | String | Timezones are shown in UTC by default. When you set this to 'local', the client uses your machine's timezone.<br>You can also set a timezone (tz) identifier such as 'America/New_York'. | utc |
 
 If `gateway_client_packages` contains links to artifacts in the Itential Nexus repository, the
@@ -67,10 +91,20 @@ the `iag5_servers` or `iag5_runners` group vars.
 | `gateway_server_listen_address` | String | The server listen address. | 0.0.0.0 |
 | `gateway_server_port` | Integer | The server listen port. | 50051 |
 | `gateway_server_requirements_file` | String |  | requirements.txt |
+| `gateway_server_venv_retention_period` | String | The amount of idle time before the gateway removes a virtual environment. Accepts a Go duration string or a number of days (e.g. `30d`). | 30d |
+| `gateway_server_venv_sweep_interval` | String | How often the background pruner scans for idle virtual environments to remove. Accepts a Go duration string. | 24h |
+| `gateway_server_features_ansible_enabled` | Boolean | Enables or disables all Ansible features. When you set this variable to false, the gateway disables the management of Ansible playbooks and the execution of Ansible services. | true |
+| `gateway_server_features_hostkeys_enabled` | Boolean | Enables or disables the hostkeys feature. When you set this variable to false, the gateway disables the hostkeys managment commands. | true |
+| `gateway_server_features_mcp_enabled` | Boolean | Enables or disables MCP (Model Context Protocol) features. When you set this variable to false, MCP commands and endpoints are not available. Available in Gateway 5.5 and later. | false |
+| `gateway_server_features_opentofu_enabled` | Boolean | Enables or disables all OpenTofu features. When you set this variable to false, the gateway disables the management of OpenTofu plans and the execution of OpenTofu services. | true |
+| `gateway_server_features_python_enabled` | Boolean | Enables or disables all Python features. When you set this variable to false, the gateway disables the management of Python scripts and the execution of Python services. | true |
 | `gateway_server_user` | String | The server user. All server files and the service will be owned by this user. | itential |
 | `gateway_server_group` | String | The server group. | itential |
-| `gateway_server_config_dir` | String | The directory containing the server configuration files. | /etc/gateway |
-| `gateway_server_data_dir` | String | The directory containing the server data files. | /var/lib/gateway |
+| `gateway_server_install_dir` | String | The directory containing the `iagctl` binary. When this differs from the default, the RPM is installed with `rpm -Uvh --relocate`. Requires a relocatable RPM (iagctl v5.5.4 and later). | /opt/gateway |
+| `gateway_server_selinux_relabel` | Boolean | When `gateway_server_install_dir` is overridden and SELinux is enabled, label it `usr_t` (the policy default for `/opt/gateway`) with `semanage fcontext` and `restorecon` so systemd can execute the binary. Set to false to manage the label yourself. | true |
+| `gateway_server_selinux_packages` | List of String | The packages that provide the SELinux policy tools used to label a relocated `gateway_server_install_dir`. Downloaded by the download playbook and installed from the control node in offline mode. | - policycoreutils-python-utils |
+| `gateway_server_config_dir` | String | The directory containing the server configuration files. When this differs from the default, the RPM prefix is relocated (see `gateway_server_install_dir`). | /etc/gateway |
+| `gateway_server_data_dir` | String | The directory containing the server data files. When this differs from the default, the RPM prefix is relocated (see `gateway_server_install_dir`). | /var/lib/gateway |
 | `gateway_server_cache_dir` | String | The directory used for the venv cache. | /var/cache/gateway |
 | `gateway_server_python_packages` | List of String | The list of Python packages to install. | - python3.11<br>- python3.11-pip<br>- python3.12<br>- python3.12-pip |
 | `gateway_server_python_executable` | String | The path to the Python executable. | /usr/bin/python3.12 |
@@ -82,7 +116,7 @@ the `iag5_servers` or `iag5_runners` group vars.
 | `gateway_server_log_file_enabled` | Boolean | Flag for enabling/disabling logging. | true |
 | `gateway_server_log_file_json` | Boolean | Flag for enabling/disabling logging in JSON format. | false |
 | `gateway_server_log_level` | String | The logging level. | INFO |
-| `gateway_server_log_server_dir` | String | The directory where log files are written. | /var/log/gateway |
+| `gateway_server_log_server_dir` | String | The directory where log files are written. When this differs from the default, the RPM prefix is relocated (see `gateway_server_install_dir`). | /var/log/gateway |
 | `gateway_server_log_timestamp_timezone` | String | Sets the timezone for timestamps in gateway logs.<br>Timezones are shown in UTC by default. When you set this to 'local', the client uses your machine's timezone.<br>You can also set a timezone (tz) identifier such as 'America/New_York'. | utc |
 | `gateway_server_use_tls` | Boolean | Flag for enabling/disabling TLS. | true |
 | `gateway_server_pki_dir` | String | The directory where TLS certificates and keys are located. | "{{ gateway_server_config_dir }}/ssl" |
@@ -95,20 +129,29 @@ the `iag5_servers` or `iag5_runners` group vars.
 | `gateway_server_pki_ca_file` | String | The name of the server TLS CA certificate file. | "ca{{ gateway_pki_cert_suffix }}" |
 | `gateway_server_pki_ca_cert_src` | String | The path to the source server TLS CA certificate on the control node. | "{{ gateway_pki_src_dir }}/{{ gateway_server_pki_ca_file }}" |
 | `gateway_server_pki_ca_cert_dest` | String | The path to the server TLS CA certificate. | "{{ gateway_server_pki_dir }}/{{ gateway_server_pki_ca_file }}" |
+| `gateway_server_pki_trust_ca_enabled` | Boolean | Flag for copying a CA certificate into the OS trust store and running `update-ca-trust`, so the gateway can verify the Gateway Manager server certificate. Only applies in server mode when `gateway_server_connect_enabled` and `gateway_pki_upload` are true. | false |
+| `gateway_server_pki_trust_ca_src` | String | The path to the CA certificate on the control node to add to the OS trust store. Set this to the CA that signed the Gateway Manager certificate if it differs from the gateway CA. | "{{ gateway_server_pki_ca_cert_src }}" |
+| `gateway_server_pki_trust_ca_dir` | String | The OS trust store anchors directory on the target host. | /etc/pki/ca-trust/source/anchors |
+| `gateway_server_pki_trust_ca_dest` | String | The destination path of the CA certificate in the OS trust store directory. | "{{ gateway_server_pki_trust_ca_dir }}/{{ gateway_server_pki_ca_file }}" |
+| `gateway_server_pki_trust_bundle` | String | The extracted OS trust bundle on the target host. The CA certificate is compared against it, and `update-ca-trust` and a Gateway restart run only when the CA is missing from it. | /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem |
 | `gateway_server_registry_default_overridable` | Boolean | Controls whether users can override the default PyPI or Ansible Galaxy registries when creating a Python or Ansible service. | true |
 | `gateway_server_store_backend` | String | Sets the backend type for persistent data storage.<br>Valid values are 'local', 'memory', 'etcd' and 'dynamodb' | local |
 | `gateway_server_store_etcd_hosts` | String | Sets the etcd hosts that the gateway connects to for backend storage.<br>A host entry consists of an address and port: hostname:port.<br>If there are multiple etcd hosts, enter them as a space separated list: hostname1:port hostname2:port. | localhost:2379 |
 | `gateway_server_store_etcd_use_tls` | Boolean | Flag for enabling/disabling TLS connections to Etcd. | true |
 | `gateway_server_store_etcd_client_cert_auth` | Boolean | Flag for determining the TLS authentication method used when connecting to an Etcd store backend and gateway_server_store_etcd_use_tls is set to 'true'. | true |
-| `gateway_server_store_etcd_ca_certificate_filename` | String | The path to the CA certificate used to authenticate to the Etcd store backend. | "{{ gateway_server_pki_ca_cert_dest }}" |
-| `gateway_server_store_etcd_certificate_filename` | String | The path to the client certificate used to authenticate to the Etcd store backend. | "{{ gateway_server_pki_cert_dest }}" |
-| `gateway_server_store_etcd_private_key_filename` | String | The path to the client private key used to authenticate to the Etcd store backend. | "{{ gateway_server_pki_key_dest }}" |
+| `gateway_server_pki_etcd_ca_cert_src` | String | The path on the control node to the Etcd CA certificate. Always derived from `gateway_pki_src_dir`, the same source directory as the main Gateway cert/key/CA - this file must exist there whenever `gateway_server_store_etcd_use_tls` is true. | "{{ gateway_pki_src_dir }}/etcd-ca{{ gateway_pki_cert_suffix }}" |
+| `gateway_server_pki_etcd_cert_src` | String | The path on the control node to the Etcd client certificate. Required (same as above) whenever `gateway_server_store_etcd_client_cert_auth` is true. | "{{ gateway_pki_src_dir }}/etcd-client{{ gateway_pki_cert_suffix }}" |
+| `gateway_server_pki_etcd_key_src` | String | The path on the control node to the Etcd client private key. Required (same as above) whenever `gateway_server_store_etcd_client_cert_auth` is true. | "{{ gateway_pki_src_dir }}/etcd-client{{ gateway_pki_key_suffix }}" |
+| `gateway_server_store_etcd_ca_certificate_filename` | String | The path to the CA certificate used to authenticate to the Etcd store backend. Sourced from `gateway_server_pki_etcd_ca_cert_dest` (see `pki.yml`). | "{{ gateway_server_pki_dir }}/etcd-ca{{ gateway_pki_cert_suffix }}" |
+| `gateway_server_store_etcd_certificate_filename` | String | The path to the client certificate used to authenticate to the Etcd store backend. Sourced from `gateway_server_pki_etcd_cert_dest`. | "{{ gateway_server_pki_dir }}/etcd-client{{ gateway_pki_cert_suffix }}" |
+| `gateway_server_store_etcd_private_key_filename` | String | The path to the client private key used to authenticate to the Etcd store backend. Sourced from `gateway_server_pki_etcd_key_dest`. | "{{ gateway_server_pki_dir }}/etcd-client{{ gateway_pki_key_suffix }}" |
 | `gateway_server_store_dynamodb_table_name` | String | Sets the Amazon DynamoDB table name that the gateway connects to for backend storage. | itential.gateway5.store |
 | `gateway_server_store_dynamodb_aws_access_key_id` | String | The AWS access key when using DynamoDB, written to `iagctl.env`. | N/A |
 | `gateway_server_store_dynamodb_aws_secret_access_key` | String | The AWS secret access key when using DynamoDB, written to `iagctl.env`. | N/A |
 | `gateway_server_store_dynamodb_aws_session_token` | String | The AWS session token when using DynamoDB, written to `iagctl.env`. | N/A |
 | `gateway_server_store_dynamodb_aws_region` | String | The AWS region when using DynamoDB, written to `iagctl.env`. | N/A |
 | `gateway_server_terminal_no_color` | Boolean | Determines whether the console outputs and logs display in color. | false |
+| `gateway_server_terminal_timestamp_timezone` | String | Timezones are shown in UTC by default. When you set this to 'local', the gateway uses the machine's timezone.<br>You can also set a timezone (tz) identifier such as 'America/New_York'. | utc |
 | `gateway_server_environment` | Dictionary | Free-form key/value pairs written directly to the systemd environment file (`iagctl.env`). Use to set system-level environment variables such as `HTTP_PROXY`, `HTTPS_PROXY`, and `NO_PROXY`. | {} |
 
 If `gateway_server_packages` contains links to artifacts in the Itential Nexus repository, the
@@ -134,10 +177,55 @@ The variables in this section may be overridden in the inventory in the `iag5_se
 | `gateway_server_connect_proxy_url` | String | The proxy URL (e.g. `http://proxy.example.com:8080`), written to `iagctl.env`. Required when `gateway_server_connect_proxy_enabled` is `true`. | N/A |
 | `gateway_server_connect_proxy_username` | String | The proxy username, written to `iagctl.env`. Optional. | N/A |
 | `gateway_server_connect_proxy_password` | String | The proxy password, written to `iagctl.env`. Optional. | N/A |
-| `gateway_server_features_ansible_enabled` | Boolean | Enables or disables all Ansible features. When you set this variable to false, the gateway disables the management of Ansible playbooks and the execution of Ansible services. | true |
-| `gateway_server_features_hostkeys_enabled` | Boolean | Enables or disables the hostkeys feature. When you set this variable to false, the gateway disables the hostkeys managment commands. | true |
-| `gateway_server_features_opentofu_enabled` | Boolean | Enables or disables all OpenTofu features. When you set this variable to false, the gateway disables the management of OpenTofu plans and the execution of OpenTofu services. | true |
-| `gateway_server_features_python_enabled` | Boolean | Enables or disables all Python features. When you set this variable to false, the gateway disables the management of Python scripts and the execution of Python services. | true |
+
+## Gateway Manager Variables
+
+The variables in this section are used by the `gwm_gateways` playbook, which creates each server's Gateway in Gateway Manager, uploads its CA and host certificates, and links the host certificate to the Gateway. They may be overridden in the inventory in the `iag5_servers` group vars.
+
+| Variable | Type | Description | Default |
+|----------|------|-------------|---------|
+| `gateway_server_gateway_manager_client_id` | String | The OAuth client ID of the Itential Platform user that calls the Gateway Manager API. Must be defined in the inventory. | N/A (must be defined in inventory) |
+| `gateway_server_gateway_manager_client_secret` | String | The OAuth client secret for the client ID. Must be defined in the inventory. Store it in Ansible Vault. | N/A (must be defined in inventory) |
+| `gateway_server_gateway_manager_groups` | List | The Itential Platform group names that can act on the Gateway. Gateway Manager requires at least one when a Gateway is created. Must be defined in the inventory. | [] |
+| `gateway_server_gateway_manager_url` | String | The Itential Platform API URL. Override this when the control node cannot reach the first host in `gateway_server_connect_hosts`. | "https://{{ first host in gateway_server_connect_hosts }}:3443" |
+| `gateway_server_gateway_manager_validate_certs` | Boolean | Validate the Itential Platform TLS certificate when calling the API. | true |
+| `gateway_server_gateway_manager_ca_cert_alias` | String | The alias of the CA certificate in Gateway Manager. | "{{ gateway_cluster_id }} CA cert" |
+| `gateway_server_gateway_manager_host_cert_alias` | String | The alias of the host certificate in Gateway Manager. Each server has its own host certificate, so the default is per server. | "{{ inventory_hostname }} cert" |
+
+The API calls run on the control node. A certificate is matched in Gateway Manager by its PEM content. The Gateway Manager API only allows the alias of a stored certificate to be changed, so a certificate with the same alias and a different PEM is deleted and uploaded again.
+
+The `gwm` playbook runs `gwm_gateways` and then `gwm_virtual_clusters`, so one command configures the Gateways and the virtual clusters.
+
+### Virtual Clusters
+
+The `gwm_virtual_clusters` playbook creates and updates virtual clusters in Gateway Manager. A virtual cluster groups Gateways that have different `cluster_id` values. It has one primary and zero or more ordered backups. This is not the same as `gateway_server_connect_server_ha_*`, which runs several servers under a single `cluster_id`. Run `gwm_gateways` first so the Gateways exist. The playbook uses the client ID, client secret, URL, and groups variables above.
+
+| Variable | Type | Description | Default |
+|----------|------|-------------|---------|
+| `gateway_server_gateway_manager_virtual_clusters` | List | The virtual clusters to create or update. Each entry is a dictionary, described below. | [] |
+
+Each entry in `gateway_server_gateway_manager_virtual_clusters` supports these keys:
+
+- `cluster_id` (required): The unique cluster ID of the virtual cluster. It must not match the `cluster_id` of a Gateway.
+- `distribution_mode` (required): `sorted` for active/standby, or `least-open-requests` for load balanced. These are the Gateway Manager API values, and the API rejects anything else.
+- `primary` (required): The `cluster_id` of the primary Gateway. It must already exist in Gateway Manager.
+- `backups`: An ordered list of backup Gateway `cluster_id` values. Failover follows this order. The primary must not be in the list.
+- `groups`: The Itential Platform group names that can act on the virtual cluster. Defaults to `gateway_server_gateway_manager_groups`.
+- `description`: Free text. Defaults to an empty string.
+
+Example:
+
+```yaml
+gateway_server_gateway_manager_virtual_clusters:
+  - cluster_id: vcluster_lb
+    distribution_mode: least-open-requests
+    primary: gateway-a
+    backups:
+      - gateway-b
+      - gateway-c
+```
+
+A virtual cluster is matched by `cluster_id`. If it exists, it is updated only when the primary, backups (order matters), groups, description, or distribution mode differ. Virtual clusters that are not in the list are not deleted.
 
 # Runner Variables
 

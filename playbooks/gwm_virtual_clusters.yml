@@ -1,0 +1,19 @@
+# Copyright (c) 2025, Itential, LLC
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+---
+- name: Configure Gateway Manager virtual clusters
+  hosts: iag5_servers
+  gather_facts: false
+  roles:
+    # Pull in the gateway vars
+    - role: itential.iag5.gateway
+      tags: always
+
+  tasks:
+    # Create or update the virtual clusters. The Gateways must already exist in Gateway Manager.
+    - name: Configure Gateway Manager virtual clusters
+      ansible.builtin.include_role:
+        name: itential.iag5.gateway_server
+        tasks_from: configure_gateway_manager_virtual_clusters
+      vars:
+        gateway_application_mode: server
