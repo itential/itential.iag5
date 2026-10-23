@@ -1,9 +1,34 @@
 # Changelog
 
+## v1.2.0 (October 23, 2026)
+
+* Add DynamoDB example inventory, rename etcd example for symmetry
+* Add etcd TLS certificate upload support to gateway_server role  https://github.com/itential/itential.iag5/pull/35
+* Add logrotate configuration for gateway_server
+* Add metrics defaults and template section to servers/runners  https://github.com/itential/itential.iag5/pull/37
+* Add playbook to configure gateways and certificates in Gateway Manager   https://github.com/itential/itential.iag5/pull/39
+* Add playbook to configure virtual clusters in Gateway Manager  https://github.com/itential/itential.iag5/pull/41
+* Add relocatable install directories for the gateway server RPM
+* Add repository connectivity checks to verify playbook  https://github.com/itential/itential.iag5/pull/34
+* Added mcp server enable variable
+* Complete feature-variable audit: add missing venv/features/terminal vars
+* Fix Jinja2 spacing lint errors and run ansible-lint on dev  https://github.com/itential/itential.iag5/pull/45
+* Fix offline installs for relocated gateway installs
+* Support offline installs in air-gapped environments  https://github.com/itential/itential.iag5/pull/38
+* Use gateway_server_group for the local bin directory group
+* added import POST example
+* added readme check
+* day0 config
+* updated instructions
+* updated server.conf to add other feature vars
+
+Full Changelog: https://github.com/itential/itential.iag5/compare/v1.1.1...v1.2.0 
+
+
 ## v1.1.1 (July 31, 2026)
 
 * Add readme for galaxy
-* Update galaxy version and changelog for release 1.1.0 [skip ci]
+* Update galaxy version and changelog for release 1.1.1 [skip ci]
 
 Full Changelog: https://github.com/itential/itential.iag5/compare/v1.1.0...v1.1.1 
 
