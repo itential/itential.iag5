@@ -48,26 +48,17 @@
 
 - name: Add Ansible Galaxy repository when Ansible is enabled
   ansible.builtin.set_fact:
-    gateway_server_required_repositories: "{{ gateway_server_required_repositories + [
-      {'url': 'https://galaxy.ansible.com', 'type': 'bare', 'notes': 'Ansible collections'}
-      ] }}"
+    gateway_server_required_repositories: "{{ gateway_server_required_repositories + [{'url': 'https://galaxy.ansible.com', 'type': 'bare', 'notes': 'Ansible collections'}] }}"
   when: gateway_server_features_ansible_enabled | bool
 
 - name: Add Python repositories when Python is enabled
   ansible.builtin.set_fact:
-    gateway_server_required_repositories: "{{ gateway_server_required_repositories + [
-      {'url': 'https://pypi.org', 'type': 'bare', 'notes': 'Python packages'},
-      {'url': 'https://python.org', 'type': 'bare', 'notes': 'Python'},
-      {'url': 'https://pythonhosted.org', 'type': 'bare', 'notes': 'Python packages'}
-      ] }}"
+    gateway_server_required_repositories: "{{ gateway_server_required_repositories + [{'url': 'https://pypi.org', 'type': 'bare', 'notes': 'Python packages'}, {'url': 'https://python.org', 'type': 'bare', 'notes': 'Python'}, {'url': 'https://pythonhosted.org', 'type': 'bare', 'notes': 'Python packages'}] }}"
   when: gateway_server_features_python_enabled | bool
 
 - name: Add OpenTofu repositories when OpenTofu is enabled
   ansible.builtin.set_fact:
-    gateway_server_required_repositories: "{{ gateway_server_required_repositories + [
-      {'url': 'https://packages.opentofu.org', 'type': 'bare', 'notes': 'OpenTofu YUM repo'},
-      {'url': 'https://get.opentofu.org', 'type': 'bare', 'notes': 'OpenTofu GPG key'}
-      ] }}"
+    gateway_server_required_repositories: "{{ gateway_server_required_repositories + [{'url': 'https://packages.opentofu.org', 'type': 'bare', 'notes': 'OpenTofu YUM repo'}, {'url': 'https://get.opentofu.org', 'type': 'bare', 'notes': 'OpenTofu GPG key'}] }}"
   when: gateway_server_features_opentofu_enabled | bool
 
 # Air-gapped installs do not reach the public repositories
