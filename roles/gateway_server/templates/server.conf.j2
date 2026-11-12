@@ -53,6 +53,9 @@ private_key_file      = '{{ gateway_server_pki_key_dest }}'
 {% endif %}
 runtime_data_dir      = '{{ gateway_server_data_dir }}'
 
+[runner]
+runtime_data_dir      = '{{ gateway_server_data_dir }}'
+
 [store]
 backend                  = '{{ gateway_server_store_backend }}'
 {% if gateway_server_store_backend == 'dynamodb' %}
