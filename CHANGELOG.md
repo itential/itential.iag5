@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.2.1 (November 12, 2026)
+
+* Add runner section with runtime_data_dir to server config template
+
+Full Changelog: https://github.com/itential/itential.iag5/compare/v1.2.0...v1.2.1 
+
+
 ## v1.2.0 (October 23, 2026)
 
 * Add DynamoDB example inventory, rename etcd example for symmetry
@@ -15,6 +22,7 @@
 * Fix Jinja2 spacing lint errors and run ansible-lint on dev  https://github.com/itential/itential.iag5/pull/45
 * Fix offline installs for relocated gateway installs
 * Support offline installs in air-gapped environments  https://github.com/itential/itential.iag5/pull/38
+* Update galaxy version and changelog for release 1.2.0 [skip ci]
 * Use gateway_server_group for the local bin directory group
 * added import POST example
 * added readme check
