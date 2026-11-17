@@ -4,7 +4,7 @@
 # IAG5 Environment Verification
 #
 # Verifies that target hosts meet all requirements before installation or upgrade:
-#   - OS is a supported distribution and version (RHEL/Rocky 8/9, x86_64)
+#   - OS is a supported distribution and version (RHEL/Rocky 8/9/10, x86_64)
 #   - Hardware specs meet minimums (servers and runners only)
 #   - Outbound connectivity to required public repositories (servers and runners only)
 #   - No proxy configuration detected

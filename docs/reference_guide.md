@@ -106,7 +106,8 @@ the `iag5_servers` or `iag5_runners` group vars.
 | `gateway_server_config_dir` | String | The directory containing the server configuration files. When this differs from the default, the RPM prefix is relocated (see `gateway_server_install_dir`). | /etc/gateway |
 | `gateway_server_data_dir` | String | The directory containing the server data files. When this differs from the default, the RPM prefix is relocated (see `gateway_server_install_dir`). | /var/lib/gateway |
 | `gateway_server_cache_dir` | String | The directory used for the venv cache. | /var/cache/gateway |
-| `gateway_server_python_packages` | List of String | The list of Python packages to install. | - python3.11<br>- python3.11-pip<br>- python3.12<br>- python3.12-pip |
+| `gateway_server_required_packages` | List of String | The packages the `iagctl` RPM depends on. They are installed before the RPM because a relocated install uses `rpm`, which does not resolve dependencies. Downloaded by the download playbook and installed from the control node in offline mode. | - openssl |
+| `gateway_server_python_packages` | List of String | The list of Python packages to install. | EL8/9: python3.11, python3.11-pip, python3.12, python3.12-pip<br>EL10: python3.12, python3.12-pip |
 | `gateway_server_python_executable` | String | The path to the Python executable. | /usr/bin/python3.12 |
 | `gateway_server_pip_executable` | String | The path to the Pip executable. | /usr/bin/pip3.12 |
 | `gateway_server_local_bin_dir` | String | The server local binnary directory. | "/home/{{ gateway_server_user }}/.local/bin" |

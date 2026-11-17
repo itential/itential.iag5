@@ -9,10 +9,10 @@
   ansible.builtin.assert:
     that:
       - ansible_distribution in ['RedHat', 'Rocky']
-      - ansible_distribution_major_version in ['8', '9']
+      - ansible_distribution_major_version in ['8', '9', '10']
     fail_msg: >-
       {{ ansible_distribution }} {{ ansible_distribution_version }} is not supported.
-      Supported OS: RHEL 8/9, Rocky Linux 8/9.
+      Supported OS: RHEL 8/9/10, Rocky Linux 8/9/10.
     success_msg: "OS check passed: {{ ansible_distribution }} {{ ansible_distribution_version }}"
     quiet: true
   ignore_errors: true

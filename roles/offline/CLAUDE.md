@@ -78,14 +78,15 @@ The paths are built in `roles/gateway/defaults/main.yml`. There is one tree unde
             └── rpms
                 ├── gateway
                 ├── opentofu
-                └── python
+                ├── python
+                └── required
 ```
 
 - `<VERSION>` is parsed from the file names in `gateway_server_packages` (server RPMs) and
   `gateway_client_packages` (client archive) by `gateway_offline_version_regex`. There is no
   release variable to set.
 - `<OS>` is `gateway_offline_os`, for example `rocky_9`.
-- `rpms/gateway` holds the `iagctl` RPM, `rpms/python` and `rpms/opentofu` hold those features'
+- `rpms/gateway` holds the `iagctl` RPM, `rpms/required` holds the RPMs the `iagctl` RPM depends on, `rpms/python` and `rpms/opentofu` hold those features'
   RPMs (only when the feature is enabled), `rpms/selinux` holds the SELinux tools RPM (only when the
   install directory is relocated), and `archives` holds the client tarball.
 

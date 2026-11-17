@@ -1,6 +1,11 @@
 # Copyright (c) 2025, Itential, Inc
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 ---
+- name: Load the OS specific variables
+  ansible.builtin.include_tasks:
+    file: load_os_vars.yml
+  tags: always
+
 - name: Validate gateway_offline_install_enabled is false for download
   ansible.builtin.assert:
     that: not gateway_offline_install_enabled | bool
@@ -70,6 +75,26 @@
     offline_src_dir: "{{ gateway_offline_target_node_rpms_dir }}/gateway"
     offline_dest_dir: "{{ gateway_offline_control_node_rpms_dir }}/gateway"
   tags: download_gateway_packages
+
+- name: Download the required RPMs
+  tags: download_required_packages
+  block:
+    - name: Download the required RPMs
+      ansible.builtin.import_role:
+        name: itential.iag5.offline
+        tasks_from: download-rpms
+      vars:
+        offline_download_method: "{{ gateway_offline_download_method }}"
+        offline_download_packages: "{{ gateway_server_required_packages }}"
+        offline_download_dir: "{{ gateway_offline_target_node_rpms_dir }}/required"
+
+    - name: Copy the required RPMs to the control node
+      ansible.builtin.import_role:
+        name: itential.iag5.offline
+        tasks_from: fetch-packages
+      vars:
+        offline_src_dir: "{{ gateway_offline_target_node_rpms_dir }}/required"
+        offline_dest_dir: "{{ gateway_offline_control_node_rpms_dir }}/required"
 
 - name: Download the Python RPMs
   when: gateway_server_features_python_enabled | bool

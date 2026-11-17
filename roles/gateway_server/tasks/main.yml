@@ -6,6 +6,11 @@
     file: validate-vars.yml
   tags: always
 
+- name: Load the OS specific variables
+  ansible.builtin.include_tasks:
+    file: load_os_vars.yml
+  tags: always
+
 - name: Install and configure Gateway and dependencies
   notify: Enable and start Gateway
   block:

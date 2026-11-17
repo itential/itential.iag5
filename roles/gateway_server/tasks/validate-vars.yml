@@ -68,7 +68,7 @@
           loop_control:
             label: "{{ item.dir }}"
           vars:
-            gateway_server_offline_required_rpm_dirs: "{{ [{'dir': 'gateway'}]
+            gateway_server_offline_required_rpm_dirs: "{{ [{'dir': 'gateway'}, {'dir': 'required'}]
               + ([{'dir': 'python'}] if gateway_server_features_python_enabled | bool else [])
               + ([{'dir': 'opentofu'}] if gateway_server_features_opentofu_enabled | bool else [])
               + ([{'dir': 'selinux'}] if gateway_server_selinux_packages_required | bool else []) }}"

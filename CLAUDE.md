@@ -23,7 +23,7 @@ platform. It provisions three component types across four supported topologies:
 
 **Supported storage backends:** `local`, `etcd`, `dynamodb`, `memory`
 
-**Target OS:** RHEL 8/9, Rocky Linux 8/9 (managed nodes). Control node requires Python ≥ 3.9
+**Target OS:** RHEL 8/9/10, Rocky Linux 8/9/10 (managed nodes). Control node requires Python ≥ 3.9
 and ansible-core ≥ 2.11, < 2.17.
 
 ## Directory Structure
@@ -79,7 +79,7 @@ Variables-only role (no tasks). Centralizes shared defaults consumed by `gateway
 Deploys server **or** runner depending on `gateway_application_mode`. Task execution order:
 
 1. `validate-vars.yml` — asserts required vars
-2. `install_gateway.yml` — creates user/dirs, downloads RPM, installs + enables systemd service; when any of `gateway_server_install_dir`, `_config_dir`, `_data_dir` or `_log_server_dir` differs from the RPM default it includes `install_gateway_packages_relocate.yml` (`rpm -Uvh --relocate`, needs a relocatable RPM, iagctl v5.5.4+) instead of the `dnf` task, then `configure_selinux.yml`
+2. `install_gateway.yml` — creates user/dirs, installs `gateway_server_required_packages` (`openssl`; `rpm` does not resolve dependencies, so they are installed first), downloads RPM, installs + enables systemd service; when any of `gateway_server_install_dir`, `_config_dir`, `_data_dir` or `_log_server_dir` differs from the RPM default it includes `install_gateway_packages_relocate.yml` (`rpm -Uvh --relocate`, needs a relocatable RPM, iagctl v5.5.4+) instead of the `dnf` task, then `configure_selinux.yml`
 3. `install_python.yml` — optional Python 3.12 install (controlled by `gateway_server_features_python_enabled`)
 4. `install_tofu.yml` — optional OpenTofu install (controlled by `gateway_server_features_opentofu_enabled`)
 5. `upload_certs.yml` — uploads TLS cert/key and CA cert; when `gateway_server_store_etcd_use_tls: true`, also uploads the Etcd CA cert (and, when `gateway_server_store_etcd_client_cert_auth: true`, the Etcd client cert/key) from `gateway_server_pki_etcd_*_src` (`pki.yml`) - these source paths are always derived from `gateway_pki_src_dir`, same as the main Gateway cert/key/CA, so `etcd-ca.crt`/`etcd-client.crt`/`etcd-client.key` must exist there whenever Etcd TLS is enabled, or the task fails
@@ -146,7 +146,7 @@ Utility role with no `main.yml` and no defaults, called via `tasks_from:` by `ga
 (`gateway_offline_install_enabled`, `gateway_offline_*`) are defined in `roles/gateway/defaults/main.yml`.
 
 - `playbooks/download_packages.yml` runs `gateway_server/tasks/download-packages.yml` (iagctl RPM,
-  Python RPMs, OpenTofu RPMs, and the SELinux tools RPM when the install directory is relocated) and `gateway_client/tasks/download-packages.yml` (client tarball) on a
+  required RPMs, Python RPMs, OpenTofu RPMs, and the SELinux tools RPM when the install directory is relocated) and `gateway_client/tasks/download-packages.yml` (client tarball) on a
   host with internet access and fetches the results to the control node. It forces
   `gateway_offline_install_enabled` to false.
 - With `gateway_offline_install_enabled: true`, `install_gateway.yml`, `install_python.yml`,
@@ -158,7 +158,7 @@ Utility role with no `main.yml` and no defaults, called via `tasks_from:` by `ga
   directly: it is parsed from the file names in `gateway_server_packages` and
   `gateway_client_packages` (`gateway_offline_server_version` / `gateway_offline_client_version`),
   and the tasks assert it can be found and is the same for every package in a list. Packages
-  live in `<root>/itential_packages/gateway/<version>/<os>/{archives,rpms/{gateway,python,opentofu,selinux}}`.
+  live in `<root>/itential_packages/gateway/<version>/<os>/{archives,rpms/{gateway,required,python,opentofu,selinux}}`.
 - See `docs/offline_install_guide.md`.
 
 ### certify\_common
@@ -179,7 +179,7 @@ sequence) — Ansible aborts the *entire* `ansible-playbook` run, not just the c
 moment a play ends with 100% of its hosts failed, and `playbooks/verify.yml` runs servers,
 runners, and clients as separate plays. See `docs/verify.md`'s "Non-Fatal Design" section.
 
-- `verify-os.yml` — asserts RHEL/Rocky 8/9, x86\_64; initializes `validation_errors`
+- `verify-os.yml` — asserts RHEL/Rocky 8/9/10, x86\_64; initializes `validation_errors`
 - `verify-specs.yml` — asserts CPU, RAM, and disk against documented minimums
 - `verify-connectivity.yml` — checks reachability of a `required_repositories` list passed in
   by the caller: `gateway_server_required_repositories` (computed from enabled features) for

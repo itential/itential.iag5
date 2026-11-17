@@ -18,6 +18,7 @@ mode.
 | Component | Package | Condition |
 | :-------- | :------ | :-------- |
 | Server / Runner | `iagctl` RPM from `gateway_server_packages` | always |
+| Server / Runner | Required RPMs from `gateway_server_required_packages` (`openssl`) | always |
 | Server / Runner | Python RPMs from `gateway_server_python_packages` | `gateway_server_features_python_enabled` is true |
 | Server / Runner | OpenTofu RPMs from `gateway_server_opentofu_packages` | `gateway_server_features_opentofu_enabled` is true |
 | Server / Runner | SELinux policy tools from `gateway_server_selinux_packages` (`policycoreutils-python-utils`) | `gateway_server_install_dir` is relocated and `gateway_server_selinux_relabel` is true |
@@ -31,7 +32,7 @@ are downloaded. Entries that are local paths are skipped.
 The download playbook must be run against a server that has internet access. It is critical to
 use a server with the same OS image as the target servers in the air-gapped environment,
 otherwise the downloaded RPMs will not match and the installation will most likely fail. The
-server should not already have the Python, OpenTofu or SELinux (`policycoreutils-python-utils`)
+server should not already have the required (`openssl`), Python, OpenTofu or SELinux (`policycoreutils-python-utils`)
 packages installed, unless
 `gateway_offline_download_method` is set to `yumdownloader` or `repotrack`.
 
@@ -74,7 +75,8 @@ By default the packages are placed in `/var/tmp/itential_packages` on the target
             └── rpms
                 ├── gateway
                 ├── opentofu
-                └── python
+                ├── python
+                └── required
 ```
 
 ## Running the Install Playbooks in Offline Mode
@@ -118,7 +120,7 @@ In offline mode the install playbooks:
 - skip adding the OpenTofu YUM repository
 - skip the public repository connectivity checks in the `verify` playbook
 
-The `iagctl` RPM and the Python and OpenTofu RPMs must therefore include all of their
+The `iagctl` RPM and the required, Python and OpenTofu RPMs must therefore include all of their
 dependencies.
 
 ## Variable Reference

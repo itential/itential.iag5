@@ -1,0 +1,11 @@
+# Copyright (c) 2026, Itential, Inc
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+---
+# Loads the OS specific values from vars/os-el<major>.yml, falling back to vars/os-default.yml.
+- name: Load the OS specific variables
+  ansible.builtin.include_vars: "{{ lookup('ansible.builtin.first_found', gateway_server_os_vars_files) }}"
+  vars:
+    gateway_server_os_vars_files:
+      - "os-el{{ ansible_distribution_major_version }}.yml"
+      - os-default.yml
+  tags: always

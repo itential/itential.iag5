@@ -53,15 +53,17 @@ gateway_server_selinux_packages_required: >-
 gateway_server_relocate_opts: >-
   {% for reloc in gateway_server_relocations if reloc.old != reloc.new %}--relocate {{ reloc.old }}={{ reloc.new }} {% endfor %}
 
+# The packages the iagctl RPM depends on. They are installed before the RPM because the relocated
+# install uses rpm instead of dnf, and rpm does not resolve dependencies.
+gateway_server_required_packages:
+  - openssl
+
 # Gateway service environment file
 gateway_server_service_env_file: "{{ gateway_server_config_dir }}/iagctl.env"
 
 # Gateway python installation
-gateway_server_python_packages:
-  - python3.11
-  - python3.11-pip
-  - python3.12
-  - python3.12-pip
+# The default package list is OS specific, see vars/os-*.yml
+gateway_server_python_packages: "{{ gateway_server_os_python_packages }}"
 gateway_server_python_executable: /usr/bin/python3.12
 gateway_server_pip_executable: /usr/bin/pip3.12
 gateway_server_local_bin_dir: "/home/{{ gateway_server_user }}/.local/bin"

@@ -1,0 +1,8 @@
+# Copyright (c) 2026, Itential, Inc
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+---
+# OS specific values for EL10. See os-default.yml.
+# EL10 does not ship Python 3.11; 3.12 is its system Python.
+gateway_server_os_python_packages:
+  - python3.12
+  - python3.12-pip

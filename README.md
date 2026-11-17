@@ -74,12 +74,12 @@ node. That node has its own set of dependencies.
 Itential recommends using a dedicated node running the requirements listed below as the Ansible
 control node. That node should meet or exceed the following specifications:
 
-| Component | Value                |
-|-----------|----------------------|
-| OS        | RHEL8/9 or Rocky 8/9 |
-| RAM       | 4 GB                 |
-| CPUs      | 2                    |
-| Disk      | 20 GB                |
+| Component | Value                       |
+|-----------|-----------------------------|
+| OS        | RHEL 8/9/10 or Rocky 8/9/10 |
+| RAM       | 4 GB                        |
+| CPUs      | 2                           |
+| Disk      | 20 GB                       |
 
 ### Required Python, Ansible, and Ansible modules
 
@@ -257,7 +257,7 @@ nodes.
 
 **&#9432; Note:**
 Although the IAG5 collection can be used to configure nodes that use any supported operating
-system, it is optimized for Rocky/RHEL 8/9.
+system, it is optimized for Rocky/RHEL 8/9/10.
 
 ### Determine the Working and IAG5 Collection Directories
 

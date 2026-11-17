@@ -26,6 +26,20 @@
     - "{{ gateway_secrets_encrypt_key_dir }}"
     - "{{ gateway_server_log_server_dir }}"
 
+- name: Install the required packages
+  ansible.builtin.dnf:
+    name: "{{ gateway_server_required_packages }}"
+    state: present
+  when: not gateway_offline_install_enabled | bool
+
+- name: Install the required packages (offline)
+  ansible.builtin.import_role:
+    name: itential.iag5.offline
+    tasks_from: install-rpms
+  vars:
+    offline_rpms_path: "{{ gateway_offline_control_node_rpms_dir }}/required"
+  when: gateway_offline_install_enabled | bool
+
 - name: Install the gateway packages (offline)
   ansible.builtin.import_role:
     name: itential.iag5.offline

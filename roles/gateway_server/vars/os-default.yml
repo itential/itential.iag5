@@ -1,0 +1,11 @@
+# Copyright (c) 2026, Itential, Inc
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+---
+# OS specific values for EL8 and EL9. Loaded by tasks/load_os_vars.yml when no os-el<major>.yml exists
+# for the managed node. These are role-internal values; override the gateway_server_* variable that
+# consumes them (see defaults/main) rather than these.
+gateway_server_os_python_packages:
+  - python3.11
+  - python3.11-pip
+  - python3.12
+  - python3.12-pip
