@@ -138,6 +138,13 @@ install the required repository or download the packages.
 | IAG5 | <https://pypi.org> | When Python is enabled |
 | IAG5 | <https://packages.opentofu.org> | When OpenTofu is enabled |
 | IAG5 | <https://get.opentofu.org> | When OpenTofu is enabled |
+| IAG5 | <https://d3fo0g5hm7lbuv.cloudfront.net> | When OpenTofu is enabled. See the note below |
+
+`https://packages.opentofu.org` redirects the repository metadata, GPG key, and RPM requests to a
+signed CloudFront URL on `d3fo0g5hm7lbuv.cloudfront.net`. That hostname is the OpenTofu package
+host at the time of writing and may change. Allow the host by name, because CloudFront IP
+addresses change, and do not strip or rewrite query strings, because the signature is carried in
+the query string.
 
 > [! WARNING]
 > Neither the IAG5 collection nor the maintainers of the project can not know if any of the above

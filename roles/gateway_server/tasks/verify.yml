@@ -58,7 +58,7 @@
 
 - name: Add OpenTofu repositories when OpenTofu is enabled
   ansible.builtin.set_fact:
-    gateway_server_required_repositories: "{{ gateway_server_required_repositories + [{'url': 'https://packages.opentofu.org', 'type': 'bare', 'notes': 'OpenTofu YUM repo'}, {'url': 'https://get.opentofu.org', 'type': 'bare', 'notes': 'OpenTofu GPG key'}] }}"
+    gateway_server_required_repositories: "{{ gateway_server_required_repositories + [{'url': 'https://packages.opentofu.org', 'type': 'path', 'check_target': 'https://packages.opentofu.org/opentofu/tofu/rpm_any/rpm_any/x86_64/repodata/repomd.xml', 'notes': 'OpenTofu YUM repo'}, {'url': 'https://get.opentofu.org', 'type': 'bare', 'notes': 'OpenTofu GPG key'}] }}"
   when: gateway_server_features_opentofu_enabled | bool
 
 # Air-gapped installs do not reach the public repositories
